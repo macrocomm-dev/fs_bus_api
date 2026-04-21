@@ -17,6 +17,7 @@ client = TestClient(app)
 
 
 class AuthTests(unittest.TestCase):
+
     def tearDown(self):
         app.dependency_overrides.clear()
 
