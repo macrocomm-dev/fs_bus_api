@@ -22,6 +22,16 @@ The following runtime secrets are managed in Google Cloud Secret Manager in proj
 
 These secrets are referenced by Cloud Run during deployment and are also available to local development through Application Default Credentials when appropriate.
 
+## Identity provider direction
+
+Firebase Authentication is the current preferred identity provider for this project.
+
+Operationally, the simplest setup is to enable Firebase against the existing Google Cloud project `bus-track-480813`, rather than creating a disconnected second project just for auth.
+
+Users are not self-registering through the app. User accounts are expected to be created and managed administratively.
+
+The API is expected to consume provider-issued tokens that include user identity and role information.
+
 ## GitHub CI/CD configuration model
 
 GitHub Actions should use repository variables for non-sensitive configuration:
@@ -80,4 +90,4 @@ If a CI workflow truly needs a secret value during execution, fetch it from Goog
 - GitHub deployment variables are the intended CI/CD config source.
 - Redundant GitHub deployment secrets were removed after variables were configured.
 - Secret Manager is the intended runtime secret source.
-- Application auth is still placeholder-level and must be replaced with real OAuth2 user authentication.
+- Application auth is still placeholder-level and must be replaced with Firebase-backed OAuth2/OIDC token validation.
