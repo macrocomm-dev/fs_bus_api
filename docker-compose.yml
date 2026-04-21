@@ -1,0 +1,55 @@
+version: "3.9"
+
+# ---------------------------------------------------------------------------
+# Local development stack
+#
+# Prerequisites:
+#   1. gcloud auth application-default login
+#   2. Copy .env.example to .env and fill in any missing non-secret values.
+#
+# Usage:
+#   docker compose up --build
+# ---------------------------------------------------------------------------
+
+services:
+  # --------------------------------------------------------------------------
+  # Cloud SQL Auth Proxy
+  # Exposes the Cloud SQL PostgreSQL instance on localhost:5432 inside the
+  # Docker network so the api service can reach it via host "cloudsql-proxy".
+  # --------------------------------------------------------------------------
+  cloudsql-proxy:
+    image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.1
+    command:
+      - "--address=0.0.0.0"
+      - "--port=5432"
+      # Replace with your actual instance connection name:
+      # <project>:<region>:<instance>
+      - "${CLOUD_SQL_INSTANCE:-bus_track:us-central1:fs-bus-db}"
+    ports:
+      - "5432:5432"
+    volumes:
+      # Mount local ADC credentials so the proxy can authenticate
+      - "${GCLOUD_CONFIG_DIR:-~/.config/gcloud}:/root/.config/gcloud:ro"
+    restart: unless-stopped
+
+  # --------------------------------------------------------------------------
+  # FS Bus API
+  # --------------------------------------------------------------------------
+  api:
+    build: .
+    ports:
+      - "8000:8080"
+    environment:
+      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT:-bus_track}
+      - DB_HOST=cloudsql-proxy
+      - DB_PORT=5432
+      # DB_NAME, DB_USER, DB_PASSWORD, and SECRET_KEY are fetched from
+      # Secret Manager at startup if not provided here.
+    env_file:
+      - .env
+    volumes:
+      # Mount ADC so the app can call Secret Manager locally
+      - "${GCLOUD_CONFIG_DIR:-~/.config/gcloud}:/root/.config/gcloud:ro"
+    depends_on:
+      - cloudsql-proxy
+    restart: unless-stopped
