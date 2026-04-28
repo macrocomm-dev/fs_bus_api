@@ -5,13 +5,14 @@ from sqlalchemy.orm import Session
 from app.auth import TokenData, get_current_user
 from app.database import get_db
 from app.models.app_auth import AppUser
-from app.models.operations import Inspection
+from app.models.operations import Inspection, InspectionCheck, InspectionPhoto
 from app.schemas.operations import InspectionCreate
 
 
 operation_router = APIRouter()
 
 
+# create inspection endpoint, only accessible to Monitor, Supervisor, Admin roles. Auto-provision user on first login based on Firebase UID → DB user_id mapping
 @operation_router.post("/create_inspection", status_code=status.HTTP_201_CREATED)
 async def create_inspection(
     payload: InspectionCreate,
@@ -56,3 +57,8 @@ async def create_inspection(
     db.refresh(new_inspection)
 
     return Response(status_code=status.HTTP_201_CREATED)
+
+
+@operation_router.post("/inspection_check")
+async def add_inspection_check():
+    pass

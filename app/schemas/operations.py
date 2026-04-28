@@ -32,3 +32,13 @@ class InspectionCreate(BaseModel):
         if v is not None and not (-180 <= v <= 180):
             raise ValueError("longitude must be between -180 and 180")
         return v
+
+
+class InspectionCheckCreate(BaseModel):
+    inspection_id: int
+    section: str
+    check_code: str
+    check_label: str
+    result: str
+    notes: str | None = None
+    display_order: int = 1
