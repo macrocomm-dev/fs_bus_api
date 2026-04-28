@@ -28,6 +28,7 @@ from app.firebase_identity import (
     FirebasePasswordSignInRequest,
     sign_in_with_email_password,
 )
+from app.routers.router_config import register_routers
 
 # ---------------------------------------------------------------------------
 # Application factory
@@ -46,6 +47,8 @@ app = FastAPI(
 def _get_cors_origins(settings: Settings) -> list[str]:
     return [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
 
+
+register_routers(app)
 
 app.add_middleware(
     CORSMiddleware,
@@ -109,9 +112,11 @@ def _build_docs_html(settings: Settings) -> str:
         )
         .replace(
             "__TEST_AUTH_STATUS__",
-            "Use a Firebase test account to fetch a token automatically."
-            if test_auth_enabled
-            else "Test auth endpoint is disabled for this environment.",
+            (
+                "Use a Firebase test account to fetch a token automatically."
+                if test_auth_enabled
+                else "Test auth endpoint is disabled for this environment."
+            ),
         )
     )
 
