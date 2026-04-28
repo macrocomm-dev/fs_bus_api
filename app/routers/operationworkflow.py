@@ -1,15 +1,38 @@
 from fastapi import Depends, HTTPException, APIRouter, status
 from fastapi.responses import Response
+from firebase_admin import db
 from sqlalchemy.orm import Session
 
 from app.auth import TokenData, get_current_user
 from app.database import get_db
 from app.models.app_auth import AppUser
 from app.models.operations import Inspection, InspectionCheck, InspectionPhoto
-from app.schemas.operations import InspectionCreate
+from app.schemas.operations import (
+    InspectionCheckCreate,
+    InspectionCreate,
+    InspectionPhotoCreate,
+)
 
 
 operation_router = APIRouter()
+
+
+async def get_user_id_from_token(current_user: TokenData, db: Session) -> int:
+    app_user = (
+        db.query(AppUser).filter(AppUser.firebase_uid == current_user.sub).first()
+    )
+    if app_user is None:
+        app_user = AppUser(
+            firebase_uid=current_user.sub,
+            email=current_user.email,
+            full_name=current_user.name,
+            role=current_user.role,
+            is_active=True,
+        )
+        db.add(app_user)
+        db.commit()
+        db.refresh(app_user)
+    return app_user.user_id
 
 
 # create inspection endpoint, only accessible to Monitor, Supervisor, Admin roles. Auto-provision user on first login based on Firebase UID → DB user_id mapping
@@ -30,16 +53,7 @@ async def create_inspection(
         db.query(AppUser).filter(AppUser.firebase_uid == current_user.sub).first()
     )
     if app_user is None:
-        app_user = AppUser(
-            firebase_uid=current_user.sub,
-            email=current_user.email,
-            full_name=current_user.name,
-            role=current_user.role,
-            is_active=True,
-        )
-        db.add(app_user)
-        db.commit()
-        db.refresh(app_user)
+        app_user = await get_user_id_from_token(current_user, db)
 
     new_inspection = Inspection(
         vehicle_id=payload.vehicle_id,
@@ -59,6 +73,56 @@ async def create_inspection(
     return Response(status_code=status.HTTP_201_CREATED)
 
 
+# Add inspection check endpoint, only accessible to Monitor, Supervisor, Admin roles
 @operation_router.post("/inspection_check")
-async def add_inspection_check():
-    pass
+async def add_inspection_check(
+    payload: InspectionCheckCreate,
+    current_user: TokenData = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    try:
+
+        new_check = InspectionCheck(
+            inspection_id=payload.inspection_id,
+            section=payload.section,
+            check_code=payload.check_code,
+            check_label=payload.check_label,
+            result=payload.result,
+            notes=payload.notes,
+            display_order=payload.display_order,
+        )
+        db.add(new_check)
+        db.commit()
+        db.refresh(new_check)
+
+        return Response(status_code=status.HTTP_201_CREATED)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error adding inspection check: {exc}",
+        )
+
+
+# Add inspection photo endpoint
+@operation_router.post("/inspection_photo")
+async def add_inspection_photo(
+    payload: InspectionPhotoCreate,
+    current_user: TokenData = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    try:
+        new_photo = InspectionPhoto(
+            inspection_id=payload.inspection_id,
+            inspection_check_id=payload.inspection_check_id,
+            storage_url=payload.storage_url,
+        )
+        db.add(new_photo)
+        db.commit()
+        db.refresh(new_photo)
+
+        return Response(status_code=status.HTTP_201_CREATED)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error adding inspection photo: {exc}",
+        )

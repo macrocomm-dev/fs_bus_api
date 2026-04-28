@@ -42,3 +42,9 @@ class InspectionCheckCreate(BaseModel):
     result: str
     notes: str | None = None
     display_order: int = 1
+
+
+class InspectionPhotoCreate(BaseModel):
+    inspection_id: int
+    inspection_check_id: int | None = None
+    storage_url: str
