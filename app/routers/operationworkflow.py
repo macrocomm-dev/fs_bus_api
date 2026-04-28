@@ -23,6 +23,7 @@ from app.schemas.operations import (
 operation_router = APIRouter()
 
 
+# Helper function to get or create AppUser based on Firebase UID
 async def get_user_id_from_token(current_user: TokenData, db: Session) -> int:
     app_user = (
         db.query(AppUser).filter(AppUser.firebase_uid == current_user.sub).first()
@@ -39,6 +40,12 @@ async def get_user_id_from_token(current_user: TokenData, db: Session) -> int:
         db.commit()
         db.refresh(app_user)
     return app_user.user_id
+
+
+# Placeholder function for photo storage - in real implementation, this would handle uploading to a service like AWS S3 or Google Cloud Storage and return the URL
+async def add_photo_to_storage(photo_data: bytes) -> str:
+
+    return "https://storage.example.com/path/to/photo.jpg"
 
 
 # create inspection endpoint, only accessible to Monitor, Supervisor, Admin roles. Auto-provision user on first login based on Firebase UID → DB user_id mapping
