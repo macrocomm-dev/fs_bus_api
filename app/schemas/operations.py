@@ -48,3 +48,29 @@ class InspectionPhotoCreate(BaseModel):
     inspection_id: int
     inspection_check_id: int | None = None
     storage_url: str
+
+
+class PassengerCountCreate(BaseModel):
+    vehicle_id: int
+    route_id: int | None = None
+    route_text: str | None = None
+    user_id: int
+    count_type: Literal["boarding", "alighting", "onboard"]
+    count: int
+    latitude: Decimal | None = None
+    longitude: Decimal | None = None
+    notes: str | None = None
+
+    @field_validator("latitude")
+    @classmethod
+    def validate_latitude(cls, v: Decimal | None) -> Decimal | None:
+        if v is not None and not (-90 <= v <= 90):
+            raise ValueError("latitude must be between -90 and 90")
+        return v
+
+    @field_validator("longitude")
+    @classmethod
+    def validate_longitude(cls, v: Decimal | None) -> Decimal | None:
+        if v is not None and not (-180 <= v <= 180):
+            raise ValueError("longitude must be between -180 and 180")
+        return v

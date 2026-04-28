@@ -6,11 +6,17 @@ from sqlalchemy.orm import Session
 from app.auth import TokenData, get_current_user
 from app.database import get_db
 from app.models.app_auth import AppUser
-from app.models.operations import Inspection, InspectionCheck, InspectionPhoto
+from app.models.operations import (
+    Inspection,
+    InspectionCheck,
+    InspectionPhoto,
+    PassengerCount,
+)
 from app.schemas.operations import (
     InspectionCheckCreate,
     InspectionCreate,
     InspectionPhotoCreate,
+    PassengerCountCreate,
 )
 
 
@@ -125,4 +131,35 @@ async def add_inspection_photo(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error adding inspection photo: {exc}",
+        )
+
+
+# Add passenger count endpoint
+@operation_router.post("/passenger_count")
+async def add_passenger_count(
+    payload: PassengerCountCreate,
+    current_user: TokenData = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    try:
+        new_count = PassengerCount(
+            vehicle_id=payload.vehicle_id,
+            route_id=payload.route_id,
+            route_text=payload.route_text,
+            user_id=await get_user_id_from_token(current_user, db),
+            passenger_count=payload.count,
+            count_type=payload.count_type,
+            latitude=payload.latitude,
+            longitude=payload.longitude,
+            notes=payload.notes,
+        )
+        db.add(new_count)
+        db.commit()
+        db.refresh(new_count)
+
+        return Response(status_code=status.HTTP_201_CREATED)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error adding passenger count: {exc}",
         )
