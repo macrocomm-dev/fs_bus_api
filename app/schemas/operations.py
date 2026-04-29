@@ -194,3 +194,71 @@ class InspectionPhotosEnvelope(BaseModel):
 class PassengerCountEnvelope(BaseModel):
     message: str
     passenger_count: PassengerCountResponse
+
+
+# ── Master data response schemas ──────────────────────────────────────────────
+
+
+class OperatorSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    operator_id: int
+    operator_name: str
+    is_active: bool
+
+
+class VehicleResponse(BaseModel):
+    vehicle_id: int
+    vin: str
+    registration_number: str | None
+    fleet_number: str | None
+    operator_id: int | None
+    operator_name: str | None
+    operator: OperatorSummary | None
+    make: str | None
+    year: str | None
+    engine_number: str | None
+    gvm: int | None
+    tare: int | None
+    chassis_no: str | None
+    date_of_1st_reg: datetime | None
+    is_active: bool
+    created_at: datetime
+
+
+class VehicleEnvelope(BaseModel):
+    message: str
+    vehicle: VehicleResponse
+
+
+class VehicleListEnvelope(BaseModel):
+    message: str
+    total: int
+    page: int
+    page_size: int
+    vehicles: List[VehicleResponse]
+
+
+class RouteResponse(BaseModel):
+    route_id: int
+    route_code: str
+    route_name: str | None
+    operator_id: int | None
+    operator_name: str | None
+    operator: OperatorSummary | None
+    description: str | None
+    is_active: bool
+    created_at: datetime
+
+
+class RouteEnvelope(BaseModel):
+    message: str
+    route: RouteResponse
+
+
+class RouteListEnvelope(BaseModel):
+    message: str
+    total: int
+    page: int
+    page_size: int
+    routes: List[RouteResponse]
