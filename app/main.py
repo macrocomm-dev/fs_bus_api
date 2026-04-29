@@ -15,7 +15,6 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.responses import HTMLResponse, JSONResponse
 
 from app.auth import (
-    Token,
     expand_role_permissions,
     get_current_user,
     normalize_role,
@@ -26,6 +25,10 @@ from app.firebase_identity import (
     FirebaseIdentityError,
     FirebaseInvalidCredentialsError,
     FirebasePasswordSignInRequest,
+    FirebasePasswordSignInResult,
+    FirebaseRefreshRequest,
+    FirebaseRefreshResult,
+    refresh_id_token,
     sign_in_with_email_password,
 )
 from app.routers.router_config import register_routers
@@ -62,8 +65,6 @@ app.add_middleware(
 # ---------------------------------------------------------------------------
 # Auth router
 # ---------------------------------------------------------------------------
-
-from fastapi.security import OAuth2PasswordRequestForm
 
 auth_router = APIRouter(prefix="/auth", tags=["auth"])
 DOCS_TEMPLATE_PATH = Path(__file__).with_name("templates") / "docs.html"
@@ -121,26 +122,81 @@ def _build_docs_html(settings: Settings) -> str:
     )
 
 
-@auth_router.post("/token", response_model=Token, summary="Obtain an access token")
+@auth_router.post(
+    "/token",
+    response_model=FirebasePasswordSignInResult,
+    summary="Obtain an access token",
+    responses={
+        401: {"description": "Invalid email or password"},
+        503: {"description": "Service unavailable"},
+    },
+)
 def login(
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    request: FirebasePasswordSignInRequest,
     settings: Annotated[Settings, Depends(get_settings)],
 ):
-    """Placeholder endpoint retained only for explicit non-support messaging.
+    """Exchange email and password for a Firebase ID token.
 
-    Production login is expected to happen through the configured identity
-    provider rather than this API endpoint.
+    Use the returned ``id_token`` as a ``Bearer`` token on all protected endpoints.
+    The ``refresh_token`` can be used to obtain a new ``id_token`` when it expires.
     """
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail=(
-            "Login is not handled by this API. "
-            "Authenticate through the configured identity provider and call the API with a Bearer token."
-        ),
-    )
+    try:
+        return sign_in_with_email_password(
+            api_key=settings.firebase_web_api_key,
+            email=request.email,
+            password=request.password,
+        )
+    except FirebaseInvalidCredentialsError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password.",
+        ) from exc
+    except FirebaseIdentityError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc
 
 
-@auth_router.get("/test/whoami", summary="Validate Firebase bearer token")
+@auth_router.post(
+    "/refresh",
+    response_model=FirebaseRefreshResult,
+    summary="Refresh an expired access token",
+    responses={
+        401: {"description": "Invalid or expired refresh token"},
+        503: {"description": "Service unavailable"},
+    },
+    include_in_schema=False,
+)
+def refresh_token(
+    request: FirebaseRefreshRequest,
+    settings: Annotated[Settings, Depends(get_settings)],
+):
+    """Exchange a ``refresh_token`` for a new ``id_token``.
+
+    Call this when the ``id_token`` from ``/auth/token`` has expired (after 1 hour).
+    The returned ``id_token`` replaces the old one for subsequent requests.
+    """
+    try:
+        return refresh_id_token(
+            api_key=settings.firebase_web_api_key,
+            refresh_token=request.refresh_token,
+        )
+    except FirebaseInvalidCredentialsError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token.",
+        ) from exc
+    except FirebaseIdentityError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc
+
+
+@auth_router.get(
+    "/test/whoami", summary="Validate Firebase bearer token", include_in_schema=False
+)
 def auth_test_whoami(
     current_user: Annotated[TokenData, Depends(get_current_user)],
 ):
@@ -153,6 +209,7 @@ def auth_test_whoami(
 @auth_router.post(
     "/test/token",
     summary="Exchange email/password for a Firebase ID token (testing only)",
+    include_in_schema=False,
 )
 def auth_test_token(
     request: FirebasePasswordSignInRequest,
@@ -209,7 +266,7 @@ def docs_index(settings: Annotated[Settings, Depends(get_settings)]):
 # ---------------------------------------------------------------------------
 
 
-@app.get("/health", tags=["health"], summary="Health check")
+@app.get("/health", tags=["health"], summary="Health check", include_in_schema=False)
 def health():
     """Returns ``{"status": "ok"}`` when the service is running."""
     return {"status": "ok"}

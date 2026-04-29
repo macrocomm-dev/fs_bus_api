@@ -212,7 +212,6 @@ async def add_passenger_count(
             route_text=payload.route_text,
             user_id=await get_user_id_from_token(current_user, db),
             passenger_count=payload.count,
-            count_type=payload.count_type,
             latitude=payload.latitude,
             longitude=payload.longitude,
             notes=payload.notes,

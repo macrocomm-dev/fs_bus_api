@@ -89,7 +89,7 @@ class PassengerCountCreate(BaseModel):
     route_id: int | None = None
     route_text: str | None = None
     user_id: int
-    count_type: Literal["boarding", "alighting", "onboard"]
+
     count: int
     latitude: Decimal | None = None
     longitude: Decimal | None = None
