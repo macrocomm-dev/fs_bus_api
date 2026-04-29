@@ -29,6 +29,11 @@ class Route(Base):
     route_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     route_code: Mapped[str] = mapped_column(String, nullable=False)
     route_name: Mapped[str | None] = mapped_column(String, nullable=True)
+    operator_id: Mapped[int | None] = mapped_column(
+        BigInteger,
+        ForeignKey("master_data.operator.operator_id"),
+        nullable=True,
+    )
     operator_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_active: Mapped[bool] = mapped_column(
@@ -71,6 +76,11 @@ class Vehicle(Base):
     vin: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     registration_number: Mapped[str | None] = mapped_column(String, nullable=True)
     fleet_number: Mapped[str | None] = mapped_column(String, nullable=True)
+    operator_id: Mapped[int | None] = mapped_column(
+        BigInteger,
+        ForeignKey("master_data.operator.operator_id"),
+        nullable=True,
+    )
     operator_name: Mapped[str | None] = mapped_column(String, nullable=True)
     make: Mapped[str | None] = mapped_column(String, nullable=True)
     year: Mapped[str | None] = mapped_column(String, nullable=True)
@@ -84,4 +94,22 @@ class Vehicle(Base):
     )
     created_at: Mapped[datetime] = mapped_column(
         nullable=False, server_default=func.now()
+    )
+
+
+class Operator(Base):
+    __tablename__ = "operator"
+    __table_args__ = {"schema": "master_data"}
+
+    operator_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    operator_name: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default="true"
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        nullable=False, server_default=func.now(), onupdate=func.now()
     )
