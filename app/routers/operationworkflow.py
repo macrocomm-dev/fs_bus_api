@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.auth import TokenData, get_current_user
 from app.database import get_db
 from app.models.app_auth import AppUser
+from app.models.master_data import Operator, Vehicle
 from app.models.operations import (
     Inspection,
     InspectionCheck,
@@ -70,6 +71,32 @@ async def get_user_id_from_token(current_user: TokenData, db: Session) -> int:
 async def add_photo_to_storage(photo_data: bytes) -> str:
 
     return "https://storage.example.com/path/to/photo.jpg"
+
+
+# Resolve the AppUser and their Operator from a Firebase token.
+# Raises 401 if the user has never been provisioned in the database.
+async def _resolve_app_user(current_user: TokenData, db: Session):
+    app_user = (
+        db.query(AppUser).filter(AppUser.firebase_uid == current_user.sub).first()
+    )
+    if app_user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User account not found. Contact an administrator.",
+        )
+    operator = None
+    if app_user.operator_id is not None:
+        operator = (
+            db.query(Operator)
+            .filter(Operator.operator_id == app_user.operator_id)
+            .first()
+        )
+    return app_user, operator
+
+
+def _is_internal(operator) -> bool:
+    """Internal operator users can see data across all operators."""
+    return operator is None or operator.operator_name == "Internal"
 
 
 # create inspection endpoint, only accessible to Monitor, Supervisor, Admin roles. Auto-provision user on first login based on Firebase UID → DB user_id mapping
@@ -244,9 +271,15 @@ async def get_inspection(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    inspection = (
-        db.query(Inspection).filter(Inspection.inspection_id == inspection_id).first()
-    )
+    app_user, operator = await _resolve_app_user(current_user, db)
+
+    query = db.query(Inspection).filter(Inspection.inspection_id == inspection_id)
+    if not _is_internal(operator):
+        query = query.join(Vehicle, Inspection.vehicle_id == Vehicle.vehicle_id).filter(
+            Vehicle.operator_id == app_user.operator_id
+        )
+    inspection = query.first()
+
     if inspection is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Inspection not found"
@@ -267,7 +300,15 @@ async def get_all_inspections(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    inspections = db.query(Inspection).all()
+    app_user, operator = await _resolve_app_user(current_user, db)
+
+    query = db.query(Inspection)
+    if not _is_internal(operator):
+        query = query.join(Vehicle, Inspection.vehicle_id == Vehicle.vehicle_id).filter(
+            Vehicle.operator_id == app_user.operator_id
+        )
+    inspections = query.all()
+
     if not inspections:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="No inspections found"
@@ -291,15 +332,23 @@ async def get_inspection_checks(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-
     try:
+        app_user, operator = await _resolve_app_user(current_user, db)
 
-        checks = (
-            db.query(InspectionCheck)
-            .filter(InspectionCheck.inspection_id == inspection_id)
-            .order_by(InspectionCheck.display_order)
-            .all()
+        query = db.query(InspectionCheck).filter(
+            InspectionCheck.inspection_id == inspection_id
         )
+        if not _is_internal(operator):
+            query = (
+                query.join(
+                    Inspection,
+                    InspectionCheck.inspection_id == Inspection.inspection_id,
+                )
+                .join(Vehicle, Inspection.vehicle_id == Vehicle.vehicle_id)
+                .filter(Vehicle.operator_id == app_user.operator_id)
+            )
+        checks = query.order_by(InspectionCheck.display_order).all()
+
         return {
             "message": "Inspection checks retrieved successfully",
             "checks": [
@@ -325,11 +374,22 @@ async def get_inspection_photos(
     db: Session = Depends(get_db),
 ):
     try:
-        photos = (
-            db.query(InspectionPhoto)
-            .filter(InspectionPhoto.inspection_id == inspection_id)
-            .all()
+        app_user, operator = await _resolve_app_user(current_user, db)
+
+        query = db.query(InspectionPhoto).filter(
+            InspectionPhoto.inspection_id == inspection_id
         )
+        if not _is_internal(operator):
+            query = (
+                query.join(
+                    Inspection,
+                    InspectionPhoto.inspection_id == Inspection.inspection_id,
+                )
+                .join(Vehicle, Inspection.vehicle_id == Vehicle.vehicle_id)
+                .filter(Vehicle.operator_id == app_user.operator_id)
+            )
+        photos = query.all()
+
         return {
             "message": "Inspection photos retrieved successfully",
             "photos": [
@@ -355,9 +415,15 @@ async def get_passenger_count(
     db: Session = Depends(get_db),
 ):
     try:
-        count = (
-            db.query(PassengerCount).filter(PassengerCount.count_id == count_id).first()
-        )
+        app_user, operator = await _resolve_app_user(current_user, db)
+
+        query = db.query(PassengerCount).filter(PassengerCount.count_id == count_id)
+        if not _is_internal(operator):
+            query = query.join(
+                Vehicle, PassengerCount.vehicle_id == Vehicle.vehicle_id
+            ).filter(Vehicle.operator_id == app_user.operator_id)
+        count = query.first()
+
         if count is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -386,9 +452,15 @@ async def get_passenger_count_user_user(
     db: Session = Depends(get_db),
 ):
     try:
-        count = (
-            db.query(PassengerCount).filter(PassengerCount.user_id == user_id).first()
-        )
+        app_user, operator = await _resolve_app_user(current_user, db)
+
+        query = db.query(PassengerCount).filter(PassengerCount.user_id == user_id)
+        if not _is_internal(operator):
+            query = query.join(
+                Vehicle, PassengerCount.vehicle_id == Vehicle.vehicle_id
+            ).filter(Vehicle.operator_id == app_user.operator_id)
+        count = query.first()
+
         if count is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
