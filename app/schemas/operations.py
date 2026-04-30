@@ -36,6 +36,10 @@ class InspectionPhotoCreatedResponse(BaseModel):
     inspection_id: int
 
 
+class PhotoUploadResponse(BaseModel):
+    storage_path: str
+
+
 class PassengerCountCreatedResponse(BaseModel):
     message: str
     count_id: int
