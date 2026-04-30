@@ -4,7 +4,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import List, Literal
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 INSPECTION_TYPES = ("Inside", "Outside", "Full", "Technical")
 INSPECTION_STATUSES = ("draft", "submitted", "reviewed", "approved", "queried")
@@ -32,6 +32,11 @@ class InspectionCheckCreatedResponse(BaseModel):
 
 class InspectionPhotoCreatedResponse(BaseModel):
     message: str
+    photo_id: int
+    inspection_id: int
+
+
+class PhotoUploadResponse(BaseModel):
     photo_id: int
     inspection_id: int
 
@@ -70,10 +75,10 @@ class InspectionCreate(BaseModel):
 
 class InspectionCheckCreate(BaseModel):
     inspection_id: int
-    section: str
+    section: Literal["Inside", "Outside"]
     check_code: str
     check_label: str
-    result: str
+    result: Literal["pass", "fail"]
     notes: str | None = None
     display_order: int = 1
 
@@ -81,7 +86,6 @@ class InspectionCheckCreate(BaseModel):
 class InspectionPhotoCreate(BaseModel):
     inspection_id: int
     inspection_check_id: int | None = None
-    storage_url: str
 
 
 class PassengerCountCreate(BaseModel):
@@ -90,7 +94,7 @@ class PassengerCountCreate(BaseModel):
     route_text: str | None = None
     user_id: int
 
-    count: int
+    count: int = Field(..., ge=0)
     latitude: Decimal | None = None
     longitude: Decimal | None = None
     notes: str | None = None
@@ -149,7 +153,7 @@ class InspectionPhotoResponse(BaseModel):
     photo_id: int
     inspection_id: int
     inspection_check_id: int | None
-    storage_url: str
+    content_type: str
     captured_at: datetime
 
 
@@ -194,3 +198,71 @@ class InspectionPhotosEnvelope(BaseModel):
 class PassengerCountEnvelope(BaseModel):
     message: str
     passenger_count: PassengerCountResponse
+
+
+# ── Master data response schemas ──────────────────────────────────────────────
+
+
+class OperatorSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    operator_id: int
+    operator_name: str
+    is_active: bool
+
+
+class VehicleResponse(BaseModel):
+    vehicle_id: int
+    vin: str
+    registration_number: str | None
+    fleet_number: str | None
+    operator_id: int | None
+    operator_name: str | None
+    operator: OperatorSummary | None
+    make: str | None
+    year: str | None
+    engine_number: str | None
+    gvm: int | None
+    tare: int | None
+    chassis_no: str | None
+    date_of_1st_reg: datetime | None
+    is_active: bool
+    created_at: datetime
+
+
+class VehicleEnvelope(BaseModel):
+    message: str
+    vehicle: VehicleResponse
+
+
+class VehicleListEnvelope(BaseModel):
+    message: str
+    total: int
+    page: int
+    page_size: int
+    vehicles: List[VehicleResponse]
+
+
+class RouteResponse(BaseModel):
+    route_id: int
+    route_code: str
+    route_name: str | None
+    operator_id: int | None
+    operator_name: str | None
+    operator: OperatorSummary | None
+    description: str | None
+    is_active: bool
+    created_at: datetime
+
+
+class RouteEnvelope(BaseModel):
+    message: str
+    route: RouteResponse
+
+
+class RouteListEnvelope(BaseModel):
+    message: str
+    total: int
+    page: int
+    page_size: int
+    routes: List[RouteResponse]
