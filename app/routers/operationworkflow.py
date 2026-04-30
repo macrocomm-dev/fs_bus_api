@@ -1,14 +1,20 @@
-import uuid
 from typing import List, Optional
 
-from fastapi import Depends, File, HTTPException, APIRouter, Query, UploadFile, status
+from fastapi import (
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    APIRouter,
+    Query,
+    UploadFile,
+    status,
+)
 from fastapi.responses import Response
 from firebase_admin import db
-from google.cloud import storage as gcs
 from sqlalchemy.orm import Session
 
 from app.auth import TokenData, get_current_user
-from app.config import get_settings
 from app.database import get_db
 from app.models.app_auth import AppUser
 from app.models.master_data import Operator, Route, Vehicle
@@ -28,8 +34,6 @@ from app.schemas.operations import (
     InspectionCreatedResponse,
     InspectionEnvelope,
     InspectionListEnvelope,
-    InspectionPhotoCreate,
-    InspectionPhotoCreatedResponse,
     InspectionPhotoResponse,
     InspectionPhotosEnvelope,
     InspectionResponse,
@@ -80,39 +84,7 @@ async def get_user_id_from_token(current_user: TokenData, db: Session) -> int:
 
 
 ALLOWED_IMAGE_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
-_CONTENT_TYPE_EXT: dict[str, str] = {
-    "image/jpeg": ".jpg",
-    "image/png": ".png",
-    "image/webp": ".webp",
-    "image/gif": ".gif",
-}
 MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
-
-
-async def add_photo_to_storage(
-    photo_data: bytes, content_type: str, operator_id: int | None
-) -> str:
-    """Upload image bytes to GCS and return the blob name.
-
-    Images are stored under a per-operator folder:
-      inspection_photos/operator_<id>/<uuid>.<ext>  — for operator users
-      inspection_photos/internal/<uuid>.<ext>        — for internal users
-    """
-    settings = get_settings()
-    if not settings.gcs_bucket_name:
-        raise RuntimeError(
-            "GCS bucket name is not configured. Ensure the 'gcs_bucket' secret is set in Secret Manager."
-        )
-    ext = _CONTENT_TYPE_EXT.get(content_type, ".jpg")
-    folder = f"operator_{operator_id}" if operator_id is not None else "internal"
-    blob_name = f"inspection_photos/{folder}/{uuid.uuid4()}{ext}"
-
-    client = gcs.Client(project=settings.google_cloud_project)
-    bucket = client.bucket(settings.gcs_bucket_name)
-    blob = bucket.blob(blob_name)
-    blob.upload_from_string(photo_data, content_type=content_type)
-
-    return blob_name
 
 
 # Resolve the AppUser and their Operator from a Firebase token.
@@ -228,41 +200,7 @@ async def add_inspection_check(
         )
 
 
-# Add inspection photo endpoint
-@operation_router.post(
-    "/inspection_photo",
-    status_code=status.HTTP_201_CREATED,
-    response_model=InspectionPhotoCreatedResponse,
-    responses={**_401, **_500},
-)
-async def add_inspection_photo(
-    payload: InspectionPhotoCreate,
-    current_user: TokenData = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    try:
-        new_photo = InspectionPhoto(
-            inspection_id=payload.inspection_id,
-            inspection_check_id=payload.inspection_check_id,
-            storage_url=payload.storage_url,
-        )
-        db.add(new_photo)
-        db.commit()
-        db.refresh(new_photo)
-
-        return {
-            "message": "Inspection photo added successfully",
-            "photo_id": new_photo.photo_id,
-            "inspection_id": new_photo.inspection_id,
-        }
-    except Exception as exc:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error adding inspection photo: {exc}",
-        )
-
-
-# Upload photo to GCS and return its storage URL
+# Upload photo and store directly in the database
 @operation_router.post(
     "/upload_photo",
     status_code=status.HTTP_201_CREATED,
@@ -275,6 +213,8 @@ async def add_inspection_photo(
 )
 async def upload_photo(
     file: UploadFile = File(...),
+    inspection_id: int = Form(...),
+    inspection_check_id: int | None = Form(None),
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -297,20 +237,23 @@ async def upload_photo(
             detail="Image exceeds the 10 MB size limit.",
         )
 
-    app_user = (
-        db.query(AppUser).filter(AppUser.firebase_uid == current_user.sub).first()
-    )
-    operator_id = app_user.operator_id if app_user is not None else None
-
     try:
-        blob_name = await add_photo_to_storage(data, file.content_type, operator_id)
+        new_photo = InspectionPhoto(
+            inspection_id=inspection_id,
+            inspection_check_id=inspection_check_id,
+            image_data=data,
+            content_type=file.content_type,
+        )
+        db.add(new_photo)
+        db.commit()
+        db.refresh(new_photo)
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to upload image: {exc}",
+            detail=f"Failed to store image: {exc}",
         )
 
-    return {"storage_path": blob_name}
+    return {"photo_id": new_photo.photo_id, "inspection_id": new_photo.inspection_id}
 
 
 # Add passenger count endpoint
@@ -496,8 +439,7 @@ async def get_inspection_photos(
         )
 
 
-# Download inspection photo — streams image bytes through the API.
-# Works with any ADC credentials (no signing required).
+# Download inspection photo — serves image bytes stored in the database.
 @operation_router.get(
     "/inspection_photo/{photo_id}/download",
     responses={
@@ -535,21 +477,7 @@ async def download_photo(
             status_code=status.HTTP_404_NOT_FOUND, detail="Photo not found"
         )
 
-    settings = get_settings()
-    client = gcs.Client(project=settings.google_cloud_project)
-    bucket = client.bucket(settings.gcs_bucket_name)
-    blob = bucket.blob(photo.storage_url)
-
-    try:
-        data = blob.download_as_bytes()
-    except Exception as exc:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to download photo: {exc}",
-        )
-
-    content_type = blob.content_type or "image/jpeg"
-    return Response(content=data, media_type=content_type)
+    return Response(content=photo.image_data, media_type=photo.content_type)
 
 
 # Get passenger count details endpoint

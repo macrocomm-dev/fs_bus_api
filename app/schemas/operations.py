@@ -4,7 +4,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import List, Literal
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 INSPECTION_TYPES = ("Inside", "Outside", "Full", "Technical")
 INSPECTION_STATUSES = ("draft", "submitted", "reviewed", "approved", "queried")
@@ -37,7 +37,8 @@ class InspectionPhotoCreatedResponse(BaseModel):
 
 
 class PhotoUploadResponse(BaseModel):
-    storage_path: str
+    photo_id: int
+    inspection_id: int
 
 
 class PassengerCountCreatedResponse(BaseModel):
@@ -74,10 +75,10 @@ class InspectionCreate(BaseModel):
 
 class InspectionCheckCreate(BaseModel):
     inspection_id: int
-    section: str
+    section: Literal["Inside", "Outside"]
     check_code: str
     check_label: str
-    result: str
+    result: Literal["pass", "fail"]
     notes: str | None = None
     display_order: int = 1
 
@@ -85,7 +86,6 @@ class InspectionCheckCreate(BaseModel):
 class InspectionPhotoCreate(BaseModel):
     inspection_id: int
     inspection_check_id: int | None = None
-    storage_url: str
 
 
 class PassengerCountCreate(BaseModel):
@@ -94,7 +94,7 @@ class PassengerCountCreate(BaseModel):
     route_text: str | None = None
     user_id: int
 
-    count: int
+    count: int = Field(..., ge=0)
     latitude: Decimal | None = None
     longitude: Decimal | None = None
     notes: str | None = None
@@ -153,7 +153,7 @@ class InspectionPhotoResponse(BaseModel):
     photo_id: int
     inspection_id: int
     inspection_check_id: int | None
-    storage_url: str
+    content_type: str
     captured_at: datetime
 
 

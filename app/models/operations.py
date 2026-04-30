@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import BigInteger, Integer, Numeric, String, Text, func
+from sqlalchemy import BigInteger, Integer, LargeBinary, Numeric, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -54,7 +54,8 @@ class InspectionPhoto(Base):
     photo_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     inspection_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     inspection_check_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
-    storage_url: Mapped[str] = mapped_column(Text, nullable=False)
+    image_data: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    content_type: Mapped[str] = mapped_column(String, nullable=False)
     captured_at: Mapped[datetime] = mapped_column(
         nullable=False, server_default=func.now()
     )
