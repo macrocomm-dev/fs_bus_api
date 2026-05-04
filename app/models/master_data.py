@@ -88,7 +88,7 @@ class Vehicle(Base):
     gvm: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     tare: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     chassis_no: Mapped[str | None] = mapped_column(String, nullable=True)
-    date_of_1st_registration: Mapped[datetime | None] = mapped_column(nullable=True)
+    date_of_1st_reg: Mapped[datetime | None] = mapped_column(nullable=True)
     is_active: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=True, server_default="true"
     )

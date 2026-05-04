@@ -15,7 +15,6 @@ from pydantic_settings import BaseSettings
 
 from app.firebase_identity import DEFAULT_FIREBASE_WEB_API_KEY
 
-
 # ---------------------------------------------------------------------------
 # Secret Manager helper
 # ---------------------------------------------------------------------------
@@ -88,6 +87,9 @@ class Settings(BaseSettings):
     enable_test_auth_endpoints: bool = True
     docs_required_role: str = "Admin"
 
+    # Google Cloud Storage
+    gcs_bucket_name: str = ""
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
@@ -103,6 +105,7 @@ class Settings(BaseSettings):
         "db_password": "db-password",
         "db_name": "db-name",
         "db_user": "db-user",
+        "gcs_bucket_name": "gcs_bucket",
     }
 
     def load_from_secret_manager(self) -> None:
