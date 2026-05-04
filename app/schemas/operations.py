@@ -2,13 +2,65 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
-from typing import List, Literal
+from typing import List, Literal, Optional
 
 from enum import Enum
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 INSPECTION_TYPES = ("Inside", "Outside", "Full", "Technical")
 INSPECTION_STATUSES = ("draft", "submitted", "reviewed", "approved", "queried")
+
+
+from fastapi import Form
+
+
+class Inspectiontype(str, Enum):
+    inside = "In-Transit Monitoring"
+    outside = "Physical Bus Inspection"
+    full = "Full"
+    technical = "Technical"
+
+
+class InspectionCreate(BaseModel):
+    vehicle_id: str
+    user_id: int
+    inspection_type: Inspectiontype
+    status: str
+    route_id: Optional[str] = None
+    route_text: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    notes: Optional[str] = None
+    date_of_inspection: Optional[datetime] = None
+    device_id: Optional[str] = None
+
+
+def inspection_create_form(
+    vehicle_id: str = Form(...),
+    user_id: int = Form(...),
+    inspection_type: str = Form(...),
+    status: str = Form(...),
+    route_id: str | None = Form(None),
+    route_text: str | None = Form(None),
+    latitude: float | None = Form(None),
+    longitude: float | None = Form(None),
+    notes: str | None = Form(None),
+    date_of_inspection: datetime | None = Form(None),
+    device_id: str | None = Form(None),
+) -> InspectionCreate:
+    return InspectionCreate(
+        vehicle_id=vehicle_id,
+        user_id=user_id,
+        inspection_type=inspection_type,
+        status=status,
+        route_id=route_id,
+        route_text=route_text,
+        latitude=latitude,
+        longitude=longitude,
+        notes=notes,
+        date_of_inspection=date_of_inspection,
+        device_id=device_id,
+    )
 
 
 class ErrorResponse(BaseModel):
@@ -28,6 +80,7 @@ class InspectionCreatedResponse(BaseModel):
     inspection_id: int
     vehicle_id: str
     route_id: str | None
+    photo_id: int | None = None
 
 
 class InspectionCheckCreatedResponse(BaseModel):

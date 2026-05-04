@@ -12,15 +12,21 @@ from fastapi import (
     status,
 )
 from fastapi.responses import JSONResponse
-from firebase_admin import db
-from sqlalchemy import inspection
 from sqlalchemy.orm import Session
 
 from app.auth import TokenData, get_current_user
 from app.database import get_db
 from app.models.app_auth import AppUser
 from app.models.master_data import Operator, Route, Vehicle
-from app.models.operations import Inspection, InspectionCheck, PassengerCount
+from app.models.operations import (
+    Inspection,
+    InspectionCheck,
+    InspectionPhoto,
+    PassengerCount,
+)
+
+ALLOWED_IMAGE_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
+MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
 from app.schemas.operations import (
     ErrorResponse,
     InspectionCheckCreate,
@@ -37,6 +43,7 @@ from app.schemas.operations import (
     PassengerCountCreate,
     PassengerCountEnvelope,
     PassengerCountResponse,
+    inspection_create_form,
 )
 
 inspection_router = APIRouter()
@@ -105,7 +112,8 @@ def _is_internal(operator) -> bool:
     responses={**_401, **_403, **_500},
 )
 async def create_inspection(
-    payload: InspectionCreate,
+    payload: InspectionCreate = Depends(inspection_create_form),
+    file: UploadFile | None = File(None),
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -122,21 +130,47 @@ async def create_inspection(
             route_text=payload.route_text,
             user_id=payload.user_id,
             inspection_type=payload.inspection_type,
+            status=payload.status,
             latitude=payload.latitude,
             longitude=payload.longitude,
             notes=payload.notes,
-            status=payload.status,
             date_of_inspection=payload.date_of_inspection,
+            device_id=payload.device_id,
         )
         db.add(new_inspection)
         db.commit()
         db.refresh(new_inspection)
+
+        photo_id = None
+        if file is not None:
+            if file.content_type not in ALLOWED_IMAGE_CONTENT_TYPES:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Unsupported file type '{file.content_type}'. Allowed: JPEG, PNG, WebP.",
+                )
+            data = await file.read()
+            if len(data) > MAX_IMAGE_SIZE_BYTES:
+                raise HTTPException(
+                    status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                    detail="Image exceeds the 10 MB size limit.",
+                )
+            new_photo = InspectionPhoto(
+                inspection_id=new_inspection.inspection_id,
+                image_data=data,
+                content_type=file.content_type,
+                user_id=payload.user_id,
+            )
+            db.add(new_photo)
+            db.commit()
+            db.refresh(new_photo)
+            photo_id = new_photo.photo_id
 
         return {
             "message": MessageResponse.success,
             "inspection_id": new_inspection.inspection_id,
             "vehicle_id": new_inspection.vehicle_id,
             "route_id": new_inspection.route_id,
+            "photo_id": photo_id,
         }
     except HTTPException:
         raise
