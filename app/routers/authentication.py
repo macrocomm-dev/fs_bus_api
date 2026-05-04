@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta, timezone
+
 from fastapi import Depends, HTTPException, APIRouter, status
 from sqlalchemy.orm import Session
 
@@ -49,9 +51,14 @@ async def get_token(
             detail="User account not found. Contact an administrator.",
         )
 
+    expires_at = datetime.now(timezone.utc) + timedelta(
+        seconds=firebase_result.expires_in
+    )
+
     return UserLoginResponse(
         access_token=firebase_result.id_token,
         token_type="bearer",
         role=app_user.role,
         user_id=app_user.user_id,
+        expires_at=expires_at,
     )

@@ -17,3 +17,4 @@ class UserLoginResponse(BaseModel):
     token_type: str
     role: str
     user_id: int
+    expires_at: datetime | None = None
