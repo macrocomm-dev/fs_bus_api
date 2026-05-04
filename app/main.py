@@ -31,7 +31,9 @@ from app.firebase_identity import (
     refresh_id_token,
     sign_in_with_email_password,
 )
+from app.database import get_db
 from app.routers.router_config import register_routers
+from sqlalchemy.orm import Session
 
 # ---------------------------------------------------------------------------
 # Application factory
@@ -270,6 +272,26 @@ def docs_index(settings: Annotated[Settings, Depends(get_settings)]):
 def health():
     """Returns ``{"status": "ok"}`` when the service is running."""
     return {"status": "ok"}
+
+
+@app.get(
+    "/health/db",
+    tags=["health"],
+    summary="Database connectivity check",
+    include_in_schema=True,
+)
+def health_db(db: Annotated[Session, Depends(get_db)]):
+    """Returns ``{"status": "ok"}`` if the database is reachable."""
+    try:
+        from sqlalchemy import text
+
+        db.execute(text("SELECT 1"))
+        return {"status": "ok"}
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Database unreachable: {exc}",
+        )
 
 
 # ---------------------------------------------------------------------------
