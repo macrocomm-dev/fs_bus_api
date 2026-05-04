@@ -56,6 +56,8 @@ class InspectionCreate(BaseModel):
     status: Literal["draft", "submitted", "reviewed", "approved", "queried"]
     latitude: Decimal | None = None
     longitude: Decimal | None = None
+    user_id: int
+    date_of_inspection: datetime | None = None
     notes: str | None = None
 
     @field_validator("latitude")
@@ -81,6 +83,8 @@ class InspectionCheckCreate(BaseModel):
     result: Literal["pass", "fail"]
     notes: str | None = None
     display_order: int = 1
+    date_of_inspectioncheck: datetime | None = None
+    user_id: int
 
 
 class InspectionPhotoCreate(BaseModel):
@@ -93,7 +97,7 @@ class PassengerCountCreate(BaseModel):
     route_id: int | None = None
     route_text: str | None = None
     user_id: int
-
+    date_of_passenger_count: datetime | None = None
     count: int = Field(..., ge=0)
     latitude: Decimal | None = None
     longitude: Decimal | None = None

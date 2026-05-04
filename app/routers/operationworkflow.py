@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List, Optional
 
 from fastapi import (
@@ -142,12 +143,13 @@ async def create_inspection(
         vehicle_id=payload.vehicle_id,
         route_id=payload.route_id,
         route_text=payload.route_text,
-        user_id=app_user.user_id,
+        user_id=payload.user_id,
         inspection_type=payload.inspection_type,
         latitude=payload.latitude,
         longitude=payload.longitude,
         notes=payload.notes,
         status=payload.status,
+        date_of_inspection=payload.date_of_inspection,
     )
     db.add(new_inspection)
     db.commit()
@@ -183,6 +185,8 @@ async def add_inspection_check(
             result=payload.result,
             notes=payload.notes,
             display_order=payload.display_order,
+            date_of_inspectioncheck=payload.date_of_inspectioncheck,
+            user_id=payload.user_id,
         )
         db.add(new_check)
         db.commit()
@@ -215,6 +219,8 @@ async def upload_photo(
     file: UploadFile = File(...),
     inspection_id: int = Form(...),
     inspection_check_id: int | None = Form(None),
+    date_of_inspectionphoto: datetime | None = Form(None),
+    user_id: int = Form(...),
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -243,6 +249,8 @@ async def upload_photo(
             inspection_check_id=inspection_check_id,
             image_data=data,
             content_type=file.content_type,
+            date_of_inspectionphoto=date_of_inspectionphoto,
+            user_id=user_id,
         )
         db.add(new_photo)
         db.commit()
@@ -273,11 +281,12 @@ async def add_passenger_count(
             vehicle_id=payload.vehicle_id,
             route_id=payload.route_id,
             route_text=payload.route_text,
-            user_id=await get_user_id_from_token(current_user, db),
+            user_id=payload.user_id,
             passenger_count=payload.count,
             latitude=payload.latitude,
             longitude=payload.longitude,
             notes=payload.notes,
+            date_of_passenger_count=payload.date_of_passenger_count,
         )
         db.add(new_count)
         db.commit()

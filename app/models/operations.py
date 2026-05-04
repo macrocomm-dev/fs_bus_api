@@ -29,6 +29,7 @@ class Inspection(Base):
     latitude: Mapped[Decimal | None] = mapped_column(Numeric, nullable=True)
     longitude: Mapped[Decimal | None] = mapped_column(Numeric, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    date_of_inspection: Mapped[datetime | None] = mapped_column(nullable=True)
 
 
 class InspectionCheck(Base):
@@ -56,6 +57,8 @@ class InspectionPhoto(Base):
     inspection_check_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     image_data: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
     content_type: Mapped[str] = mapped_column(String, nullable=False)
+    user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    date_of_inspectionphoto: Mapped[datetime | None] = mapped_column(nullable=True)
     captured_at: Mapped[datetime] = mapped_column(
         nullable=False, server_default=func.now()
     )
@@ -77,3 +80,4 @@ class PassengerCount(Base):
     latitude: Mapped[Decimal | None] = mapped_column(Numeric, nullable=True)
     longitude: Mapped[Decimal | None] = mapped_column(Numeric, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    date_of_passenger_count: Mapped[datetime | None] = mapped_column(nullable=True)
