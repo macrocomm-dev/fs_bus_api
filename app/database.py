@@ -16,17 +16,22 @@ from app.config import get_settings
 
 
 def _build_url(settings) -> str:
+    user = settings.db_user.strip()
+    password = settings.db_password.strip()
+    name = settings.db_name.strip()
+    host = settings.db_host.strip()
+
     # Cloud Run + Cloud SQL commonly use a Unix socket path like
     # /cloudsql/<project>:<region>:<instance>. Build that DSN accordingly.
-    if settings.db_host.startswith("/cloudsql/"):
+    if host.startswith("/cloudsql/"):
         return (
-            f"postgresql+psycopg2://{settings.db_user}:{settings.db_password}"
-            f"@/{settings.db_name}?host={quote_plus(settings.db_host)}"
+            f"postgresql+psycopg2://{user}:{quote_plus(password)}"
+            f"@/{name}?host={quote_plus(host)}"
         )
 
     return (
-        f"postgresql+psycopg2://{settings.db_user}:{settings.db_password}"
-        f"@{settings.db_host}:{settings.db_port}/{settings.db_name}"
+        f"postgresql+psycopg2://{user}:{quote_plus(password)}"
+        f"@{host}:{settings.db_port}/{name}"
     )
 
 
@@ -47,6 +52,7 @@ class Base(DeclarativeBase):
 # ---------------------------------------------------------------------------
 # FastAPI dependency
 # ---------------------------------------------------------------------------
+
 
 def get_db():
     db = SessionLocal()
