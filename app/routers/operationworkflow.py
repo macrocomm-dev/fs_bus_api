@@ -764,3 +764,38 @@ async def get_route(
         "message": "Route retrieved successfully",
         "route": _build_route_response(route, op),
     }
+
+
+# Get route assigned to a vehicle, to be confirmed
+@operation_router.get(
+    "/vehicle_route/{vehicle_id}",
+    response_model=RouteEnvelope,
+    responses={**_401, **_404},
+)
+async def get_vehicle_route(
+    vehicle_id: int,
+    current_user: TokenData = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    app_user, operator = await _resolve_app_user(current_user, db)
+
+    # query = (
+    #     db.query(Route, Operator)
+    #     .outerjoin(Operator, Route.operator_id == Operator.operator_id)
+    #     .filter(Route.vehicle_id == vehicle_id)
+    # )
+
+    # if not _is_internal(operator):
+    #     query = query.filter(Route.operator_id == app_user.operator_id)
+
+    # row = query.first()
+    # if row is None:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_404_NOT_FOUND, detail="Route not found"
+    #     )
+
+    # route, op = row
+    # return {
+    #     "message": "Route retrieved successfully",
+    #     "route": _build_route_response(route, op),
+    # }
