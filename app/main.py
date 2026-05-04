@@ -278,7 +278,7 @@ def health():
     "/health/db",
     tags=["health"],
     summary="Database connectivity check",
-    include_in_schema=True,
+    include_in_schema=False,
 )
 def health_db(db: Annotated[Session, Depends(get_db)]):
     """Returns ``{"status": "ok"}`` if the database is reachable."""

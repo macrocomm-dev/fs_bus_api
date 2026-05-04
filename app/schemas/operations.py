@@ -4,6 +4,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import List, Literal
 
+from enum import Enum
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 INSPECTION_TYPES = ("Inside", "Outside", "Full", "Technical")
@@ -17,41 +18,46 @@ class ErrorResponse(BaseModel):
 # ── POST response schemas ─────────────────────────────────────────────────────
 
 
+class MessageResponse(str, Enum):
+    success = "pass"
+    fail = "fail"
+
+
 class InspectionCreatedResponse(BaseModel):
-    message: str
+    message: MessageResponse
     inspection_id: int
-    vehicle_id: int
-    route_id: int | None
+    vehicle_id: str
+    route_id: str | None
 
 
 class InspectionCheckCreatedResponse(BaseModel):
-    message: str
+    message: MessageResponse
     inspection_check_id: int
     inspection_id: int
 
 
 class InspectionPhotoCreatedResponse(BaseModel):
-    message: str
+    message: MessageResponse
     photo_id: int
     inspection_id: int
 
 
 class PhotoUploadResponse(BaseModel):
-    message: str
+    message: MessageResponse
     photo_id: int
     inspection_id: int
 
 
 class PassengerCountCreatedResponse(BaseModel):
-    message: str
+    message: MessageResponse
     count_id: int
-    vehicle_id: int
-    route_id: int | None
+    vehicle_id: str
+    route_id: str | None
 
 
 class InspectionCreate(BaseModel):
-    vehicle_id: int
-    route_id: int | None = None
+    vehicle_id: str
+    route_id: str | None = None
     route_text: str | None = None
     inspection_type: Literal["Inside", "Outside", "Full", "Technical"]
     status: Literal["draft", "submitted", "reviewed", "approved", "queried"]
@@ -94,8 +100,8 @@ class InspectionPhotoCreate(BaseModel):
 
 
 class PassengerCountCreate(BaseModel):
-    vehicle_id: int
-    route_id: int | None = None
+    vehicle_id: str
+    route_id: str | None = None
     route_text: str | None = None
     user_id: int
     date_of_passenger_count: datetime | None = None
@@ -126,8 +132,8 @@ class InspectionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     inspection_id: int
-    vehicle_id: int
-    route_id: int | None
+    vehicle_id: str
+    route_id: str | None
     route_text: str | None
     user_id: int
     inspection_type: str
@@ -166,8 +172,8 @@ class PassengerCountResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     count_id: int
-    vehicle_id: int
-    route_id: int | None
+    vehicle_id: str
+    route_id: str | None
     route_text: str | None
     user_id: int
     passenger_count: int
@@ -181,27 +187,27 @@ class PassengerCountResponse(BaseModel):
 
 
 class InspectionEnvelope(BaseModel):
-    message: str
+    message: MessageResponse
     inspection: InspectionResponse
 
 
 class InspectionListEnvelope(BaseModel):
-    message: str
+    message: MessageResponse
     inspections: List[InspectionResponse]
 
 
 class InspectionChecksEnvelope(BaseModel):
-    message: str
+    message: MessageResponse
     checks: List[InspectionCheckResponse]
 
 
 class InspectionPhotosEnvelope(BaseModel):
-    message: str
+    message: MessageResponse
     photos: List[InspectionPhotoResponse]
 
 
 class PassengerCountEnvelope(BaseModel):
-    message: str
+    message: MessageResponse
     passenger_count: PassengerCountResponse
 
 
@@ -217,7 +223,7 @@ class OperatorSummary(BaseModel):
 
 
 class VehicleResponse(BaseModel):
-    vehicle_id: int
+    vehicle_id: str
     vin: str
     registration_number: str | None
     fleet_number: str | None
@@ -236,12 +242,12 @@ class VehicleResponse(BaseModel):
 
 
 class VehicleEnvelope(BaseModel):
-    message: str
+    message: MessageResponse
     vehicle: VehicleResponse
 
 
 class VehicleListEnvelope(BaseModel):
-    message: str
+    message: MessageResponse
     total: int
     page: int
     page_size: int
@@ -261,12 +267,12 @@ class RouteResponse(BaseModel):
 
 
 class RouteEnvelope(BaseModel):
-    message: str
+    message: MessageResponse
     route: RouteResponse
 
 
 class RouteListEnvelope(BaseModel):
-    message: str
+    message: MessageResponse
     total: int
     page: int
     page_size: int
