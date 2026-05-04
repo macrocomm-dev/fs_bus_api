@@ -37,6 +37,7 @@ class InspectionPhotoCreatedResponse(BaseModel):
 
 
 class PhotoUploadResponse(BaseModel):
+    message: str
     photo_id: int
     inspection_id: int
 

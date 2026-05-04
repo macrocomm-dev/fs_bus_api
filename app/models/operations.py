@@ -46,6 +46,8 @@ class InspectionCheck(Base):
     display_order: Mapped[int] = mapped_column(
         Integer, nullable=False, default=1, server_default="1"
     )
+    user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    date_of_inspectioncheck: Mapped[datetime | None] = mapped_column(nullable=True)
 
 
 class InspectionPhoto(Base):

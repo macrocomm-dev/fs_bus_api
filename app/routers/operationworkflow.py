@@ -132,12 +132,12 @@ async def create_inspection(
             detail="Not authorized to create inspections",
         )
 
-    # Resolve Firebase UID → DB user_id, auto-provisioning on first login
-    app_user = (
-        db.query(AppUser).filter(AppUser.firebase_uid == current_user.sub).first()
-    )
-    if app_user is None:
-        app_user = await get_user_id_from_token(current_user, db)
+    # # Resolve Firebase UID → DB user_id, auto-provisioning on first login
+    # app_user = (
+    #     db.query(AppUser).filter(AppUser.firebase_uid == current_user.sub).first()
+    # )
+    # if app_user is None:
+    #     app_user = await get_user_id_from_token(current_user, db)
 
     new_inspection = Inspection(
         vehicle_id=payload.vehicle_id,
@@ -261,7 +261,11 @@ async def upload_photo(
             detail=f"Failed to store image: {exc}",
         )
 
-    return {"photo_id": new_photo.photo_id, "inspection_id": new_photo.inspection_id}
+    return {
+        "message": "Photo uploaded successfully",
+        "photo_id": new_photo.photo_id,
+        "inspection_id": new_photo.inspection_id,
+    }
 
 
 # Add passenger count endpoint
