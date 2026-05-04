@@ -108,7 +108,7 @@ def _is_internal(operator) -> bool:
 )
 async def upload_inspection_photo(
     file: UploadFile = File(...),
-    inspection_id: str = Form(...),
+    inspection_id: int = Form(...),
     inspection_check_id: int | None = Form(None),
     date_of_inspectionphoto: datetime | None = Form(None),
     user_id: int = Form(...),

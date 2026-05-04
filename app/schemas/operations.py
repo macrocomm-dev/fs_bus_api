@@ -61,6 +61,7 @@ class InspectionCreate(BaseModel):
     route_text: str | None = None
     inspection_type: Literal["Inside", "Outside", "Full", "Technical"]
     status: Literal["draft", "submitted", "reviewed", "approved", "queried"]
+    device_id: str | None = None
     latitude: Decimal | None = None
     longitude: Decimal | None = None
     user_id: int
@@ -103,6 +104,7 @@ class PassengerCountCreate(BaseModel):
     vehicle_id: str
     route_id: str | None = None
     route_text: str | None = None
+    device_id: str | None = None
     user_id: int
     date_of_passenger_count: datetime | None = None
     count: int = Field(..., ge=0)
@@ -135,6 +137,7 @@ class InspectionResponse(BaseModel):
     vehicle_id: str
     route_id: str | None
     route_text: str | None
+    device_id: str | None
     user_id: int
     inspection_type: str
     status: str
@@ -174,6 +177,7 @@ class PassengerCountResponse(BaseModel):
     count_id: int
     vehicle_id: str
     route_id: str | None
+    device_id: str | None
     route_text: str | None
     user_id: int
     passenger_count: int
