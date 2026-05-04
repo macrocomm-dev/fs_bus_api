@@ -15,7 +15,8 @@ class Inspection(Base):
 
     inspection_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     vehicle_id: Mapped[str] = mapped_column(String, nullable=False)
-    route_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    device_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    route_id: Mapped[str | None] = mapped_column(String, nullable=True)
     route_text: Mapped[str | None] = mapped_column(String, nullable=True)
     user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     inspection_type: Mapped[str] = mapped_column(String, nullable=False)
@@ -86,7 +87,7 @@ class PassengerCount(Base):
 
     count_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     vehicle_id: Mapped[str] = mapped_column(String, nullable=False)
-    route_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    route_id: Mapped[str | None] = mapped_column(String, nullable=True)
     route_text: Mapped[str | None] = mapped_column(String, nullable=True)
     user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     passenger_count: Mapped[int] = mapped_column(Integer, nullable=False)

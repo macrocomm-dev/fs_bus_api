@@ -168,7 +168,7 @@ def login(
         401: {"description": "Invalid or expired refresh token"},
         503: {"description": "Service unavailable"},
     },
-    include_in_schema=False,
+    include_in_schema=True,
 )
 def refresh_token(
     request: FirebaseRefreshRequest,
@@ -299,7 +299,9 @@ def health_db(db: Annotated[Session, Depends(get_db)]):
 # ---------------------------------------------------------------------------
 
 
-@app.get("/me", tags=["users"], summary="Current authenticated user")
+@app.get(
+    "/me", tags=["users"], summary="Current authenticated user", include_in_schema=False
+)
 def read_current_user(
     current_user: Annotated[TokenData, Depends(get_current_user)],
 ):

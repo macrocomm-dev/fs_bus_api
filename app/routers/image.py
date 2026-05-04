@@ -241,7 +241,7 @@ async def get_inspection_photos(
                     Inspection,
                     InspectionPhoto.inspection_id == Inspection.inspection_id,
                 )
-                .join(Vehicle, Inspection.vehicle_id == Vehicle.vehicle_id)
+                .join(Vehicle, Inspection.vehicle_id == Vehicle.vin)
                 .filter(Vehicle.operator_id == app_user.operator_id)
             )
         photos = query.all()
@@ -288,7 +288,7 @@ async def download_photo(
             query.join(
                 Inspection, InspectionPhoto.inspection_id == Inspection.inspection_id
             )
-            .join(Vehicle, Inspection.vehicle_id == Vehicle.vehicle_id)
+            .join(Vehicle, Inspection.vehicle_id == Vehicle.vin)
             .filter(Vehicle.operator_id == app_user.operator_id)
         )
     photo = query.first()

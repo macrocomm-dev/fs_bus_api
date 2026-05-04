@@ -324,7 +324,7 @@ async def get_inspection(
 
     query = db.query(Inspection).filter(Inspection.inspection_id == inspection_id)
     if not _is_internal(operator):
-        query = query.join(Vehicle, Inspection.vehicle_id == Vehicle.vehicle_id).filter(
+        query = query.join(Vehicle, Inspection.vehicle_id == Vehicle.vin).filter(
             Vehicle.operator_id == app_user.operator_id
         )
     inspection = query.first()
@@ -353,7 +353,7 @@ async def get_all_inspections(
 
     query = db.query(Inspection)
     if not _is_internal(operator):
-        query = query.join(Vehicle, Inspection.vehicle_id == Vehicle.vehicle_id).filter(
+        query = query.join(Vehicle, Inspection.vehicle_id == Vehicle.vin).filter(
             Vehicle.operator_id == app_user.operator_id
         )
     inspections = query.all()
@@ -393,7 +393,7 @@ async def get_inspection_checks(
                     Inspection,
                     InspectionCheck.inspection_id == Inspection.inspection_id,
                 )
-                .join(Vehicle, Inspection.vehicle_id == Vehicle.vehicle_id)
+                .join(Vehicle, Inspection.vehicle_id == Vehicle.vin)
                 .filter(Vehicle.operator_id == app_user.operator_id)
             )
         checks = query.order_by(InspectionCheck.display_order).all()
@@ -434,7 +434,7 @@ async def get_inspection_photos(
                     Inspection,
                     InspectionPhoto.inspection_id == Inspection.inspection_id,
                 )
-                .join(Vehicle, Inspection.vehicle_id == Vehicle.vehicle_id)
+                .join(Vehicle, Inspection.vehicle_id == Vehicle.vin)
                 .filter(Vehicle.operator_id == app_user.operator_id)
             )
         photos = query.all()
@@ -481,7 +481,7 @@ async def download_photo(
             query.join(
                 Inspection, InspectionPhoto.inspection_id == Inspection.inspection_id
             )
-            .join(Vehicle, Inspection.vehicle_id == Vehicle.vehicle_id)
+            .join(Vehicle, Inspection.vehicle_id == Vehicle.vin)
             .filter(Vehicle.operator_id == app_user.operator_id)
         )
     photo = query.first()
@@ -510,7 +510,7 @@ async def get_passenger_count(
         query = db.query(PassengerCount).filter(PassengerCount.count_id == count_id)
         if not _is_internal(operator):
             query = query.join(
-                Vehicle, PassengerCount.vehicle_id == Vehicle.vehicle_id
+                Vehicle, PassengerCount.vehicle_id == Vehicle.vin
             ).filter(Vehicle.operator_id == app_user.operator_id)
         count = query.first()
 
@@ -547,7 +547,7 @@ async def get_passenger_count_user_user(
         query = db.query(PassengerCount).filter(PassengerCount.user_id == user_id)
         if not _is_internal(operator):
             query = query.join(
-                Vehicle, PassengerCount.vehicle_id == Vehicle.vehicle_id
+                Vehicle, PassengerCount.vehicle_id == Vehicle.vin
             ).filter(Vehicle.operator_id == app_user.operator_id)
         count = query.first()
 
