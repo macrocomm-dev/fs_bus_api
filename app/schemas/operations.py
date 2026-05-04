@@ -223,13 +223,13 @@ class OperatorSummary(BaseModel):
 
 
 class VehicleResponse(BaseModel):
-    vehicle_id: str
+    vehicle_id: int
     vin: str
     registration_number: str | None
     fleet_number: str | None
     operator_id: int | None
     operator_name: str | None
-    operator: OperatorSummary | None
+    # operator: OperatorSummary | None
     make: str | None
     year: str | None
     engine_number: str | None

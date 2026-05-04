@@ -11,7 +11,7 @@ from fastapi import (
     UploadFile,
     status,
 )
-from fastapi.responses import Response
+from fastapi.responses import JSONResponse
 from firebase_admin import db
 from sqlalchemy import inspection
 from sqlalchemy.orm import Session
@@ -102,41 +102,52 @@ def _is_internal(operator) -> bool:
     "/create_inspection",
     status_code=status.HTTP_201_CREATED,
     response_model=InspectionCreatedResponse,
-    responses={**_401, **_403},
+    responses={**_401, **_403, **_500},
 )
 async def create_inspection(
     payload: InspectionCreate,
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    if current_user.role not in ["Monitor", "Supervisor", "Admin"]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to create inspections",
+    try:
+        if current_user.role not in ["Monitor", "Supervisor", "Admin"]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not authorized to create inspections",
+            )
+
+        new_inspection = Inspection(
+            vehicle_id=payload.vehicle_id,
+            route_id=payload.route_id,
+            route_text=payload.route_text,
+            user_id=payload.user_id,
+            inspection_type=payload.inspection_type,
+            latitude=payload.latitude,
+            longitude=payload.longitude,
+            notes=payload.notes,
+            status=payload.status,
+            date_of_inspection=payload.date_of_inspection,
         )
+        db.add(new_inspection)
+        db.commit()
+        db.refresh(new_inspection)
 
-    new_inspection = Inspection(
-        vehicle_id=payload.vehicle_id,
-        route_id=payload.route_id,
-        route_text=payload.route_text,
-        user_id=payload.user_id,
-        inspection_type=payload.inspection_type,
-        latitude=payload.latitude,
-        longitude=payload.longitude,
-        notes=payload.notes,
-        status=payload.status,
-        date_of_inspection=payload.date_of_inspection,
-    )
-    db.add(new_inspection)
-    db.commit()
-    db.refresh(new_inspection)
-
-    return {
-        "message": MessageResponse.success,
-        "inspection_id": new_inspection.inspection_id,
-        "vehicle_id": new_inspection.vehicle_id,
-        "route_id": new_inspection.route_id,
-    }
+        return {
+            "message": MessageResponse.success,
+            "inspection_id": new_inspection.inspection_id,
+            "vehicle_id": new_inspection.vehicle_id,
+            "route_id": new_inspection.route_id,
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                "message": MessageResponse.fail,
+                "detail": f"Error creating inspection: {exc}",
+            },
+        )
 
 
 # Add inspection check endpoint, only accessible to Monitor, Supervisor, Admin roles
@@ -173,10 +184,15 @@ async def add_inspection_check(
             "inspection_check_id": new_check.inspection_check_id,
             "inspection_id": new_check.inspection_id,
         }
+    except HTTPException:
+        raise
     except Exception as exc:
-        raise HTTPException(
+        return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error adding inspection check: {exc}",
+            content={
+                "message": MessageResponse.fail,
+                "detail": f"Error adding inspection check: {exc}",
+            },
         )
 
 
@@ -214,10 +230,15 @@ async def add_passenger_count(
             "vehicle_id": new_count.vehicle_id,
             "route_id": new_count.route_id,
         }
+    except HTTPException:
+        raise
     except Exception as exc:
-        raise HTTPException(
+        return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error adding passenger count: {exc}",
+            content={
+                "message": MessageResponse.fail,
+                "detail": f"Error adding passenger count: {exc}",
+            },
         )
 
 
@@ -251,10 +272,15 @@ async def get_passenger_count(
             "message": MessageResponse.success,
             "passenger_count": PassengerCountResponse.model_validate(count),
         }
+    except HTTPException:
+        raise
     except Exception as exc:
-        raise HTTPException(
+        return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error retrieving passenger count: {exc}",
+            content={
+                "message": MessageResponse.fail,
+                "detail": f"Error retrieving passenger count: {exc}",
+            },
         )
 
 
@@ -288,10 +314,15 @@ async def get_passenger_count_user_user(
             "message": MessageResponse.success,
             "passenger_count": PassengerCountResponse.model_validate(count),
         }
+    except HTTPException:
+        raise
     except Exception as exc:
-        raise HTTPException(
+        return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error retrieving passenger count: {exc}",
+            content={
+                "message": MessageResponse.fail,
+                "detail": f"Error retrieving passenger count: {exc}",
+            },
         )
 
 
@@ -299,61 +330,84 @@ async def get_passenger_count_user_user(
 @inspection_router.get(
     "/inspection/{inspection_id}",
     response_model=InspectionEnvelope,
-    responses={**_401, **_404},
+    responses={**_401, **_404, **_500},
 )
 async def get_inspection(
     inspection_id: int,
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    app_user, operator = await _resolve_app_user(current_user, db)
+    try:
+        app_user, operator = await _resolve_app_user(current_user, db)
 
-    query = db.query(Inspection).filter(Inspection.inspection_id == inspection_id)
-    if not _is_internal(operator):
-        query = query.join(Vehicle, Inspection.vehicle_id == Vehicle.vin).filter(
-            Vehicle.operator_id == app_user.operator_id
-        )
-    inspection = query.first()
+        query = db.query(Inspection).filter(Inspection.inspection_id == inspection_id)
+        if not _is_internal(operator):
+            query = query.join(Vehicle, Inspection.vehicle_id == Vehicle.vin).filter(
+                Vehicle.operator_id == app_user.operator_id
+            )
+        inspection = query.first()
 
-    if inspection is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Inspection not found"
+        if inspection is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Inspection not found"
+            )
+        return {
+            "message": MessageResponse.success,
+            "inspection": InspectionResponse.model_validate(inspection),
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                "message": MessageResponse.fail,
+                "detail": f"Error retrieving inspection: {exc}",
+            },
         )
-    return {
-        "message": MessageResponse.success,
-        "inspection": InspectionResponse.model_validate(inspection),
-    }
 
 
 # Get all inspections endpoint
 @inspection_router.get(
     "/inspections/",
     response_model=InspectionListEnvelope,
-    responses={**_401, **_404},
+    responses={**_401, **_404, **_500},
 )
 async def get_all_inspections(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    app_user, operator = await _resolve_app_user(current_user, db)
+    try:
+        app_user, operator = await _resolve_app_user(current_user, db)
 
-    query = db.query(Inspection)
-    if not _is_internal(operator):
-        query = query.join(Vehicle, Inspection.vehicle_id == Vehicle.vin).filter(
-            Vehicle.operator_id == app_user.operator_id
-        )
-    inspections = query.all()
+        query = db.query(Inspection)
+        if not _is_internal(operator):
+            query = query.join(Vehicle, Inspection.vehicle_id == Vehicle.vin).filter(
+                Vehicle.operator_id == app_user.operator_id
+            )
+        inspections = query.all()
 
-    if not inspections:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="No inspections found"
+        if not inspections:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="No inspections found"
+            )
+        return {
+            "message": MessageResponse.success,
+            "inspections": [
+                InspectionResponse.model_validate(inspection)
+                for inspection in inspections
+            ],
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                "message": MessageResponse.fail,
+                "detail": f"Error retrieving inspections: {exc}",
+            },
         )
-    return {
-        "message": MessageResponse.success,
-        "inspections": [
-            InspectionResponse.model_validate(inspection) for inspection in inspections
-        ],
-    }
 
 
 # Get inspection checks for an inspection endpoint
@@ -390,8 +444,13 @@ async def get_inspection_checks(
                 InspectionCheckResponse.model_validate(check) for check in checks
             ],
         }
+    except HTTPException:
+        raise
     except Exception as exc:
-        raise HTTPException(
+        return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error retrieving inspection checks: {exc}",
+            content={
+                "message": MessageResponse.fail,
+                "detail": f"Error retrieving inspection checks: {exc}",
+            },
         )
