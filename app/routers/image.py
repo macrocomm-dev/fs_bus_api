@@ -11,7 +11,7 @@ from fastapi import (
     UploadFile,
     status,
 )
-from fastapi.responses import Response
+from fastapi.responses import JSONResponse, Response
 from firebase_admin import db
 from sqlalchemy.orm import Session
 
@@ -102,6 +102,7 @@ def _is_internal(operator) -> bool:
     responses={
         **_401,
         **_403,
+        **_500,
         413: {"model": ErrorResponse, "description": "Image exceeds size limit"},
     },
 )
@@ -114,26 +115,26 @@ async def upload_inspection_photo(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    if current_user.role not in ["Monitor", "Supervisor", "Admin"]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to upload photos",
-        )
-
-    if file.content_type not in ALLOWED_IMAGE_CONTENT_TYPES:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Unsupported file type '{file.content_type}'. Allowed: JPEG, PNG, WebP.",
-        )
-
-    data = await file.read()
-    if len(data) > MAX_IMAGE_SIZE_BYTES:
-        raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail="Image exceeds the 10 MB size limit.",
-        )
-
     try:
+        if current_user.role not in ["Monitor", "Supervisor", "Admin"]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not authorized to upload photos",
+            )
+
+        if file.content_type not in ALLOWED_IMAGE_CONTENT_TYPES:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Unsupported file type '{file.content_type}'. Allowed: JPEG, PNG, WebP.",
+            )
+
+        data = await file.read()
+        if len(data) > MAX_IMAGE_SIZE_BYTES:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail="Image exceeds the 10 MB size limit.",
+            )
+
         new_photo = InspectionPhoto(
             inspection_id=inspection_id,
             inspection_check_id=inspection_check_id,
@@ -145,17 +146,22 @@ async def upload_inspection_photo(
         db.add(new_photo)
         db.commit()
         db.refresh(new_photo)
-    except Exception as exc:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to store image: {exc}",
-        )
 
-    return {
-        "message": MessageResponse.success,
-        "photo_id": new_photo.photo_id,
-        "inspection_id": new_photo.inspection_id,
-    }
+        return {
+            "message": MessageResponse.success,
+            "photo_id": new_photo.photo_id,
+            "inspection_id": new_photo.inspection_id,
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                "message": MessageResponse.fail,
+                "detail": f"Failed to store image: {exc}",
+            },
+        )
 
 
 # Upload photo and store directly in the database
@@ -166,6 +172,7 @@ async def upload_inspection_photo(
     responses={
         **_401,
         **_403,
+        **_500,
         413: {"model": ErrorResponse, "description": "Image exceeds size limit"},
     },
 )
@@ -176,26 +183,26 @@ async def upload_user_verification_photo(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    if current_user.role not in ["Monitor", "Supervisor", "Admin"]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to upload photos",
-        )
-
-    if file.content_type not in ALLOWED_IMAGE_CONTENT_TYPES:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Unsupported file type '{file.content_type}'. Allowed: JPEG, PNG, WebP.",
-        )
-
-    data = await file.read()
-    if len(data) > MAX_IMAGE_SIZE_BYTES:
-        raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail="Image exceeds the 10 MB size limit.",
-        )
-
     try:
+        if current_user.role not in ["Monitor", "Supervisor", "Admin"]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not authorized to upload photos",
+            )
+
+        if file.content_type not in ALLOWED_IMAGE_CONTENT_TYPES:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Unsupported file type '{file.content_type}'. Allowed: JPEG, PNG, WebP.",
+            )
+
+        data = await file.read()
+        if len(data) > MAX_IMAGE_SIZE_BYTES:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail="Image exceeds the 10 MB size limit.",
+            )
+
         new_photo = UserVerificationPhoto(
             image_data=data,
             content_type=file.content_type,
@@ -205,17 +212,22 @@ async def upload_user_verification_photo(
         db.add(new_photo)
         db.commit()
         db.refresh(new_photo)
-    except Exception as exc:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to store image: {exc}",
-        )
 
-    return {
-        "message": MessageResponse.success,
-        "photo_id": new_photo.photo_id,
-        "inspection_id": new_photo.inspection_id,
-    }
+        return {
+            "message": MessageResponse.success,
+            "photo_id": new_photo.photo_id,
+            "inspection_id": new_photo.photo_id,
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                "message": MessageResponse.fail,
+                "detail": f"Failed to store image: {exc}",
+            },
+        )
 
 
 # Get inspection photos for an inspection endpoint
@@ -252,10 +264,15 @@ async def get_inspection_photos(
                 InspectionPhotoResponse.model_validate(photo) for photo in photos
             ],
         }
+    except HTTPException:
+        raise
     except Exception as exc:
-        raise HTTPException(
+        return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error retrieving inspection photos: {exc}",
+            content={
+                "message": MessageResponse.fail,
+                "detail": f"Error retrieving inspection photos: {exc}",
+            },
         )
 
 
@@ -265,6 +282,7 @@ async def get_inspection_photos(
     responses={
         **_401,
         **_404,
+        **_500,
         200: {
             "content": {
                 "image/jpeg": {},
@@ -280,21 +298,33 @@ async def download_photo(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    app_user, operator = await _resolve_app_user(current_user, db)
+    try:
+        app_user, operator = await _resolve_app_user(current_user, db)
 
-    query = db.query(InspectionPhoto).filter(InspectionPhoto.photo_id == photo_id)
-    if not _is_internal(operator):
-        query = (
-            query.join(
-                Inspection, InspectionPhoto.inspection_id == Inspection.inspection_id
+        query = db.query(InspectionPhoto).filter(InspectionPhoto.photo_id == photo_id)
+        if not _is_internal(operator):
+            query = (
+                query.join(
+                    Inspection,
+                    InspectionPhoto.inspection_id == Inspection.inspection_id,
+                )
+                .join(Vehicle, Inspection.vehicle_id == Vehicle.vin)
+                .filter(Vehicle.operator_id == app_user.operator_id)
             )
-            .join(Vehicle, Inspection.vehicle_id == Vehicle.vin)
-            .filter(Vehicle.operator_id == app_user.operator_id)
-        )
-    photo = query.first()
-    if photo is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Photo not found"
-        )
+        photo = query.first()
+        if photo is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Photo not found"
+            )
 
-    return Response(content=photo.image_data, media_type=photo.content_type)
+        return Response(content=photo.image_data, media_type=photo.content_type)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                "message": MessageResponse.fail,
+                "detail": f"Error downloading photo: {exc}",
+            },
+        )

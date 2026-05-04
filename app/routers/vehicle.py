@@ -11,7 +11,7 @@ from fastapi import (
     UploadFile,
     status,
 )
-from fastapi.responses import Response
+from fastapi.responses import JSONResponse, Response
 from firebase_admin import db
 from sqlalchemy.orm import Session
 
@@ -27,26 +27,8 @@ from app.models.operations import (
 )
 from app.schemas.operations import (
     ErrorResponse,
-    InspectionCheckCreate,
-    InspectionCheckCreatedResponse,
-    InspectionCheckResponse,
-    InspectionChecksEnvelope,
-    InspectionCreate,
-    InspectionCreatedResponse,
-    InspectionEnvelope,
-    InspectionListEnvelope,
-    InspectionPhotoResponse,
-    InspectionPhotosEnvelope,
-    InspectionResponse,
-    PassengerCountCreate,
-    PassengerCountCreatedResponse,
-    PassengerCountEnvelope,
-    PassengerCountResponse,
+    MessageResponse,
     OperatorSummary,
-    PhotoUploadResponse,
-    RouteEnvelope,
-    RouteListEnvelope,
-    RouteResponse,
     VehicleEnvelope,
     VehicleListEnvelope,
     VehicleResponse,
@@ -124,7 +106,7 @@ def _build_vehicle_response(
         fleet_number=vehicle.fleet_number,
         operator_id=vehicle.operator_id,
         operator_name=vehicle.operator_name,
-        operator=OperatorSummary.model_validate(operator) if operator else None,
+        # operator=OperatorSummary.model_validate(operator) if operator else None,
         make=vehicle.make,
         year=vehicle.year,
         engine_number=vehicle.engine_number,
@@ -140,7 +122,7 @@ def _build_vehicle_response(
 @vehicle_router.get(
     "/vehicles/",
     response_model=VehicleListEnvelope,
-    responses={**_401, **_403},
+    responses={**_401, **_403, **_500},
 )
 async def get_vehicles(
     is_active: Optional[bool] = Query(None, description="Filter by active status"),
@@ -152,66 +134,88 @@ async def get_vehicles(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    app_user, operator = await _resolve_app_user(current_user, db)
+    try:
+        app_user, operator = await _resolve_app_user(current_user, db)
 
-    query = db.query(Vehicle, Operator).outerjoin(
-        Operator, Vehicle.operator_id == Operator.operator_id
-    )
+        query = db.query(Vehicle, Operator).outerjoin(
+            Operator, Vehicle.operator_id == Operator.operator_id
+        )
 
-    if not _is_internal(operator):
-        query = query.filter(Vehicle.operator_id == app_user.operator_id)
-    elif operator_id is not None:
-        query = query.filter(Vehicle.operator_id == operator_id)
+        if not _is_internal(operator):
+            query = query.filter(Vehicle.operator_id == app_user.operator_id)
+        elif operator_id is not None:
+            query = query.filter(Vehicle.operator_id == operator_id)
 
-    if is_active is not None:
-        query = query.filter(Vehicle.is_active == is_active)
+        if is_active is not None:
+            query = query.filter(Vehicle.is_active == is_active)
 
-    total = query.count()
-    rows = (
-        query.order_by(Vehicle.vehicle_id)
-        .offset((page - 1) * page_size)
-        .limit(page_size)
-        .all()
-    )
+        total = query.count()
+        rows = (
+            query.order_by(Vehicle.vehicle_id)
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+            .all()
+        )
 
-    return {
-        "message": "Vehicles retrieved successfully",
-        "total": total,
-        "page": page,
-        "page_size": page_size,
-        "vehicles": [_build_vehicle_response(v, op) for v, op in rows],
-    }
+        return {
+            "message": MessageResponse.success,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "vehicles": [_build_vehicle_response(v, op) for v, op in rows],
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                "message": MessageResponse.fail,
+                "detail": f"Error retrieving vehicles: {exc}",
+            },
+        )
 
 
 @vehicle_router.get(
     "/vehicle/{vin}",
     response_model=VehicleEnvelope,
-    responses={**_401, **_404},
+    responses={**_401, **_404, **_500},
 )
 async def get_vehicle(
     vin: str,
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    app_user, operator = await _resolve_app_user(current_user, db)
+    try:
+        app_user, operator = await _resolve_app_user(current_user, db)
 
-    query = (
-        db.query(Vehicle, Operator)
-        .outerjoin(Operator, Vehicle.operator_id == Operator.operator_id)
-        .filter(Vehicle.vin == vin)
-    )
-
-    if not _is_internal(operator):
-        query = query.filter(Vehicle.operator_id == app_user.operator_id)
-
-    row = query.first()
-    if row is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Vehicle not found"
+        query = (
+            db.query(Vehicle, Operator)
+            .outerjoin(Operator, Vehicle.operator_id == Operator.operator_id)
+            .filter(Vehicle.vin == vin)
         )
 
-    vehicle, op = row
-    return {
-        "message": "Vehicle retrieved successfully",
-        "vehicle": _build_vehicle_response(vehicle, op),
-    }
+        if not _is_internal(operator):
+            query = query.filter(Vehicle.operator_id == app_user.operator_id)
+
+        row = query.first()
+        if row is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Vehicle not found"
+            )
+
+        vehicle, op = row
+        return {
+            "message": MessageResponse.success,
+            "vehicle": _build_vehicle_response(vehicle, op),
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                "message": MessageResponse.fail,
+                "detail": f"Error retrieving vehicle: {exc}",
+            },
+        )
