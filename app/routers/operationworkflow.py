@@ -84,7 +84,7 @@ async def get_user_id_from_token(current_user: TokenData, db: Session) -> int:
     return app_user.user_id
 
 
-ALLOWED_IMAGE_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+ALLOWED_IMAGE_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
 MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
 
 
@@ -233,7 +233,7 @@ async def upload_photo(
     if file.content_type not in ALLOWED_IMAGE_CONTENT_TYPES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Unsupported file type '{file.content_type}'. Allowed: JPEG, PNG, WebP, GIF.",
+            detail=f"Unsupported file type '{file.content_type}'. Allowed: JPEG, PNG, WebP.",
         )
 
     data = await file.read()
