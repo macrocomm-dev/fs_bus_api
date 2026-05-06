@@ -3,7 +3,16 @@ from __future__ import annotations
 from datetime import datetime
 from enum import Enum
 from typing import Optional
-
+from fastapi import (
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    APIRouter,
+    Query,
+    UploadFile,
+    status,
+)
 from pydantic import BaseModel
 
 
@@ -24,14 +33,14 @@ class PhotoIn(BaseModel):
     timestamp: datetime
     lat: float
     lon: float
-    photo: bytes  # base64-encoded bytes
+    photo: UploadFile  # base64-encoded image string
 
 
 class SelfieIn(BaseModel):
     timestamp: datetime
     lat: float
     lon: float
-    photo: bytes  # base64-encoded bytes
+    photo: UploadFile  # base64-encoded image string
 
 
 # ---------------------------------------------------------------------------
@@ -47,7 +56,7 @@ class InspectionIn(BaseModel):
     inspection_lon: float
     count: Optional[int] = 0
     pass_: bool = True
-    photos: list[PhotoIn] = []
+    photos: list[PhotoIn]
     notes: Optional[str] = None
 
     model_config = {"populate_by_name": True}
@@ -61,7 +70,7 @@ class InspectionIn(BaseModel):
 class BusIn(BaseModel):
     bus_id: str  # maps to bus_id / vin
     bus_number: str  # maps to fleet_number
-    inspections: list[InspectionIn] = []
+    inspections: list[InspectionIn]
 
 
 # ---------------------------------------------------------------------------
@@ -78,13 +87,113 @@ class ShiftCreate(BaseModel):
     end_lat: float
     end_lon: float
     device_id: str
-    selfies: list[SelfieIn] = []
-    busses: list[BusIn] = []
+    selfies: list[SelfieIn]
+    busses: list[BusIn]
+
+    # model_config = {
+    #     "json_schema_extra": {
+    #         "example": {
+    #             "user_id": "firebase_uid_abc123",
+    #             "start_time": "2026-05-06T08:00:00",
+    #             "end_time": "2026-05-06T16:00:00",
+    #             "start_lat": -26.2041,
+    #             "start_lon": 28.0473,
+    #             "end_lat": -26.2041,
+    #             "end_lon": 28.0473,
+    #             "device_id": "device_xyz",
+    #             "selfies": [
+    #                 {
+    #                     "timestamp": "2026-05-06T08:05:00",
+    #                     "lat": -26.2041,
+    #                     "lon": 28.0473,
+    #                     "photo": "<base64-encoded-image-string>",
+    #                 }
+    #             ],
+    #             "busses": [
+    #                 {
+    #                     "bus_id": "WVWZZZ1KZ8W123456",
+    #                     "bus_number": "BUS-001",
+    #                     "inspections": [
+    #                         {
+    #                             "internal_inspection_id": "INSP-001",
+    #                             "inspection_type": "external",
+    #                             "inspection_time": "2026-05-06T08:10:00",
+    #                             "inspection_lat": -26.2041,
+    #                             "inspection_lon": 28.0473,
+    #                             "count": 0,
+    #                             "pass_": True,
+    #                             "notes": "All clear",
+    #                             "photos": [
+    #                                 {
+    #                                     "timestamp": "2026-05-06T08:10:05",
+    #                                     "lat": -26.2041,
+    #                                     "lon": 28.0473,
+    #                                     "photo": "<base64-encoded-image-string>",
+    #                                 }
+    #                             ],
+    #                         }
+    #                     ],
+    #                 }
+    #             ],
+    #         }
+    #     }
+    # }
 
 
 # ---------------------------------------------------------------------------
-# Response schemas
+# Multipart variants — no photo field; files sent as separate form fields
+#
+# File naming convention for multipart/form-data:
+#   selfie_{i}                          e.g. selfie_0, selfie_1
+#   bus_{i}_inspection_{j}_photo_{k}    e.g. bus_0_inspection_0_photo_0
 # ---------------------------------------------------------------------------
+
+
+class PhotoMetaIn(BaseModel):
+    timestamp: datetime
+    lat: float
+    lon: float
+
+
+class SelfieMetaIn(BaseModel):
+    timestamp: datetime
+    lat: float
+    lon: float
+
+
+class InspectionMetaIn(BaseModel):
+    internal_inspection_id: str
+    inspection_type: InspectionType
+    inspection_time: datetime
+    inspection_lat: float
+    inspection_lon: float
+    count: Optional[int] = 0
+    pass_: bool = True
+    photos: list[PhotoMetaIn] = []
+    notes: Optional[str] = None
+
+    model_config = {"populate_by_name": True}
+
+
+class BusMetaIn(BaseModel):
+    bus_id: str
+    bus_number: str
+    inspections: list[InspectionMetaIn] = []
+
+
+class ShiftCreateMeta(BaseModel):
+    """Used with multipart/form-data. Send this as a JSON string in the `data` Form field."""
+
+    user_id: str
+    start_time: datetime
+    end_time: datetime
+    start_lat: float
+    start_lon: float
+    end_lat: float
+    end_lon: float
+    device_id: str
+    selfies: list[SelfieMetaIn] = []
+    busses: list[BusMetaIn] = []
 
 
 class MessageResponse(str, Enum):

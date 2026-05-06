@@ -1,6 +1,8 @@
 from typing import List, Optional
 
-from fastapi import Depends, HTTPException, APIRouter, Query, status
+import base64
+import json
+from fastapi import Depends, HTTPException, APIRouter, Query, Request, Form, status
 from firebase_admin import db
 from sqlalchemy.orm import Session
 
@@ -12,6 +14,7 @@ from app.models.shift import Shift
 from app.models import BusInspection
 from app.schemas.shift import (
     ShiftCreate,
+    ShiftCreateMeta,
     ShiftCreatedResponse,
     PhotoIn,
     SelfieIn,
@@ -31,7 +34,7 @@ def create_shift(
 
     try:
         create_shif = Shift(
-            user_id=current_user.firebase_uid,
+            user_id=shift_data.user_id,
             start_time=shift_data.start_time,
             end_time=shift_data.end_time,
             start_lat=shift_data.start_lat,
@@ -44,6 +47,8 @@ def create_shift(
         db.add(create_shif)
         db.commit()
         db.refresh(create_shif)
+        selfies = add_shift_selfies(create_shif.id, shift_data.selfies, db)
+        inspections = add_inspections(create_shif.id, shift_data.busses, db)
 
     except Exception as e:
         db.rollback()
@@ -63,7 +68,7 @@ async def add_shift_selfies(shift_id: int, selfies: List[SelfieIn], db: Session)
                 timestamp=selfie.timestamp,
                 lat=selfie.lat,
                 lon=selfie.lon,
-                photo=selfie.photo,
+                photo=base64.b64decode(selfie.photo),
             )
             db.add(new_selfie)
         db.commit()
@@ -104,7 +109,7 @@ async def add_inspections(shift_id: int, buses: List[BusIn], db: Session):
                         timestamp=photo.timestamp,
                         lat=photo.lat,
                         lon=photo.lon,
-                        photo=photo.photo,
+                        photo=base64.b64decode(photo.photo),
                     )
                     db.add(new_photo)
 
@@ -115,4 +120,108 @@ async def add_inspections(shift_id: int, buses: List[BusIn], db: Session):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An error occurred while adding inspections: {str(e)}",
+        )
+
+
+# ---------------------------------------------------------------------------
+# Multipart version
+#
+# Send as multipart/form-data:
+#   data          — JSON string of ShiftCreateMeta (no photo bytes)
+#   selfie_{i}    — image file for selfies[i]
+#   bus_{i}_inspection_{j}_photo_{k} — image file for that photo
+# ---------------------------------------------------------------------------
+
+
+@monitor_router.post("/create_shift_multipart/")
+async def create_shift_multipart(
+    request: Request,
+    data: str = Form(...),
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    try:
+        shift_data = ShiftCreateMeta.model_validate_json(data)
+        form = await request.form()
+
+        new_shift = Shift(
+            user_id=shift_data.user_id,
+            start_time=shift_data.start_time,
+            end_time=shift_data.end_time,
+            start_lat=shift_data.start_lat,
+            start_lon=shift_data.start_lon,
+            end_lat=shift_data.end_lat,
+            end_lon=shift_data.end_lon,
+            device_id=shift_data.device_id,
+        )
+        db.add(new_shift)
+        db.commit()
+        db.refresh(new_shift)
+
+        # Selfies — file key: selfie_{i}
+        for i, selfie in enumerate(shift_data.selfies):
+            file = form.get(f"selfie_{i}")
+            if file is None:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=f"Missing file: selfie_{i}",
+                )
+            photo_bytes = await file.read()
+            db.add(
+                Selfie(
+                    shift_id=new_shift.id,
+                    timestamp=selfie.timestamp,
+                    lat=selfie.lat,
+                    lon=selfie.lon,
+                    photo=photo_bytes,
+                )
+            )
+
+        # Inspections + photos — file key: bus_{i}_inspection_{j}_photo_{k}
+        for i, bus in enumerate(shift_data.busses):
+            for j, inspection in enumerate(bus.inspections):
+                new_inspection = BusInspection(
+                    shift_id=new_shift.id,
+                    bus_id=bus.bus_id,
+                    fleet_number=bus.bus_number,
+                    internal_inspection_id=inspection.internal_inspection_id,
+                    inspection_type=inspection.inspection_type,
+                    inspection_time=inspection.inspection_time,
+                    inspection_lat=inspection.inspection_lat,
+                    inspection_lon=inspection.inspection_lon,
+                    count=inspection.count,
+                    pass_=inspection.pass_,
+                    notes=inspection.notes,
+                )
+                db.add(new_inspection)
+                db.flush()
+
+                for k, photo_meta in enumerate(inspection.photos):
+                    file = form.get(f"bus_{i}_inspection_{j}_photo_{k}")
+                    if file is None:
+                        raise HTTPException(
+                            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            detail=f"Missing file: bus_{i}_inspection_{j}_photo_{k}",
+                        )
+                    photo_bytes = await file.read()
+                    db.add(
+                        Photo(
+                            inspection_id=new_inspection.id,
+                            timestamp=photo_meta.timestamp,
+                            lat=photo_meta.lat,
+                            lon=photo_meta.lon,
+                            photo=photo_bytes,
+                        )
+                    )
+
+        db.commit()
+        return ShiftCreatedResponse(shift_id=new_shift.id, message="success")
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An error occurred while creating the shift: {str(e)}",
         )
