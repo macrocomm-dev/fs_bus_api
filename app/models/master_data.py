@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     BigInteger,
@@ -14,9 +15,12 @@ from sqlalchemy import (
     UniqueConstraint,
     func,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
+
+if TYPE_CHECKING:
+    from app.models.bus_inspection import BusInspection
 
 
 class Route(Base):
@@ -94,6 +98,11 @@ class Vehicle(Base):
     )
     created_at: Mapped[datetime] = mapped_column(
         nullable=False, server_default=func.now()
+    )
+
+    # Relationships
+    inspections: Mapped[list[BusInspection]] = relationship(
+        "BusInspection", back_populates="vehicle", foreign_keys="BusInspection.bus_id"
     )
 
 
