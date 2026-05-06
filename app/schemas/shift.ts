@@ -23,11 +23,11 @@
         "inspections": [
             {
                 "internal_inspection_id": "string",
-                "inspection_type": ["external", "internal", "count", "driver", "technical"],Enum
+                "inspection_type": ["external", "internal", "count", "driver", "technical"],
                 "inspection_time": "datetime",
                 "inspection_lat": "number",
                 "inspection_lon": "number",
-                "count": "number",default 0, only for inspection_type=count
+                "count": "number",
                 "pass": "boolean",
                 "photos": [{
                     "timestamp": "datetime",
