@@ -3,16 +3,6 @@ from __future__ import annotations
 from datetime import datetime
 from enum import Enum
 from typing import Optional
-from fastapi import (
-    Depends,
-    File,
-    Form,
-    HTTPException,
-    APIRouter,
-    Query,
-    UploadFile,
-    status,
-)
 from pydantic import BaseModel
 
 
@@ -34,14 +24,14 @@ class PhotoIn(BaseModel):
     lat: float
     lon: float
     inspection_item: str
-    photo: UploadFile  # base64-encoded image string
+    photo: str  # base64-encoded image string
 
 
 class SelfieIn(BaseModel):
     timestamp: datetime
     lat: float
     lon: float
-    photo: UploadFile  # base64-encoded image string
+    photo: str  # base64-encoded image string
 
 
 # ---------------------------------------------------------------------------
@@ -77,7 +67,7 @@ class InspectionIn(BaseModel):
     number_standing: Optional[int] = None
     # Behind schedule
     behind_schedule_interval: Optional[str] = None
-    photos: list[PhotoIn] = []
+    photos: list[PhotoIn]
 
     model_config = {"populate_by_name": True}
 
@@ -117,8 +107,8 @@ class ShiftCreate(BaseModel):
     driver_identified: Optional[bool] = None
     driver_fail_reason: Optional[str] = None
     driver: Optional[str] = None
-    selfies: list[SelfieIn] = []
-    busses: list[BusIn] = []
+    selfies: list[SelfieIn]
+    busses: list[BusIn]
 
     # model_config = {
     #     "json_schema_extra": {

@@ -1,7 +1,6 @@
 from typing import List, Optional
 
 import base64
-import json
 from fastapi import Depends, HTTPException, APIRouter, Query, Request, Form, status
 from firebase_admin import db
 from sqlalchemy.orm import Session
@@ -76,7 +75,7 @@ async def add_shift_selfies(shift_id: int, selfies: List[SelfieIn], db: Session)
                 timestamp=selfie.timestamp,
                 lat=selfie.lat,
                 lon=selfie.lon,
-                photo=base64.b64decode(selfie.photo),
+                photo=selfie.photo,
             )
             db.add(new_selfie)
         db.commit()
@@ -133,7 +132,7 @@ async def add_inspections(shift_id: int, buses: List[BusIn], db: Session):
                         lat=photo.lat,
                         lon=photo.lon,
                         inspection_item=photo.inspection_item,
-                        photo=base64.b64decode(photo.photo),
+                        photo=photo.photo,
                     )
                     db.add(new_photo)
 
@@ -205,7 +204,7 @@ async def create_shift_multipart(
                     timestamp=selfie.timestamp,
                     lat=selfie.lat,
                     lon=selfie.lon,
-                    photo=photo_bytes,
+                    photo=base64.b64encode(photo_bytes).decode(),
                 )
             )
 
@@ -258,7 +257,7 @@ async def create_shift_multipart(
                             lat=photo_meta.lat,
                             lon=photo_meta.lon,
                             inspection_item=photo_meta.inspection_item,
-                            photo=photo_bytes,
+                            photo=base64.b64encode(photo_bytes).decode(),
                         )
                     )
 
