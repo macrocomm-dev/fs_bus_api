@@ -55,6 +55,21 @@ class BusInspection(Base):
         "pass", Boolean, nullable=True, default=True, server_default="true"
     )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    tyres_pass: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    tyres_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    windows_pass: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    windows_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    ext_other_pass: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    ext_other_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    seats_pass: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    seats_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    aisle_pass: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    aisle_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    int_other_pass: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    int_other_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    number_seated: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    number_standing: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    behind_schedule_interval: Mapped[str | None] = mapped_column(String, nullable=True)
 
     # Relationships
     shift: Mapped[Shift] = relationship("Shift", back_populates="inspections")
