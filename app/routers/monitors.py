@@ -42,6 +42,14 @@ def create_shift(
             end_lat=shift_data.end_lat,
             end_lon=shift_data.end_lon,
             device_id=shift_data.device_id,
+            license_disk_scan_succeeded=shift_data.license_disk_scan_succeeded,
+            bus_number=shift_data.bus_number,
+            destination_displayed=shift_data.destination_displayed,
+            prdp_scan_succeeded=shift_data.prdp_scan_succeeded,
+            prdp_expiry_date=shift_data.prdp_expiry_date,
+            driver_identified=shift_data.driver_identified,
+            driver_fail_reason=shift_data.driver_fail_reason,
+            driver=shift_data.driver,
         )
 
         db.add(create_shif)
@@ -98,6 +106,21 @@ async def add_inspections(shift_id: int, buses: List[BusIn], db: Session):
                     count=inspection.count,
                     pass_=inspection.pass_,
                     notes=inspection.notes,
+                    tyres_pass=inspection.tyres_pass,
+                    tyres_notes=inspection.tyres_notes,
+                    windows_pass=inspection.windows_pass,
+                    windows_notes=inspection.windows_notes,
+                    ext_other_pass=inspection.ext_other_pass,
+                    ext_other_notes=inspection.ext_other_notes,
+                    seats_pass=inspection.seats_pass,
+                    seats_notes=inspection.seats_notes,
+                    aisle_pass=inspection.aisle_pass,
+                    aisle_notes=inspection.aisle_notes,
+                    int_other_pass=inspection.int_other_pass,
+                    int_other_notes=inspection.int_other_notes,
+                    number_seated=inspection.number_seated,
+                    number_standing=inspection.number_standing,
+                    behind_schedule_interval=inspection.behind_schedule_interval,
                 )
                 db.add(new_inspection)
                 db.flush()  # Get the ID of the newly created inspection
@@ -109,6 +132,7 @@ async def add_inspections(shift_id: int, buses: List[BusIn], db: Session):
                         timestamp=photo.timestamp,
                         lat=photo.lat,
                         lon=photo.lon,
+                        inspection_item=photo.inspection_item,
                         photo=base64.b64decode(photo.photo),
                     )
                     db.add(new_photo)
@@ -153,6 +177,14 @@ async def create_shift_multipart(
             end_lat=shift_data.end_lat,
             end_lon=shift_data.end_lon,
             device_id=shift_data.device_id,
+            license_disk_scan_succeeded=shift_data.license_disk_scan_succeeded,
+            bus_number=shift_data.bus_number,
+            destination_displayed=shift_data.destination_displayed,
+            prdp_scan_succeeded=shift_data.prdp_scan_succeeded,
+            prdp_expiry_date=shift_data.prdp_expiry_date,
+            driver_identified=shift_data.driver_identified,
+            driver_fail_reason=shift_data.driver_fail_reason,
+            driver=shift_data.driver,
         )
         db.add(new_shift)
         db.commit()
@@ -192,6 +224,21 @@ async def create_shift_multipart(
                     count=inspection.count,
                     pass_=inspection.pass_,
                     notes=inspection.notes,
+                    tyres_pass=inspection.tyres_pass,
+                    tyres_notes=inspection.tyres_notes,
+                    windows_pass=inspection.windows_pass,
+                    windows_notes=inspection.windows_notes,
+                    ext_other_pass=inspection.ext_other_pass,
+                    ext_other_notes=inspection.ext_other_notes,
+                    seats_pass=inspection.seats_pass,
+                    seats_notes=inspection.seats_notes,
+                    aisle_pass=inspection.aisle_pass,
+                    aisle_notes=inspection.aisle_notes,
+                    int_other_pass=inspection.int_other_pass,
+                    int_other_notes=inspection.int_other_notes,
+                    number_seated=inspection.number_seated,
+                    number_standing=inspection.number_standing,
+                    behind_schedule_interval=inspection.behind_schedule_interval,
                 )
                 db.add(new_inspection)
                 db.flush()
@@ -210,6 +257,7 @@ async def create_shift_multipart(
                             timestamp=photo_meta.timestamp,
                             lat=photo_meta.lat,
                             lon=photo_meta.lon,
+                            inspection_item=photo_meta.inspection_item,
                             photo=photo_bytes,
                         )
                     )
