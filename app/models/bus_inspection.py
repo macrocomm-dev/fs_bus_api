@@ -35,7 +35,6 @@ class BusInspection(Base):
     bus_id: Mapped[str] = mapped_column(
         String,
         ForeignKey("master_data.vehicle.vin"),
-        primary_key=True,
         nullable=False,
     )
     fleet_number: Mapped[str] = mapped_column(
@@ -70,6 +69,16 @@ class BusInspection(Base):
     number_seated: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     number_standing: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     behind_schedule_interval: Mapped[str | None] = mapped_column(String, nullable=True)
+    # Bus / driver identification (moved from shifts table)
+    license_disk_scan_succeeded: Mapped[bool | None] = mapped_column(
+        Boolean, nullable=True
+    )
+    destination_displayed: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    prdp_scan_succeeded: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    prdp_expiry_date: Mapped[datetime | None] = mapped_column(nullable=True)
+    driver_identified: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    driver_fail_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    driver: Mapped[str | None] = mapped_column(String, nullable=True)
 
     # Relationships
     shift: Mapped[Shift] = relationship("Shift", back_populates="inspections")

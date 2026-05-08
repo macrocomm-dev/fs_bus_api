@@ -5,12 +5,9 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     BigInteger,
-    Boolean,
     Float,
     ForeignKey,
-    Integer,
     String,
-    Text,
     func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -28,9 +25,9 @@ class Shift(Base):
     __table_args__ = {"schema": "shifts"}
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    user_id: Mapped[str] = mapped_column(
-        String,
-        ForeignKey("app_auth.app_user.firebase_uid"),
+    user_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("app_auth.app_user.user_id"),
         nullable=False,
     )
     start_time: Mapped[datetime] = mapped_column(nullable=False)
@@ -40,16 +37,6 @@ class Shift(Base):
     end_lat: Mapped[float] = mapped_column(Float, nullable=False)
     end_lon: Mapped[float] = mapped_column(Float, nullable=False)
     device_id: Mapped[str] = mapped_column(String, nullable=False)
-    license_disk_scan_succeeded: Mapped[bool | None] = mapped_column(
-        Boolean, nullable=True
-    )
-    bus_number: Mapped[str | None] = mapped_column(String, nullable=True)
-    destination_displayed: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
-    prdp_scan_succeeded: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
-    prdp_expiry_date: Mapped[datetime | None] = mapped_column(nullable=True)
-    driver_identified: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
-    driver_fail_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
-    driver: Mapped[str | None] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         nullable=False, server_default=func.now()
     )

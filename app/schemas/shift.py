@@ -80,6 +80,14 @@ class InspectionIn(BaseModel):
 class BusIn(BaseModel):
     bus_id: str  # maps to bus_id / vin
     bus_number: str  # maps to fleet_number
+    # Bus / driver identification
+    license_disk_scan_succeeded: Optional[bool] = None
+    destination_displayed: Optional[bool] = None
+    prdp_scan_succeeded: Optional[bool] = None
+    prdp_expiry_date: Optional[datetime] = None
+    driver_identified: Optional[bool] = None
+    driver_fail_reason: Optional[str] = None
+    driver: Optional[str] = None
     inspections: list[InspectionIn]
 
 
@@ -89,7 +97,7 @@ class BusIn(BaseModel):
 
 
 class ShiftCreate(BaseModel):
-    user_id: str
+    user_id: int
     start_time: datetime
     end_time: datetime
     start_lat: float
@@ -97,16 +105,6 @@ class ShiftCreate(BaseModel):
     end_lat: float
     end_lon: float
     device_id: str
-    # Bus identification
-    license_disk_scan_succeeded: Optional[bool] = None
-    bus_number: Optional[str] = None
-    destination_displayed: Optional[bool] = None
-    # Driver / PrDP
-    prdp_scan_succeeded: Optional[bool] = None
-    prdp_expiry_date: Optional[datetime] = None
-    driver_identified: Optional[bool] = None
-    driver_fail_reason: Optional[str] = None
-    driver: Optional[str] = None
     selfies: list[SelfieIn]
     busses: list[BusIn]
 
@@ -218,6 +216,14 @@ class InspectionMetaIn(BaseModel):
 class BusMetaIn(BaseModel):
     bus_id: str
     bus_number: str
+    # Bus / driver identification
+    license_disk_scan_succeeded: Optional[bool] = None
+    destination_displayed: Optional[bool] = None
+    prdp_scan_succeeded: Optional[bool] = None
+    prdp_expiry_date: Optional[datetime] = None
+    driver_identified: Optional[bool] = None
+    driver_fail_reason: Optional[str] = None
+    driver: Optional[str] = None
     inspections: list[InspectionMetaIn] = []
 
 
@@ -232,16 +238,6 @@ class ShiftCreateMeta(BaseModel):
     end_lat: float
     end_lon: float
     device_id: str
-    # Bus identification
-    license_disk_scan_succeeded: Optional[bool] = None
-    bus_number: Optional[str] = None
-    destination_displayed: Optional[bool] = None
-    # Driver / PrDP
-    prdp_scan_succeeded: Optional[bool] = None
-    prdp_expiry_date: Optional[datetime] = None
-    driver_identified: Optional[bool] = None
-    driver_fail_reason: Optional[str] = None
-    driver: Optional[str] = None
     selfies: list[SelfieMetaIn] = []
     busses: list[BusMetaIn] = []
 
@@ -266,14 +262,6 @@ class ShiftResponse(BaseModel):
     end_lat: float
     end_lon: float
     device_id: str
-    license_disk_scan_succeeded: Optional[bool] = None
-    bus_number: Optional[str] = None
-    destination_displayed: Optional[bool] = None
-    prdp_scan_succeeded: Optional[bool] = None
-    prdp_expiry_date: Optional[datetime] = None
-    driver_identified: Optional[bool] = None
-    driver_fail_reason: Optional[str] = None
-    driver: Optional[str] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

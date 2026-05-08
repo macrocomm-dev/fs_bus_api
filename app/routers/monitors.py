@@ -25,7 +25,7 @@ monitor_router = APIRouter()
 
 # We store all the shifts we will be receiving from the FE for the day
 @monitor_router.post("/create_shift/")
-def create_shift(
+async def create_shift(
     shift_data: ShiftCreate,
     db: Session = Depends(get_db),
     current_user: TokenData = Depends(get_current_user),
@@ -41,21 +41,20 @@ def create_shift(
             end_lat=shift_data.end_lat,
             end_lon=shift_data.end_lon,
             device_id=shift_data.device_id,
-            license_disk_scan_succeeded=shift_data.license_disk_scan_succeeded,
-            bus_number=shift_data.bus_number,
-            destination_displayed=shift_data.destination_displayed,
-            prdp_scan_succeeded=shift_data.prdp_scan_succeeded,
-            prdp_expiry_date=shift_data.prdp_expiry_date,
-            driver_identified=shift_data.driver_identified,
-            driver_fail_reason=shift_data.driver_fail_reason,
-            driver=shift_data.driver,
         )
 
         db.add(create_shif)
         db.commit()
         db.refresh(create_shif)
-        selfies = add_shift_selfies(create_shif.id, shift_data.selfies, db)
-        inspections = add_inspections(create_shif.id, shift_data.busses, db)
+        selfies = await add_shift_selfies(create_shif.id, shift_data.selfies, db)
+        inspections = await add_inspections(create_shif.id, shift_data.busses, db)
+        if selfies and inspections:
+            return ShiftCreatedResponse(shift_id=create_shif.id, message="success")
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="An error occurred while processing selfies or inspections",
+            )
 
     except Exception as e:
         db.rollback()
@@ -120,9 +119,17 @@ async def add_inspections(shift_id: int, buses: List[BusIn], db: Session):
                     number_seated=inspection.number_seated,
                     number_standing=inspection.number_standing,
                     behind_schedule_interval=inspection.behind_schedule_interval,
+                    license_disk_scan_succeeded=bus.license_disk_scan_succeeded,
+                    destination_displayed=bus.destination_displayed,
+                    prdp_scan_succeeded=bus.prdp_scan_succeeded,
+                    prdp_expiry_date=bus.prdp_expiry_date,
+                    driver_identified=bus.driver_identified,
+                    driver_fail_reason=bus.driver_fail_reason,
+                    driver=bus.driver,
                 )
                 db.add(new_inspection)
                 db.flush()  # Get the ID of the newly created inspection
+                db.refresh(new_inspection)
 
                 # Add photos for this inspection
                 for photo in inspection.photos:
@@ -176,14 +183,6 @@ async def create_shift_multipart(
             end_lat=shift_data.end_lat,
             end_lon=shift_data.end_lon,
             device_id=shift_data.device_id,
-            license_disk_scan_succeeded=shift_data.license_disk_scan_succeeded,
-            bus_number=shift_data.bus_number,
-            destination_displayed=shift_data.destination_displayed,
-            prdp_scan_succeeded=shift_data.prdp_scan_succeeded,
-            prdp_expiry_date=shift_data.prdp_expiry_date,
-            driver_identified=shift_data.driver_identified,
-            driver_fail_reason=shift_data.driver_fail_reason,
-            driver=shift_data.driver,
         )
         db.add(new_shift)
         db.commit()
@@ -238,9 +237,17 @@ async def create_shift_multipart(
                     number_seated=inspection.number_seated,
                     number_standing=inspection.number_standing,
                     behind_schedule_interval=inspection.behind_schedule_interval,
+                    license_disk_scan_succeeded=bus.license_disk_scan_succeeded,
+                    destination_displayed=bus.destination_displayed,
+                    prdp_scan_succeeded=bus.prdp_scan_succeeded,
+                    prdp_expiry_date=bus.prdp_expiry_date,
+                    driver_identified=bus.driver_identified,
+                    driver_fail_reason=bus.driver_fail_reason,
+                    driver=bus.driver,
                 )
                 db.add(new_inspection)
                 db.flush()
+                db.refresh(new_inspection)
 
                 for k, photo_meta in enumerate(inspection.photos):
                     file = form.get(f"bus_{i}_inspection_{j}_photo_{k}")
