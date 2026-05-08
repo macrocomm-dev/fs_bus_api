@@ -15,6 +15,7 @@ from app.schemas.shift import (
     ShiftCreate,
     ShiftCreateMeta,
     ShiftCreatedResponse,
+    ErrorResponse,
     PhotoIn,
     SelfieIn,
     BusIn,
@@ -22,9 +23,29 @@ from app.schemas.shift import (
 
 monitor_router = APIRouter()
 
+_401 = {
+    401: {
+        "model": ErrorResponse,
+        "description": "Unauthorized – invalid or missing token",
+    }
+}
+_403 = {403: {"model": ErrorResponse, "description": "Forbidden – insufficient role"}}
+_422 = {
+    422: {
+        "model": ErrorResponse,
+        "description": "Validation error – malformed request body",
+    }
+}
+_500 = {500: {"model": ErrorResponse, "description": "Internal server error"}}
+
 
 # We store all the shifts we will be receiving from the FE for the day
-@monitor_router.post("/create_shift/")
+@monitor_router.post(
+    "/create_shift/",
+    status_code=201,
+    response_model=ShiftCreatedResponse,
+    responses={**_401, **_422, **_500},
+)
 async def create_shift(
     shift_data: ShiftCreate,
     db: Session = Depends(get_db),
@@ -163,7 +184,12 @@ async def add_inspections(shift_id: int, buses: List[BusIn], db: Session):
 # ---------------------------------------------------------------------------
 
 
-@monitor_router.post("/create_shift_multipart/")
+@monitor_router.post(
+    "/create_shift_multipart/",
+    status_code=201,
+    response_model=ShiftCreatedResponse,
+    responses={**_401, **_422, **_500},
+)
 async def create_shift_multipart(
     request: Request,
     data: str = Form(...),

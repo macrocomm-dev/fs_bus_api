@@ -6,6 +6,10 @@ from typing import Optional
 from pydantic import BaseModel
 
 
+class ErrorResponse(BaseModel):
+    detail: str
+
+
 class InspectionType(str, Enum):
     external = "external"
     internal = "internal"
