@@ -101,7 +101,7 @@ class BusIn(BaseModel):
 
 
 class ShiftCreate(BaseModel):
-    user_id: int
+    user_id: str
     start_time: datetime
     end_time: datetime
     start_lat: float
@@ -258,7 +258,6 @@ class ShiftCreatedResponse(BaseModel):
 
 class ShiftResponse(BaseModel):
     id: int
-    user_id: str
     start_time: datetime
     end_time: datetime
     start_lat: float
