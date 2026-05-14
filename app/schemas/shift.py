@@ -101,7 +101,7 @@ class BusIn(BaseModel):
 
 
 class ShiftCreate(BaseModel):
-    user_id: int
+    user_id: str
     start_time: datetime
     end_time: datetime
     start_lat: float
@@ -258,7 +258,6 @@ class ShiftCreatedResponse(BaseModel):
 
 class ShiftResponse(BaseModel):
     id: int
-    user_id: str
     start_time: datetime
     end_time: datetime
     start_lat: float
@@ -266,6 +265,31 @@ class ShiftResponse(BaseModel):
     end_lat: float
     end_lon: float
     device_id: str
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class SelfieResponse(BaseModel):
+    id: int
+    shift_id: int
+    timestamp: datetime
+    lat: float
+    lon: float
+    photo: str
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class PhotoResponse(BaseModel):
+    id: int
+    inspection_id: int
+    timestamp: datetime
+    lat: float
+    lon: float
+    inspection_item: str
+    photo: str
     created_at: datetime
 
     model_config = {"from_attributes": True}

@@ -24,6 +24,7 @@ from app.models.operations import (
     InspectionPhoto,
     UserVerificationPhoto,
 )
+from app.models.photo import Photo, Selfie
 from app.schemas.operations import (
     ErrorResponse,
     InspectionPhotoResponse,
@@ -31,6 +32,7 @@ from app.schemas.operations import (
     MessageResponse,
     PhotoUploadResponse,
 )
+from app.schemas.shift import PhotoResponse, SelfieResponse
 
 image_router = APIRouter()
 
@@ -105,6 +107,7 @@ def _is_internal(operator) -> bool:
         **_500,
         413: {"model": ErrorResponse, "description": "Image exceeds size limit"},
     },
+    include_in_schema=False,
 )
 async def upload_inspection_photo(
     file: UploadFile = File(...),
@@ -175,6 +178,7 @@ async def upload_inspection_photo(
         **_500,
         413: {"model": ErrorResponse, "description": "Image exceeds size limit"},
     },
+    include_in_schema=False,
 )
 async def upload_user_verification_photo(
     file: UploadFile = File(...),
@@ -235,6 +239,7 @@ async def upload_user_verification_photo(
     "/inspection/{inspection_id}/photos",
     response_model=InspectionPhotosEnvelope,
     responses={**_401, **_500},
+    include_in_schema=False,
 )
 async def get_inspection_photos(
     inspection_id: int,
@@ -292,6 +297,7 @@ async def get_inspection_photos(
             }
         },
     },
+    include_in_schema=False,
 )
 async def download_photo(
     photo_id: int,
@@ -327,4 +333,124 @@ async def download_photo(
                 "message": MessageResponse.fail,
                 "detail": f"Error downloading photo: {exc}",
             },
+        )
+
+
+# ---------------------------------------------------------------------------
+# Shift selfies
+# ---------------------------------------------------------------------------
+
+
+@image_router.get(
+    "/selfies",
+    response_model=List[SelfieResponse],
+    responses={**_401, **_500},
+    summary="Get all selfies",
+)
+async def get_all_selfies(
+    current_user: TokenData = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Return every selfie record across all shifts."""
+    try:
+        selfies = db.query(Selfie).order_by(Selfie.created_at.desc()).all()
+        return [SelfieResponse.model_validate(s) for s in selfies]
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving selfies: {exc}",
+        )
+
+
+@image_router.get(
+    "/selfies/shift/{shift_id}",
+    response_model=List[SelfieResponse],
+    responses={**_401, **_404, **_500},
+    summary="Get selfies by shift ID",
+)
+async def get_selfies_by_shift(
+    shift_id: int,
+    current_user: TokenData = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Return all selfies recorded during a specific shift."""
+    try:
+        selfies = (
+            db.query(Selfie)
+            .filter(Selfie.shift_id == shift_id)
+            .order_by(Selfie.timestamp)
+            .all()
+        )
+        if not selfies:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No selfies found for shift {shift_id}",
+            )
+        return [SelfieResponse.model_validate(s) for s in selfies]
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving selfies: {exc}",
+        )
+
+
+# ---------------------------------------------------------------------------
+# Inspection photos
+# ---------------------------------------------------------------------------
+
+
+@image_router.get(
+    "/photos",
+    response_model=List[PhotoResponse],
+    responses={**_401, **_500},
+    summary="Get all inspection photos",
+)
+async def get_all_photos(
+    current_user: TokenData = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Return every inspection photo record across all inspections."""
+    try:
+        photos = db.query(Photo).order_by(Photo.created_at.desc()).all()
+        return [PhotoResponse.model_validate(p) for p in photos]
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving photos: {exc}",
+        )
+
+
+@image_router.get(
+    "/photos/inspection/{inspection_id}",
+    response_model=List[PhotoResponse],
+    responses={**_401, **_404, **_500},
+    summary="Get inspection photos by inspection ID",
+)
+async def get_photos_by_inspection(
+    inspection_id: int,
+    current_user: TokenData = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Return all photos attached to a specific bus inspection."""
+    try:
+        photos = (
+            db.query(Photo)
+            .filter(Photo.inspection_id == inspection_id)
+            .order_by(Photo.timestamp)
+            .all()
+        )
+        if not photos:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No photos found for inspection {inspection_id}",
+            )
+        return [PhotoResponse.model_validate(p) for p in photos]
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving photos: {exc}",
         )

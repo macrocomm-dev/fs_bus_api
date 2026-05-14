@@ -15,6 +15,7 @@ from app.schemas.shift import (
     ShiftCreate,
     ShiftCreateMeta,
     ShiftCreatedResponse,
+    ShiftResponse,
     ErrorResponse,
     PhotoIn,
     SelfieIn,
@@ -30,6 +31,7 @@ _401 = {
     }
 }
 _403 = {403: {"model": ErrorResponse, "description": "Forbidden – insufficient role"}}
+_404 = {404: {"model": ErrorResponse, "description": "Resource not found"}}
 _422 = {
     422: {
         "model": ErrorResponse,
@@ -55,8 +57,16 @@ async def create_shift(
     try:
         completed_shifts = []
         for shift_data in shifts:
+            user_id = (
+                db.query(AppUser).filter(AppUser.user_id == shift_data.user_id).first()
+            )
+            if user_id is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"User {shift_data.user_id} not found",
+                )
             create_shif = Shift(
-                user_id=shift_data.user_id,
+                user_id=user_id.user_id,
                 start_time=shift_data.start_time,
                 end_time=shift_data.end_time,
                 start_lat=shift_data.start_lat,
@@ -194,11 +204,13 @@ async def add_inspections(shift_id: int, buses: List[BusIn], db: Session):
 # ---------------------------------------------------------------------------
 
 
+# We are hiding this endpoint for now but might need it later
 @monitor_router.post(
     "/create_shift_multipart/",
     status_code=201,
     response_model=ShiftCreatedResponse,
     responses={**_401, **_422, **_500},
+    include_in_schema=False,
 )
 async def create_shift_multipart(
     request: Request,
@@ -314,4 +326,54 @@ async def create_shift_multipart(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An error occurred while creating the shift: {str(e)}",
+        )
+
+
+@monitor_router.get(
+    "/shifts",
+    response_model=List[ShiftResponse],
+    responses={**_401, **_500},
+    summary="Get all shifts",
+)
+async def get_all_shifts(
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    """Return all shifts ordered by most recent first."""
+    try:
+        shifts = db.query(Shift).order_by(Shift.created_at.desc()).all()
+        return [ShiftResponse.model_validate(s) for s in shifts]
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving shifts: {exc}",
+        )
+
+
+@monitor_router.get(
+    "/shifts/{shift_id}",
+    response_model=ShiftResponse,
+    responses={**_401, **_404, **_500},
+    summary="Get a single shift by ID",
+)
+async def get_shift_by_id(
+    shift_id: int,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    """Return a single shift by its ID."""
+    try:
+        shift = db.query(Shift).filter(Shift.id == shift_id).first()
+        if shift is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Shift {shift_id} not found",
+            )
+        return ShiftResponse.model_validate(shift)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving shift: {exc}",
         )
