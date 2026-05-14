@@ -252,7 +252,7 @@ class MessageResponse(str, Enum):
 
 
 class ShiftCreatedResponse(BaseModel):
-    shift_id: int
+    status: int
     message: MessageResponse
 
 
