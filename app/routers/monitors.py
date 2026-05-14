@@ -47,35 +47,39 @@ _500 = {500: {"model": ErrorResponse, "description": "Internal server error"}}
     responses={**_401, **_422, **_500},
 )
 async def create_shift(
-    shift_data: ShiftCreate,
+    shifts: List[ShiftCreate],
     db: Session = Depends(get_db),
     current_user: TokenData = Depends(get_current_user),
 ):
 
     try:
-        create_shif = Shift(
-            user_id=shift_data.user_id,
-            start_time=shift_data.start_time,
-            end_time=shift_data.end_time,
-            start_lat=shift_data.start_lat,
-            start_lon=shift_data.start_lon,
-            end_lat=shift_data.end_lat,
-            end_lon=shift_data.end_lon,
-            device_id=shift_data.device_id,
-        )
-
-        db.add(create_shif)
-        db.commit()
-        db.refresh(create_shif)
-        selfies = await add_shift_selfies(create_shif.id, shift_data.selfies, db)
-        inspections = await add_inspections(create_shif.id, shift_data.busses, db)
-        if selfies and inspections:
-            return ShiftCreatedResponse(shift_id=create_shif.id, message="success")
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="An error occurred while processing selfies or inspections",
+        completed_shifts = []
+        for shift_data in shifts:
+            create_shif = Shift(
+                user_id=shift_data.user_id,
+                start_time=shift_data.start_time,
+                end_time=shift_data.end_time,
+                start_lat=shift_data.start_lat,
+                start_lon=shift_data.start_lon,
+                end_lat=shift_data.end_lat,
+                end_lon=shift_data.end_lon,
+                device_id=shift_data.device_id,
             )
+
+            db.add(create_shif)
+            db.commit()
+            db.refresh(create_shif)
+            selfies = await add_shift_selfies(create_shif.id, shift_data.selfies, db)
+            inspections = await add_inspections(create_shif.id, shift_data.busses, db)
+            if selfies and inspections:
+                completed_shifts.append(
+                    ShiftCreatedResponse(status=201, message="success")
+                )
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="An error occurred while processing selfies or inspections",
+                )
 
     except Exception as e:
         db.rollback()
@@ -83,10 +87,13 @@ async def create_shift(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An error occurred while creating the shift: {str(e)}",
         )
+    return {"status": 201, "message": "success"}
 
 
 # We add selfies captured during the shift to the selfies table, linked to the shift_id
 async def add_shift_selfies(shift_id: int, selfies: List[SelfieIn], db: Session):
+    if not selfies:
+        return True  # No selfies to add, but not an error
 
     try:
         for selfie in selfies:
@@ -109,6 +116,8 @@ async def add_shift_selfies(shift_id: int, selfies: List[SelfieIn], db: Session)
 
 
 async def add_inspections(shift_id: int, buses: List[BusIn], db: Session):
+    if not buses:
+        return True  # No inspections to add, but not an error
 
     try:
         for bus in buses:
@@ -153,6 +162,7 @@ async def add_inspections(shift_id: int, buses: List[BusIn], db: Session):
                 db.refresh(new_inspection)
 
                 # Add photos for this inspection
+
                 for photo in inspection.photos:
                     new_photo = Photo(
                         inspection_id=new_inspection.id,
