@@ -194,11 +194,13 @@ async def add_inspections(shift_id: int, buses: List[BusIn], db: Session):
 # ---------------------------------------------------------------------------
 
 
+# We are hiding this endpoint for now but might need it later
 @monitor_router.post(
     "/create_shift_multipart/",
     status_code=201,
     response_model=ShiftCreatedResponse,
     responses={**_401, **_422, **_500},
+    include_in_schema=False,
 )
 async def create_shift_multipart(
     request: Request,

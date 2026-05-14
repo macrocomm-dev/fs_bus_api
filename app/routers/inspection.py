@@ -110,6 +110,7 @@ def _is_internal(operator) -> bool:
     status_code=status.HTTP_201_CREATED,
     response_model=InspectionCreatedResponse,
     responses={**_401, **_403, **_500},
+    include_in_schema=False,
 )
 async def create_inspection(
     payload: InspectionCreate = Depends(inspection_create_form),
@@ -190,6 +191,7 @@ async def create_inspection(
     status_code=status.HTTP_201_CREATED,
     response_model=InspectionCheckCreatedResponse,
     responses={**_401, **_500},
+    include_in_schema=False,
 )
 async def add_inspection_check(
     payload: InspectionCheckCreate,
@@ -236,6 +238,7 @@ async def add_inspection_check(
     status_code=status.HTTP_201_CREATED,
     response_model=PassengerCountCreatedResponse,
     responses={**_401, **_500},
+    include_in_schema=False,
 )
 async def add_passenger_count(
     payload: PassengerCountCreate,
@@ -281,6 +284,7 @@ async def add_passenger_count(
     "/passenger_count/{count_id}",
     response_model=PassengerCountEnvelope,
     responses={**_401, **_404, **_500},
+    include_in_schema=False,
 )
 async def get_passenger_count(
     count_id: int,
@@ -323,6 +327,7 @@ async def get_passenger_count(
     "/passenger_count_user/{user_id}",
     response_model=PassengerCountEnvelope,
     responses={**_401, **_404, **_500},
+    include_in_schema=False,
 )
 async def get_passenger_count_user_user(
     user_id: int,
@@ -449,6 +454,7 @@ async def get_all_inspections(
     "/inspection/{inspection_id}/checks",
     response_model=InspectionChecksEnvelope,
     responses={**_401, **_500},
+    include_in_schema=False,
 )
 async def get_inspection_checks(
     inspection_id: int,

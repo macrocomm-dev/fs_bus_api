@@ -269,3 +269,28 @@ class ShiftResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class SelfieResponse(BaseModel):
+    id: int
+    shift_id: int
+    timestamp: datetime
+    lat: float
+    lon: float
+    photo: str
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class PhotoResponse(BaseModel):
+    id: int
+    inspection_id: int
+    timestamp: datetime
+    lat: float
+    lon: float
+    inspection_item: str
+    photo: str
+    created_at: datetime
+
+    model_config = {"from_attributes": True}

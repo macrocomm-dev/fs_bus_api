@@ -16,7 +16,9 @@ from app.schemas.authentication import UserLoginRequest, UserLoginResponse
 authentication_router = APIRouter()
 
 
-@authentication_router.post("/get_token", response_model=UserLoginResponse)
+@authentication_router.post(
+    "/get_token", response_model=UserLoginResponse, include_in_schema=False
+)
 async def get_token(
     payload: UserLoginRequest,
     db: Session = Depends(get_db),
