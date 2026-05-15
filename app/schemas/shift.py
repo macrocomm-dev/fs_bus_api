@@ -337,10 +337,25 @@ class BusInspectionResponse(BaseModel):
 class DateRangeLimitQueryParams:
     def __init__(
         self,
-        daterange: Optional[str] = Query(
+        start_date: Optional[str] = Query(
             None,
-            description="Date range filter in the format 'YYYY-MM-DD,YYYY-MM-DD'",
-            example="2026-05-01,2026-05-15",
+            description="Start date filter in 'YYYY-MM-DD' format",
+            example="2026-05-01",
+        ),
+        end_date: Optional[str] = Query(
+            None,
+            description="End date filter in 'YYYY-MM-DD' format",
+            example="2026-05-15",
+        ),
+        start_time: Optional[str] = Query(
+            None,
+            description="Start time filter in 'HH:MM:SS' format (defaults to 00:00:00 when start_date is set)",
+            example="08:00:00",
+        ),
+        end_time: Optional[str] = Query(
+            None,
+            description="End time filter in 'HH:MM:SS' format (defaults to 23:59:59 when end_date is set)",
+            example="16:00:00",
         ),
         limit: Optional[int] = Query(
             None,
@@ -348,5 +363,8 @@ class DateRangeLimitQueryParams:
             example=100,
         ),
     ):
-        self.daterange = daterange
+        self.start_date = start_date
+        self.end_date = end_date
+        self.start_time = start_time
+        self.end_time = end_time
         self.limit = limit

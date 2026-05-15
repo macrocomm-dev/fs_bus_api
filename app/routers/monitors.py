@@ -342,18 +342,43 @@ async def get_all_shifts(
     try:
         query = db.query(Shift).order_by(Shift.created_at.desc())
 
-        if params.daterange:
+        if params.start_date or params.end_date:
             try:
-                start_date, end_date = map(
-                    lambda d: datetime.datetime.strptime(d, "%Y-%m-%d"),
-                    params.daterange.split(","),
-                )
-                query = query.filter(Shift.created_at.between(start_date, end_date))
+                start_dt = None
+                end_dt = None
+                if params.start_date:
+                    start_dt = datetime.datetime.strptime(
+                        params.start_date.strip(), "%Y-%m-%d"
+                    )
+                    if params.start_time:
+                        t = datetime.datetime.strptime(
+                            params.start_time.strip(), "%H:%M:%S"
+                        )
+                        start_dt = start_dt.replace(
+                            hour=t.hour, minute=t.minute, second=t.second
+                        )
+                if params.end_date:
+                    end_dt = datetime.datetime.strptime(
+                        params.end_date.strip(), "%Y-%m-%d"
+                    )
+                    if params.end_time:
+                        t = datetime.datetime.strptime(
+                            params.end_time.strip(), "%H:%M:%S"
+                        )
+                        end_dt = end_dt.replace(
+                            hour=t.hour, minute=t.minute, second=t.second
+                        )
+                    else:
+                        end_dt = end_dt.replace(hour=23, minute=59, second=59)
             except ValueError:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Invalid date range format. Use 'YYYY-MM-DD,YYYY-MM-DD'.",
+                    detail="start_date/end_date must be 'YYYY-MM-DD'; start_time/end_time must be 'HH:MM:SS'",
                 )
+            if start_dt:
+                query = query.filter(Shift.created_at >= start_dt)
+            if end_dt:
+                query = query.filter(Shift.created_at <= end_dt)
 
         if params.limit:
             query = query.limit(params.limit)
@@ -368,29 +393,34 @@ async def get_all_shifts(
 
 
 @monitor_router.get(
-    "/shifts/{shift_id}",
-    response_model=ShiftResponse,
+    "/shifts/by_ids",
+    response_model=List[ShiftResponse],
     responses={**_401, **_404, **_500},
-    summary="Get a single shift by ID",
+    summary="Get shifts by one or more IDs",
 )
-async def get_shift_by_id(
-    shift_id: int,
+async def get_shifts_by_ids(
+    ids: List[int] = Query(..., description="One or more shift IDs to retrieve"),
     db: Session = Depends(get_db),
     current_user: TokenData = Depends(get_current_user),
 ):
-    """Return a single shift by its ID."""
+    """Return shifts matching the provided IDs. At least one ID is required."""
+    if not ids:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="At least one shift ID must be provided",
+        )
     try:
-        shift = db.query(Shift).filter(Shift.id == shift_id).first()
-        if shift is None:
+        shifts = db.query(Shift).filter(Shift.id.in_(ids)).all()
+        if not shifts:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Shift {shift_id} not found",
+                detail="No shifts found for the provided IDs",
             )
-        return ShiftResponse.model_validate(shift)
+        return [ShiftResponse.model_validate(s) for s in shifts]
     except HTTPException:
         raise
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error retrieving shift: {exc}",
+            detail=f"Error retrieving shifts: {exc}",
         )
