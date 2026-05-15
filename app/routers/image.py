@@ -1,5 +1,5 @@
-from datetime import datetime
-from typing import List, Optional
+from datetime import date, datetime, time
+from typing import Annotated, List, Optional
 
 from fastapi import (
     Depends,
@@ -33,7 +33,7 @@ from app.schemas.operations import (
     MessageResponse,
     PhotoUploadResponse,
 )
-from app.schemas.shift import DateRangeLimitQueryParams, PhotoResponse, SelfieResponse
+from app.schemas.shift import DateRangeLimitQueryParams, PhotoResponse, SelfieResponse, date_range_params
 
 image_router = APIRouter()
 
@@ -351,42 +351,23 @@ async def download_photo(
     summary="Get all selfies with optional date range and limit",
 )
 async def get_all_selfies(
-    params: DateRangeLimitQueryParams = Depends(),
+    params: DateRangeLimitQueryParams = Depends(date_range_params),
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Return every selfie record across all shifts."""
     try:
         query = db.query(Selfie).order_by(Selfie.timestamp.desc())
-        if params.start_date or params.end_date:
-            try:
-                start_dt = None
-                end_dt = None
-                if params.start_date:
-                    start_dt = datetime.strptime(params.start_date.strip(), "%Y-%m-%d")
-                    if params.start_time:
-                        t = datetime.strptime(params.start_time.strip(), "%H:%M:%S")
-                        start_dt = start_dt.replace(
-                            hour=t.hour, minute=t.minute, second=t.second
-                        )
-                if params.end_date:
-                    end_dt = datetime.strptime(params.end_date.strip(), "%Y-%m-%d")
-                    if params.end_time:
-                        t = datetime.strptime(params.end_time.strip(), "%H:%M:%S")
-                        end_dt = end_dt.replace(
-                            hour=t.hour, minute=t.minute, second=t.second
-                        )
-                    else:
-                        end_dt = end_dt.replace(hour=23, minute=59, second=59)
-            except ValueError:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="start_date/end_date must be 'YYYY-MM-DD'; start_time/end_time must be 'HH:MM:SS'",
-                )
-            if start_dt:
-                query = query.filter(Selfie.timestamp >= start_dt)
-            if end_dt:
-                query = query.filter(Selfie.timestamp <= end_dt)
+        if params.start_date:
+            start_dt = datetime.combine(
+                params.start_date, params.start_time or time.min
+            )
+            query = query.filter(Selfie.timestamp >= start_dt)
+        if params.end_date:
+            end_dt = datetime.combine(
+                params.end_date, params.end_time or time(23, 59, 59)
+            )
+            query = query.filter(Selfie.timestamp <= end_dt)
         if params.limit is not None:
             query = query.limit(params.limit)
         return [SelfieResponse.model_validate(s) for s in query.all()]
@@ -450,42 +431,23 @@ async def get_selfies_by_shift(
     summary="Get all inspection photos with optional date range and limit",
 )
 async def get_all_photos(
-    params: DateRangeLimitQueryParams = Depends(),
+    params: DateRangeLimitQueryParams = Depends(date_range_params),
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Return every inspection photo record across all inspections with optional date range and limit."""
     try:
         query = db.query(Photo).order_by(Photo.timestamp.desc())
-        if params.start_date or params.end_date:
-            try:
-                start_dt = None
-                end_dt = None
-                if params.start_date:
-                    start_dt = datetime.strptime(params.start_date.strip(), "%Y-%m-%d")
-                    if params.start_time:
-                        t = datetime.strptime(params.start_time.strip(), "%H:%M:%S")
-                        start_dt = start_dt.replace(
-                            hour=t.hour, minute=t.minute, second=t.second
-                        )
-                if params.end_date:
-                    end_dt = datetime.strptime(params.end_date.strip(), "%Y-%m-%d")
-                    if params.end_time:
-                        t = datetime.strptime(params.end_time.strip(), "%H:%M:%S")
-                        end_dt = end_dt.replace(
-                            hour=t.hour, minute=t.minute, second=t.second
-                        )
-                    else:
-                        end_dt = end_dt.replace(hour=23, minute=59, second=59)
-            except ValueError:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="start_date/end_date must be 'YYYY-MM-DD'; start_time/end_time must be 'HH:MM:SS'",
-                )
-            if start_dt:
-                query = query.filter(Photo.timestamp >= start_dt)
-            if end_dt:
-                query = query.filter(Photo.timestamp <= end_dt)
+        if params.start_date:
+            start_dt = datetime.combine(
+                params.start_date, params.start_time or time.min
+            )
+            query = query.filter(Photo.timestamp >= start_dt)
+        if params.end_date:
+            end_dt = datetime.combine(
+                params.end_date, params.end_time or time(23, 59, 59)
+            )
+            query = query.filter(Photo.timestamp <= end_dt)
         if params.limit is not None:
             query = query.limit(params.limit)
         return [PhotoResponse.model_validate(p) for p in query.all()]

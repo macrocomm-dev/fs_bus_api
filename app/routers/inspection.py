@@ -1,5 +1,5 @@
-from datetime import datetime
-from typing import List, Optional
+from datetime import date, datetime, time
+from typing import Annotated, List, Optional
 
 from fastapi import (
     Depends,
@@ -26,7 +26,11 @@ from app.models.operations import (
     InspectionPhoto,
     PassengerCount,
 )
-from app.schemas.shift import BusInspectionResponse, DateRangeLimitQueryParams
+from app.schemas.shift import (
+    BusInspectionResponse,
+    DateRangeLimitQueryParams,
+    date_range_params,
+)
 
 ALLOWED_IMAGE_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
 MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
@@ -284,35 +288,12 @@ async def add_passenger_count(
 
 def _apply_date_range_limit(query, params: DateRangeLimitQueryParams):
     """Apply optional date-range and limit filters to a BusInspection query."""
-    if params.start_date or params.end_date:
-        try:
-            start_dt = None
-            end_dt = None
-            if params.start_date:
-                start_dt = datetime.strptime(params.start_date.strip(), "%Y-%m-%d")
-                if params.start_time:
-                    t = datetime.strptime(params.start_time.strip(), "%H:%M:%S")
-                    start_dt = start_dt.replace(
-                        hour=t.hour, minute=t.minute, second=t.second
-                    )
-            if params.end_date:
-                end_dt = datetime.strptime(params.end_date.strip(), "%Y-%m-%d")
-                if params.end_time:
-                    t = datetime.strptime(params.end_time.strip(), "%H:%M:%S")
-                    end_dt = end_dt.replace(
-                        hour=t.hour, minute=t.minute, second=t.second
-                    )
-                else:
-                    end_dt = end_dt.replace(hour=23, minute=59, second=59)
-        except ValueError:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="start_date/end_date must be 'YYYY-MM-DD'; start_time/end_time must be 'HH:MM:SS'",
-            )
-        if start_dt:
-            query = query.filter(BusInspection.inspection_time >= start_dt)
-        if end_dt:
-            query = query.filter(BusInspection.inspection_time <= end_dt)
+    if params.start_date:
+        start_dt = datetime.combine(params.start_date, params.start_time or time.min)
+        query = query.filter(BusInspection.inspection_time >= start_dt)
+    if params.end_date:
+        end_dt = datetime.combine(params.end_date, params.end_time or time(23, 59, 59))
+        query = query.filter(BusInspection.inspection_time <= end_dt)
     if params.limit is not None:
         query = query.limit(params.limit)
     return query
@@ -325,7 +306,7 @@ def _apply_date_range_limit(query, params: DateRangeLimitQueryParams):
     summary="Get all bus inspections with optional date range and limit",
 )
 async def get_all_bus_inspections(
-    params: DateRangeLimitQueryParams = Depends(),
+    params: DateRangeLimitQueryParams = Depends(date_range_params),
     db: Session = Depends(get_db),
     current_user: TokenData = Depends(get_current_user),
 ):
@@ -349,10 +330,10 @@ async def get_all_bus_inspections(
     summary="Get bus inspections by shift IDs with optional date range and limit",
 )
 async def get_bus_inspections_by_shift(
+    params: DateRangeLimitQueryParams = Depends(date_range_params),
     shift_ids: List[int] = Query(
         ..., description="One or more shift IDs to retrieve inspections for"
     ),
-    params: DateRangeLimitQueryParams = Depends(),
     db: Session = Depends(get_db),
     current_user: TokenData = Depends(get_current_user),
 ):
@@ -387,11 +368,11 @@ async def get_bus_inspections_by_shift(
     summary="Get bus inspections by bus IDs/VINs with optional date range and limit",
 )
 async def get_bus_inspections_by_bus(
+    params: DateRangeLimitQueryParams = Depends(date_range_params),
     bus_ids: List[str] = Query(
         ...,
         description="One or more vehicle VINs / bus IDs to retrieve inspections for",
     ),
-    params: DateRangeLimitQueryParams = Depends(),
     db: Session = Depends(get_db),
     current_user: TokenData = Depends(get_current_user),
 ):
@@ -426,11 +407,11 @@ async def get_bus_inspections_by_bus(
     summary="Get bus inspections by user IDs with optional date range and limit",
 )
 async def get_bus_inspections_by_user(
+    params: DateRangeLimitQueryParams = Depends(date_range_params),
     user_ids: List[str] = Query(
         ...,
         description="One or more Firebase UIDs of monitors who recorded the inspections",
     ),
-    params: DateRangeLimitQueryParams = Depends(),
     db: Session = Depends(get_db),
     current_user: TokenData = Depends(get_current_user),
 ):

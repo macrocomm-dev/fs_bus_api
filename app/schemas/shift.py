@@ -1,8 +1,8 @@
-from datetime import datetime
+from datetime import date, datetime, time
 from enum import Enum
 from typing import List, Optional
-from fastapi.params import Query
-from pydantic import BaseModel
+from fastapi import Query
+from pydantic import BaseModel, Field
 
 
 class ErrorResponse(BaseModel):
@@ -82,7 +82,7 @@ class InspectionIn(BaseModel):
 
 class BusIn(BaseModel):
     bus_id: str  # maps to bus_id / vin
-    bus_number: str  # maps to fleet_number
+    bus_number: Optional[str]  # maps to fleet_number
     # Bus / driver identification
     license_disk_scan_succeeded: Optional[bool] = None
     destination_displayed: Optional[bool] = None
@@ -90,7 +90,7 @@ class BusIn(BaseModel):
     prdp_expiry_date: Optional[datetime] = None
     driver_identified: Optional[bool] = None
     driver_fail_reason: Optional[str] = None
-    driver: Optional[str] = None
+    driver_name: Optional[str] = None
     inspections: list[InspectionIn]
 
 
@@ -218,7 +218,7 @@ class InspectionMetaIn(BaseModel):
 
 class BusMetaIn(BaseModel):
     bus_id: str
-    bus_number: str
+    bus_number: Optional[str] = None  # maps to fleet_number
     # Bus / driver identification
     license_disk_scan_succeeded: Optional[bool] = None
     destination_displayed: Optional[bool] = None
@@ -226,7 +226,7 @@ class BusMetaIn(BaseModel):
     prdp_expiry_date: Optional[datetime] = None
     driver_identified: Optional[bool] = None
     driver_fail_reason: Optional[str] = None
-    driver: Optional[str] = None
+    driver_name: Optional[str] = None
     inspections: list[InspectionMetaIn] = []
 
 
@@ -329,42 +329,66 @@ class BusInspectionResponse(BaseModel):
     prdp_expiry_date: Optional[datetime] = None
     driver_identified: Optional[bool] = None
     driver_fail_reason: Optional[str] = None
-    driver: Optional[str] = None
+    driver_name: Optional[str] = None
 
     model_config = {"from_attributes": True}
 
 
-class DateRangeLimitQueryParams:
-    def __init__(
-        self,
-        start_date: Optional[str] = Query(
-            None,
-            description="Start date filter in 'YYYY-MM-DD' format",
-            example="2026-05-01",
-        ),
-        end_date: Optional[str] = Query(
-            None,
-            description="End date filter in 'YYYY-MM-DD' format",
-            example="2026-05-15",
-        ),
-        start_time: Optional[str] = Query(
-            None,
-            description="Start time filter in 'HH:MM:SS' format (defaults to 00:00:00 when start_date is set)",
-            example="08:00:00",
-        ),
-        end_time: Optional[str] = Query(
-            None,
-            description="End time filter in 'HH:MM:SS' format (defaults to 23:59:59 when end_date is set)",
-            example="16:00:00",
-        ),
-        limit: Optional[int] = Query(
-            None,
-            description="Maximum number of records to return",
-            example=100,
-        ),
-    ):
-        self.start_date = start_date
-        self.end_date = end_date
-        self.start_time = start_time
-        self.end_time = end_time
-        self.limit = limit
+class DateRangeLimitQueryParams(BaseModel):
+    start_date: Optional[date] = Field(
+        None,
+        description="Start date filter",
+        examples=["2026-05-01"],
+    )
+    end_date: Optional[date] = Field(
+        None,
+        description="End date filter",
+        examples=["2026-05-15"],
+    )
+    start_time: Optional[time] = Field(
+        None,
+        description="Start time filter (defaults to 00:00:00 when start_date is set)",
+        examples=["08:00:00"],
+    )
+    end_time: Optional[time] = Field(
+        None,
+        description="End time filter (defaults to 23:59:59 when end_date is set)",
+        examples=["16:00:00"],
+    )
+    limit: Optional[int] = Field(
+        100,
+        description="Maximum number of records to return",
+        examples=[100],
+    )
+
+    model_config = {"from_attributes": True}
+
+
+def date_range_params(
+    start_date: Optional[date] = Query(
+        None, description="Start date filter", examples=["2026-05-01"]
+    ),
+    end_date: Optional[date] = Query(
+        None, description="End date filter", examples=["2026-05-15"]
+    ),
+    start_time: Optional[time] = Query(
+        None,
+        description="Start time filter (defaults to 00:00:00 when start_date is set)",
+        examples=["08:00:00"],
+    ),
+    end_time: Optional[time] = Query(
+        None,
+        description="End time filter (defaults to 23:59:59 when end_date is set)",
+        examples=["16:00:00"],
+    ),
+    limit: Optional[int] = Query(
+        100, description="Maximum number of records to return", examples=[100]
+    ),
+) -> DateRangeLimitQueryParams:
+    return DateRangeLimitQueryParams(
+        start_date=start_date,
+        end_date=end_date,
+        start_time=start_time,
+        end_time=end_time,
+        limit=limit,
+    )

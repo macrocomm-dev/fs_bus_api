@@ -1,5 +1,6 @@
 import datetime
-from typing import List, Optional
+from datetime import date, time
+from typing import Annotated, List, Optional
 
 import base64
 from fastapi import Depends, HTTPException, APIRouter, Query, Request, Form, status
@@ -22,6 +23,7 @@ from app.schemas.shift import (
     SelfieIn,
     BusIn,
     DateRangeLimitQueryParams,
+    date_range_params,
 )
 
 monitor_router = APIRouter()
@@ -163,7 +165,7 @@ async def add_inspections(shift_id: int, user_id: str, buses: List[BusIn], db: S
                     prdp_expiry_date=bus.prdp_expiry_date,
                     driver_identified=bus.driver_identified,
                     driver_fail_reason=bus.driver_fail_reason,
-                    driver=bus.driver,
+                    driver_name=bus.driver_name,
                 )
                 db.add(new_inspection)
                 db.flush()  # Get the ID of the newly created inspection
@@ -334,51 +336,24 @@ async def create_shift_multipart(
     summary="Get all shifts with optional date range and limit",
 )
 async def get_all_shifts(
+    params: DateRangeLimitQueryParams = Depends(date_range_params),
     db: Session = Depends(get_db),
-    params: DateRangeLimitQueryParams = Depends(),
     current_user: TokenData = Depends(get_current_user),
 ):
     """Return all shifts ordered by most recent first."""
     try:
         query = db.query(Shift).order_by(Shift.created_at.desc())
 
-        if params.start_date or params.end_date:
-            try:
-                start_dt = None
-                end_dt = None
-                if params.start_date:
-                    start_dt = datetime.datetime.strptime(
-                        params.start_date.strip(), "%Y-%m-%d"
-                    )
-                    if params.start_time:
-                        t = datetime.datetime.strptime(
-                            params.start_time.strip(), "%H:%M:%S"
-                        )
-                        start_dt = start_dt.replace(
-                            hour=t.hour, minute=t.minute, second=t.second
-                        )
-                if params.end_date:
-                    end_dt = datetime.datetime.strptime(
-                        params.end_date.strip(), "%Y-%m-%d"
-                    )
-                    if params.end_time:
-                        t = datetime.datetime.strptime(
-                            params.end_time.strip(), "%H:%M:%S"
-                        )
-                        end_dt = end_dt.replace(
-                            hour=t.hour, minute=t.minute, second=t.second
-                        )
-                    else:
-                        end_dt = end_dt.replace(hour=23, minute=59, second=59)
-            except ValueError:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="start_date/end_date must be 'YYYY-MM-DD'; start_time/end_time must be 'HH:MM:SS'",
-                )
-            if start_dt:
-                query = query.filter(Shift.created_at >= start_dt)
-            if end_dt:
-                query = query.filter(Shift.created_at <= end_dt)
+        if params.start_date:
+            start_dt = datetime.datetime.combine(
+                params.start_date, params.start_time or time.min
+            )
+            query = query.filter(Shift.created_at >= start_dt)
+        if params.end_date:
+            end_dt = datetime.datetime.combine(
+                params.end_date, params.end_time or time(23, 59, 59)
+            )
+            query = query.filter(Shift.created_at <= end_dt)
 
         if params.limit:
             query = query.limit(params.limit)
