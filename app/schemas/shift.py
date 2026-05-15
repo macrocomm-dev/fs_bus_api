@@ -1,8 +1,6 @@
-from __future__ import annotations
-
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import List, Optional
 from fastapi.params import Query
 from pydantic import BaseModel
 
@@ -336,14 +334,19 @@ class BusInspectionResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class DateRangeLimitQueryParams(BaseModel):
-    daterange: Optional[str] = Query(
-        None,
-        description="Optional date range filter in the format 'YYYY-MM-DD,YYYY-MM-DD'",
-        example="2024-01-01,2024-01-31",
-    )
-    limit: Optional[int] = Query(
-        None,
-        description="Optional limit on the number of shifts returned",
-        example=100,
-    )
+class DateRangeLimitQueryParams:
+    def __init__(
+        self,
+        daterange: Optional[str] = Query(
+            None,
+            description="Date range filter in the format 'YYYY-MM-DD,YYYY-MM-DD'",
+            example="2026-05-01,2026-05-15",
+        ),
+        limit: Optional[int] = Query(
+            None,
+            description="Maximum number of records to return",
+            example=100,
+        ),
+    ):
+        self.daterange = daterange
+        self.limit = limit

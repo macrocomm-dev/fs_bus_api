@@ -7,6 +7,7 @@ from fastapi import (
     Form,
     HTTPException,
     APIRouter,
+    Path,
     Query,
     UploadFile,
     status,
@@ -308,6 +309,7 @@ def _apply_date_range_limit(query, params: DateRangeLimitQueryParams):
     "/bus_inspections",
     response_model=List[BusInspectionResponse],
     responses={**_401, **_500},
+    summary="Get all bus inspections with optional date range and limit",
 )
 async def get_all_bus_inspections(
     params: DateRangeLimitQueryParams = Depends(),
@@ -331,9 +333,10 @@ async def get_all_bus_inspections(
     "/bus_inspections/by_shift/{shift_id}",
     response_model=List[BusInspectionResponse],
     responses={**_401, **_404, **_500},
+    summary="Get bus inspections by shift ID with optional date range and limit",
 )
 async def get_bus_inspections_by_shift(
-    shift_id: int,
+    shift_id: int = Path(description="ID of the shift to retrieve inspections for"),
     params: DateRangeLimitQueryParams = Depends(),
     db: Session = Depends(get_db),
     current_user: TokenData = Depends(get_current_user),
@@ -361,9 +364,10 @@ async def get_bus_inspections_by_shift(
     "/bus_inspections/by_bus/{bus_id}",
     response_model=List[BusInspectionResponse],
     responses={**_401, **_404, **_500},
+    summary="Get bus inspections by bus ID/Vin number with optional date range and limit",
 )
 async def get_bus_inspections_by_bus(
-    bus_id: str,
+    bus_id: str = Path(description="Vehicle VIN / bus_id to retrieve inspections for"),
     params: DateRangeLimitQueryParams = Depends(),
     db: Session = Depends(get_db),
     current_user: TokenData = Depends(get_current_user),
@@ -388,24 +392,27 @@ async def get_bus_inspections_by_bus(
 
 
 @inspection_router.get(
-    "/bus_inspections/by_user/{firebase_uid}",
+    "/bus_inspections/by_user/{user_id}",
     response_model=List[BusInspectionResponse],
     responses={**_401, **_404, **_500},
+    summary="Get bus inspections by user ID with optional date range and limit",
 )
 async def get_bus_inspections_by_user(
-    firebase_uid: str,
+    user_id: str = Path(
+        description="User ID of the monitor who recorded the inspections"
+    ),
     params: DateRangeLimitQueryParams = Depends(),
     db: Session = Depends(get_db),
     current_user: TokenData = Depends(get_current_user),
 ):
     try:
-        query = db.query(BusInspection).filter(BusInspection.user_id == firebase_uid)
+        query = db.query(BusInspection).filter(BusInspection.user_id == user_id)
         query = _apply_date_range_limit(query, params)
         results = query.all()
         if not results:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"No inspections found for user {firebase_uid}",
+                detail=f"No inspections found for user {user_id}",
             )
         return results
     except HTTPException:
@@ -413,5 +420,5 @@ async def get_bus_inspections_by_user(
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error fetching inspections for user {firebase_uid}: {exc}",
+            detail=f"Error fetching inspections for user {user_id}: {exc}",
         )
