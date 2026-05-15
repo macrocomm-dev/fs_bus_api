@@ -81,7 +81,7 @@ class BusInspection(Base):
     prdp_expiry_date: Mapped[datetime | None] = mapped_column(nullable=True)
     driver_identified: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     driver_fail_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
-    driver: Mapped[str | None] = mapped_column(String, nullable=True)
+    driver_name: Mapped[str | None] = mapped_column(String, nullable=True)
 
     # Relationships
     shift: Mapped[Shift] = relationship("Shift", back_populates="inspections")

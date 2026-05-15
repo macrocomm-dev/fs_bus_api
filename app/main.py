@@ -9,7 +9,12 @@ from html import escape
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, FastAPI, HTTPException, status
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request, status
+from fastapi.exception_handlers import (
+    http_exception_handler as _default_http_handler,
+    request_validation_exception_handler as _default_validation_handler,
+)
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -33,6 +38,7 @@ from app.firebase_identity import (
 )
 from app.database import get_db
 from app.routers.router_config import register_routers
+from app.services.audit_service import log_api_error
 from sqlalchemy.orm import Session
 
 # ---------------------------------------------------------------------------
@@ -51,6 +57,54 @@ app = FastAPI(
 
 def _get_cors_origins(settings: Settings) -> list[str]:
     return [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
+
+
+# ---------------------------------------------------------------------------
+# Exception handlers — log every error to audit.api_error_log
+# ---------------------------------------------------------------------------
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    await log_api_error(
+        request=request,
+        status_code=exc.status_code,
+        error_category="HTTP_ERROR",
+        error_message=str(exc.detail),
+        error_code=str(exc.status_code),
+        exc=exc,
+    )
+    return await _default_http_handler(request, exc)
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    await log_api_error(
+        request=request,
+        status_code=422,
+        error_category="VALIDATION_ERROR",
+        error_message="Request validation failed",
+        error_code="VALIDATION_ERROR",
+        validation_errors={"errors": exc.errors()},
+        exc=exc,
+    )
+    return await _default_validation_handler(request, exc)
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    await log_api_error(
+        request=request,
+        status_code=500,
+        error_category="INTERNAL_ERROR",
+        error_message=str(exc),
+        error_code=type(exc).__name__,
+        exc=exc,
+    )
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"},
+    )
 
 
 register_routers(app)
