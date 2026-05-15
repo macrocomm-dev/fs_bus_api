@@ -18,12 +18,14 @@ from app.auth import TokenData, get_current_user
 from app.database import get_db
 from app.models.app_auth import AppUser
 from app.models.master_data import Operator, Route, Vehicle
+from app.models.bus_inspection import BusInspection
 from app.models.operations import (
     Inspection,
     InspectionCheck,
     InspectionPhoto,
     PassengerCount,
 )
+from app.schemas.shift import BusInspectionResponse, DateRangeLimitQueryParams
 
 ALLOWED_IMAGE_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
 MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
@@ -279,218 +281,137 @@ async def add_passenger_count(
         )
 
 
-# Get passenger count details endpoint
-@inspection_router.get(
-    "/passenger_count/{count_id}",
-    response_model=PassengerCountEnvelope,
-    responses={**_401, **_404, **_500},
-    include_in_schema=False,
-)
-async def get_passenger_count(
-    count_id: int,
-    current_user: TokenData = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    try:
-        app_user, operator = await _resolve_app_user(current_user, db)
-
-        query = db.query(PassengerCount).filter(PassengerCount.count_id == count_id)
-        if not _is_internal(operator):
-            query = query.join(
-                Vehicle, PassengerCount.vehicle_id == Vehicle.vin
-            ).filter(Vehicle.operator_id == app_user.operator_id)
-        count = query.first()
-
-        if count is None:
+def _apply_date_range_limit(query, params: DateRangeLimitQueryParams):
+    """Apply optional date-range and limit filters to a BusInspection query."""
+    if params.daterange:
+        try:
+            start_str, end_str = params.daterange.split(",")
+            start_dt = datetime.strptime(start_str.strip(), "%Y-%m-%d")
+            end_dt = datetime.strptime(end_str.strip(), "%Y-%m-%d").replace(
+                hour=23, minute=59, second=59
+            )
+        except ValueError:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Passenger count not found",
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="daterange must be in the format 'YYYY-MM-DD,YYYY-MM-DD'",
             )
-        return {
-            "message": MessageResponse.success,
-            "passenger_count": PassengerCountResponse.model_validate(count),
-        }
-    except HTTPException:
-        raise
-    except Exception as exc:
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={
-                "message": MessageResponse.fail,
-                "detail": f"Error retrieving passenger count: {exc}",
-            },
+        query = query.filter(
+            BusInspection.inspection_time >= start_dt,
+            BusInspection.inspection_time <= end_dt,
         )
+    if params.limit is not None:
+        query = query.limit(params.limit)
+    return query
 
 
-# Get passenger counts for a user endpoint
 @inspection_router.get(
-    "/passenger_count_user/{user_id}",
-    response_model=PassengerCountEnvelope,
-    responses={**_401, **_404, **_500},
-    include_in_schema=False,
-)
-async def get_passenger_count_user_user(
-    user_id: int,
-    current_user: TokenData = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    try:
-        app_user, operator = await _resolve_app_user(current_user, db)
-
-        query = db.query(PassengerCount).filter(PassengerCount.user_id == user_id)
-        if not _is_internal(operator):
-            query = query.join(
-                Vehicle, PassengerCount.vehicle_id == Vehicle.vin
-            ).filter(Vehicle.operator_id == app_user.operator_id)
-        count = query.first()
-
-        if count is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Passenger count not found",
-            )
-        return {
-            "message": MessageResponse.success,
-            "passenger_count": PassengerCountResponse.model_validate(count),
-        }
-    except HTTPException:
-        raise
-    except Exception as exc:
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={
-                "message": MessageResponse.fail,
-                "detail": f"Error retrieving passenger count: {exc}",
-            },
-        )
-
-
-# Get inspection by id details endpoint
-@inspection_router.get(
-    "/inspection/{inspection_id}",
-    response_model=InspectionEnvelope,
-    responses={**_401, **_404, **_500},
-)
-async def get_inspection(
-    inspection_id: int,
-    current_user: TokenData = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    try:
-        app_user, operator = await _resolve_app_user(current_user, db)
-
-        query = db.query(Inspection).filter(Inspection.inspection_id == inspection_id)
-        if not _is_internal(operator):
-            query = query.join(Vehicle, Inspection.vehicle_id == Vehicle.vin).filter(
-                Vehicle.operator_id == app_user.operator_id
-            )
-        inspection = query.first()
-
-        if inspection is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Inspection not found"
-            )
-        return {
-            "message": MessageResponse.success,
-            "inspection": InspectionResponse.model_validate(inspection),
-        }
-    except HTTPException:
-        raise
-    except Exception as exc:
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={
-                "message": MessageResponse.fail,
-                "detail": f"Error retrieving inspection: {exc}",
-            },
-        )
-
-
-# Get all inspections endpoint
-@inspection_router.get(
-    "/inspections/",
-    response_model=InspectionListEnvelope,
-    responses={**_401, **_404, **_500},
-)
-async def get_all_inspections(
-    current_user: TokenData = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    try:
-        app_user, operator = await _resolve_app_user(current_user, db)
-
-        query = db.query(Inspection)
-        if not _is_internal(operator):
-            query = query.join(Vehicle, Inspection.vehicle_id == Vehicle.vin).filter(
-                Vehicle.operator_id == app_user.operator_id
-            )
-        inspections = query.all()
-
-        if not inspections:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="No inspections found"
-            )
-        return {
-            "message": MessageResponse.success,
-            "inspections": [
-                InspectionResponse.model_validate(inspection)
-                for inspection in inspections
-            ],
-        }
-    except HTTPException:
-        raise
-    except Exception as exc:
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={
-                "message": MessageResponse.fail,
-                "detail": f"Error retrieving inspections: {exc}",
-            },
-        )
-
-
-# Get inspection checks for an inspection endpoint
-@inspection_router.get(
-    "/inspection/{inspection_id}/checks",
-    response_model=InspectionChecksEnvelope,
+    "/bus_inspections",
+    response_model=List[BusInspectionResponse],
     responses={**_401, **_500},
-    include_in_schema=False,
 )
-async def get_inspection_checks(
-    inspection_id: int,
-    current_user: TokenData = Depends(get_current_user),
+async def get_all_bus_inspections(
+    params: DateRangeLimitQueryParams = Depends(),
     db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
 ):
     try:
-        app_user, operator = await _resolve_app_user(current_user, db)
-
-        query = db.query(InspectionCheck).filter(
-            InspectionCheck.inspection_id == inspection_id
-        )
-        if not _is_internal(operator):
-            query = (
-                query.join(
-                    Inspection,
-                    InspectionCheck.inspection_id == Inspection.inspection_id,
-                )
-                .join(Vehicle, Inspection.vehicle_id == Vehicle.vin)
-                .filter(Vehicle.operator_id == app_user.operator_id)
-            )
-        checks = query.order_by(InspectionCheck.display_order).all()
-
-        return {
-            "message": MessageResponse.success,
-            "checks": [
-                InspectionCheckResponse.model_validate(check) for check in checks
-            ],
-        }
+        query = db.query(BusInspection)
+        query = _apply_date_range_limit(query, params)
+        return query.all()
     except HTTPException:
         raise
     except Exception as exc:
-        return JSONResponse(
+        raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={
-                "message": MessageResponse.fail,
-                "detail": f"Error retrieving inspection checks: {exc}",
-            },
+            detail=f"Error fetching inspections: {exc}",
+        )
+
+
+@inspection_router.get(
+    "/bus_inspections/by_shift/{shift_id}",
+    response_model=List[BusInspectionResponse],
+    responses={**_401, **_404, **_500},
+)
+async def get_bus_inspections_by_shift(
+    shift_id: int,
+    params: DateRangeLimitQueryParams = Depends(),
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    try:
+        query = db.query(BusInspection).filter(BusInspection.shift_id == shift_id)
+        query = _apply_date_range_limit(query, params)
+        results = query.all()
+        if not results:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No inspections found for shift {shift_id}",
+            )
+        return results
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching inspections for shift {shift_id}: {exc}",
+        )
+
+
+@inspection_router.get(
+    "/bus_inspections/by_bus/{bus_id}",
+    response_model=List[BusInspectionResponse],
+    responses={**_401, **_404, **_500},
+)
+async def get_bus_inspections_by_bus(
+    bus_id: str,
+    params: DateRangeLimitQueryParams = Depends(),
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    try:
+        query = db.query(BusInspection).filter(BusInspection.bus_id == bus_id)
+        query = _apply_date_range_limit(query, params)
+        results = query.all()
+        if not results:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No inspections found for bus {bus_id}",
+            )
+        return results
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching inspections for bus {bus_id}: {exc}",
+        )
+
+
+@inspection_router.get(
+    "/bus_inspections/by_user/{firebase_uid}",
+    response_model=List[BusInspectionResponse],
+    responses={**_401, **_404, **_500},
+)
+async def get_bus_inspections_by_user(
+    firebase_uid: str,
+    params: DateRangeLimitQueryParams = Depends(),
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    try:
+        query = db.query(BusInspection).filter(BusInspection.user_id == firebase_uid)
+        query = _apply_date_range_limit(query, params)
+        results = query.all()
+        if not results:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No inspections found for user {firebase_uid}",
+            )
+        return results
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching inspections for user {firebase_uid}: {exc}",
         )

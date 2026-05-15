@@ -25,9 +25,9 @@ class Shift(Base):
     __table_args__ = {"schema": "shifts"}
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    user_id: Mapped[int] = mapped_column(
-        BigInteger,
-        ForeignKey("app_auth.app_user.user_id"),
+    user_id: Mapped[str] = mapped_column(
+        String,
+        ForeignKey("app_auth.app_user.firebase_uid"),
         nullable=False,
     )
     start_time: Mapped[datetime] = mapped_column(nullable=False)

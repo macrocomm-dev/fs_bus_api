@@ -18,6 +18,7 @@ from app.database import Base
 
 if TYPE_CHECKING:
     from app.models.shift import Shift
+    from app.models.app_auth import AppUser
     from app.models.master_data import Vehicle
     from app.models.photo import Photo
 
@@ -32,6 +33,9 @@ class BusInspection(Base):
         ForeignKey("shifts.shifts.id"),
         nullable=False,
     )
+    user_id: Mapped[str] = mapped_column(
+        String, ForeignKey("app_auth.app_user.firebase_uid"), nullable=False
+    )
     bus_id: Mapped[str] = mapped_column(
         String,
         ForeignKey("master_data.vehicle.vin"),
@@ -39,7 +43,6 @@ class BusInspection(Base):
     )
     fleet_number: Mapped[str] = mapped_column(
         String,
-        ForeignKey("master_data.vehicle.fleet_number"),
         nullable=False,
     )
     internal_inspection_id: Mapped[str] = mapped_column(String, nullable=False)
@@ -86,3 +89,6 @@ class BusInspection(Base):
         "Vehicle", back_populates="inspections", foreign_keys=[bus_id]
     )
     photos: Mapped[list[Photo]] = relationship("Photo", back_populates="inspection")
+    user: Mapped[AppUser] = relationship(
+        "AppUser", back_populates="inspections", foreign_keys="[BusInspection.user_id]"
+    )

@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from enum import Enum
 from typing import Optional
+from fastapi.params import Query
 from pydantic import BaseModel
 
 
@@ -293,3 +294,56 @@ class PhotoResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class BusInspectionResponse(BaseModel):
+    id: int
+    shift_id: int
+    user_id: str
+    bus_id: str
+    fleet_number: str
+    internal_inspection_id: str
+    inspection_type: str
+    inspection_time: datetime
+    inspection_lat: float
+    inspection_lon: float
+    count: Optional[int] = 0
+    pass_: Optional[bool] = True
+    notes: Optional[str] = None
+    tyres_pass: Optional[bool] = None
+    tyres_notes: Optional[str] = None
+    windows_pass: Optional[bool] = None
+    windows_notes: Optional[str] = None
+    ext_other_pass: Optional[bool] = None
+    ext_other_notes: Optional[str] = None
+    seats_pass: Optional[bool] = None
+    seats_notes: Optional[str] = None
+    aisle_pass: Optional[bool] = None
+    aisle_notes: Optional[str] = None
+    int_other_pass: Optional[bool] = None
+    int_other_notes: Optional[str] = None
+    number_seated: Optional[int] = None
+    number_standing: Optional[int] = None
+    behind_schedule_interval: Optional[str] = None
+    license_disk_scan_succeeded: Optional[bool] = None
+    destination_displayed: Optional[bool] = None
+    prdp_scan_succeeded: Optional[bool] = None
+    prdp_expiry_date: Optional[datetime] = None
+    driver_identified: Optional[bool] = None
+    driver_fail_reason: Optional[str] = None
+    driver: Optional[str] = None
+
+    model_config = {"from_attributes": True}
+
+
+class DateRangeLimitQueryParams(BaseModel):
+    daterange: Optional[str] = Query(
+        None,
+        description="Optional date range filter in the format 'YYYY-MM-DD,YYYY-MM-DD'",
+        example="2024-01-01,2024-01-31",
+    )
+    limit: Optional[int] = Query(
+        None,
+        description="Optional limit on the number of shifts returned",
+        example=100,
+    )

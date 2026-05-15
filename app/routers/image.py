@@ -32,7 +32,7 @@ from app.schemas.operations import (
     MessageResponse,
     PhotoUploadResponse,
 )
-from app.schemas.shift import PhotoResponse, SelfieResponse
+from app.schemas.shift import DateRangeLimitQueryParams, PhotoResponse, SelfieResponse
 
 image_router = APIRouter()
 
@@ -348,13 +348,32 @@ async def download_photo(
     summary="Get all selfies",
 )
 async def get_all_selfies(
+    params: DateRangeLimitQueryParams = Depends(),
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Return every selfie record across all shifts."""
     try:
-        selfies = db.query(Selfie).order_by(Selfie.created_at.desc()).all()
-        return [SelfieResponse.model_validate(s) for s in selfies]
+        query = db.query(Selfie).order_by(Selfie.timestamp.desc())
+        if params.daterange:
+            try:
+                start_str, end_str = params.daterange.split(",")
+                start_dt = datetime.strptime(start_str.strip(), "%Y-%m-%d")
+                end_dt = datetime.strptime(end_str.strip(), "%Y-%m-%d").replace(
+                    hour=23, minute=59, second=59
+                )
+            except ValueError:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="daterange must be in the format 'YYYY-MM-DD,YYYY-MM-DD'",
+                )
+            query = query.filter(
+                Selfie.timestamp >= start_dt,
+                Selfie.timestamp <= end_dt,
+            )
+        if params.limit is not None:
+            query = query.limit(params.limit)
+        return [SelfieResponse.model_validate(s) for s in query.all()]
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -408,13 +427,32 @@ async def get_selfies_by_shift(
     summary="Get all inspection photos",
 )
 async def get_all_photos(
+    params: DateRangeLimitQueryParams = Depends(),
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Return every inspection photo record across all inspections."""
     try:
-        photos = db.query(Photo).order_by(Photo.created_at.desc()).all()
-        return [PhotoResponse.model_validate(p) for p in photos]
+        query = db.query(Photo).order_by(Photo.timestamp.desc())
+        if params.daterange:
+            try:
+                start_str, end_str = params.daterange.split(",")
+                start_dt = datetime.strptime(start_str.strip(), "%Y-%m-%d")
+                end_dt = datetime.strptime(end_str.strip(), "%Y-%m-%d").replace(
+                    hour=23, minute=59, second=59
+                )
+            except ValueError:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="daterange must be in the format 'YYYY-MM-DD,YYYY-MM-DD'",
+                )
+            query = query.filter(
+                Photo.timestamp >= start_dt,
+                Photo.timestamp <= end_dt,
+            )
+        if params.limit is not None:
+            query = query.limit(params.limit)
+        return [PhotoResponse.model_validate(p) for p in query.all()]
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
