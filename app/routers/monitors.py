@@ -1,3 +1,4 @@
+import datetime
 from typing import List, Optional
 
 import base64
@@ -20,6 +21,7 @@ from app.schemas.shift import (
     PhotoIn,
     SelfieIn,
     BusIn,
+    DateRangeLimitQueryParams,
 )
 
 monitor_router = APIRouter()
@@ -57,16 +59,9 @@ async def create_shift(
     try:
         completed_shifts = []
         for shift_data in shifts:
-            user_id = (
-                db.query(AppUser).filter(AppUser.user_id == shift_data.user_id).first()
-            )
-            if user_id is None:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"User {shift_data.user_id} not found",
-                )
+
             create_shif = Shift(
-                user_id=user_id.user_id,
+                user_id=shift_data.user_id,
                 start_time=shift_data.start_time,
                 end_time=shift_data.end_time,
                 start_lat=shift_data.start_lat,
@@ -125,7 +120,7 @@ async def add_shift_selfies(shift_id: int, selfies: List[SelfieIn], db: Session)
         )
 
 
-async def add_inspections(shift_id: int, buses: List[BusIn], db: Session):
+async def add_inspections(shift_id: int, user_id: str, buses: List[BusIn], db: Session):
     if not buses:
         return True  # No inspections to add, but not an error
 
@@ -133,6 +128,7 @@ async def add_inspections(shift_id: int, buses: List[BusIn], db: Session):
         for bus in buses:
             for inspection in bus.inspections:
                 new_inspection = BusInspection(
+                    user_id=user_id,
                     shift_id=shift_id,
                     bus_id=bus.bus_id,
                     fleet_number=bus.bus_number,
@@ -337,11 +333,30 @@ async def create_shift_multipart(
 )
 async def get_all_shifts(
     db: Session = Depends(get_db),
+    params: DateRangeLimitQueryParams = Depends(),
     current_user: TokenData = Depends(get_current_user),
 ):
     """Return all shifts ordered by most recent first."""
     try:
-        shifts = db.query(Shift).order_by(Shift.created_at.desc()).all()
+        query = db.query(Shift).order_by(Shift.created_at.desc())
+
+        if params.daterange:
+            try:
+                start_date, end_date = map(
+                    lambda d: datetime.datetime.strptime(d, "%Y-%m-%d"),
+                    params.daterange.split(","),
+                )
+                query = query.filter(Shift.created_at.between(start_date, end_date))
+            except ValueError:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid date range format. Use 'YYYY-MM-DD,YYYY-MM-DD'.",
+                )
+
+        if params.limit:
+            query = query.limit(params.limit)
+
+        shifts = query.all()
         return [ShiftResponse.model_validate(s) for s in shifts]
     except Exception as exc:
         raise HTTPException(

@@ -16,5 +16,5 @@ class UserLoginResponse(BaseModel):
     access_token: str
     token_type: str
     role: str
-    user_id: int
+    user_id: str
     expires_at: datetime | None = None

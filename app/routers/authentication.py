@@ -61,6 +61,6 @@ async def get_token(
         access_token=firebase_result.id_token,
         token_type="bearer",
         role=app_user.role,
-        user_id=app_user.user_id,
+        user_id=app_user.firebase_uid,
         expires_at=expires_at,
     )
