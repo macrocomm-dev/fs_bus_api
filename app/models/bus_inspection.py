@@ -43,7 +43,6 @@ class BusInspection(Base):
     )
     fleet_number: Mapped[str] = mapped_column(
         String,
-        ForeignKey("master_data.vehicle.fleet_number"),
         nullable=False,
     )
     internal_inspection_id: Mapped[str] = mapped_column(String, nullable=False)

@@ -75,7 +75,9 @@ async def create_shift(
             db.commit()
             db.refresh(create_shif)
             selfies = await add_shift_selfies(create_shif.id, shift_data.selfies, db)
-            inspections = await add_inspections(create_shif.id, shift_data.busses, db)
+            inspections = await add_inspections(
+                create_shif.id, shift_data.user_id, shift_data.busses, db
+            )
             if selfies and inspections:
                 completed_shifts.append(
                     ShiftCreatedResponse(status=201, message="success")

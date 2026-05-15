@@ -10,6 +10,7 @@ from app.database import Base
 
 if TYPE_CHECKING:
     from app.models.shift import Shift
+    from app.models.bus_inspection import BusInspection
 
 
 class AppUser(Base):
@@ -35,3 +36,6 @@ class AppUser(Base):
 
     # Relationships
     shifts: Mapped[list[Shift]] = relationship("Shift", back_populates="user")
+    inspections: Mapped[list[BusInspection]] = relationship(
+        "BusInspection", back_populates="user", foreign_keys="[BusInspection.user_id]"
+    )
