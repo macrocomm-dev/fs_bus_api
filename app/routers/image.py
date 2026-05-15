@@ -358,22 +358,35 @@ async def get_all_selfies(
     """Return every selfie record across all shifts."""
     try:
         query = db.query(Selfie).order_by(Selfie.timestamp.desc())
-        if params.daterange:
+        if params.start_date or params.end_date:
             try:
-                start_str, end_str = params.daterange.split(",")
-                start_dt = datetime.strptime(start_str.strip(), "%Y-%m-%d")
-                end_dt = datetime.strptime(end_str.strip(), "%Y-%m-%d").replace(
-                    hour=23, minute=59, second=59
-                )
+                start_dt = None
+                end_dt = None
+                if params.start_date:
+                    start_dt = datetime.strptime(params.start_date.strip(), "%Y-%m-%d")
+                    if params.start_time:
+                        t = datetime.strptime(params.start_time.strip(), "%H:%M:%S")
+                        start_dt = start_dt.replace(
+                            hour=t.hour, minute=t.minute, second=t.second
+                        )
+                if params.end_date:
+                    end_dt = datetime.strptime(params.end_date.strip(), "%Y-%m-%d")
+                    if params.end_time:
+                        t = datetime.strptime(params.end_time.strip(), "%H:%M:%S")
+                        end_dt = end_dt.replace(
+                            hour=t.hour, minute=t.minute, second=t.second
+                        )
+                    else:
+                        end_dt = end_dt.replace(hour=23, minute=59, second=59)
             except ValueError:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="daterange must be in the format 'YYYY-MM-DD,YYYY-MM-DD'",
+                    detail="start_date/end_date must be 'YYYY-MM-DD'; start_time/end_time must be 'HH:MM:SS'",
                 )
-            query = query.filter(
-                Selfie.timestamp >= start_dt,
-                Selfie.timestamp <= end_dt,
-            )
+            if start_dt:
+                query = query.filter(Selfie.timestamp >= start_dt)
+            if end_dt:
+                query = query.filter(Selfie.timestamp <= end_dt)
         if params.limit is not None:
             query = query.limit(params.limit)
         return [SelfieResponse.model_validate(s) for s in query.all()]
@@ -385,28 +398,35 @@ async def get_all_selfies(
 
 
 @image_router.get(
-    "/selfies/shift/{shift_id}",
+    "/selfies/by_shift_ids",
     response_model=List[SelfieResponse],
     responses={**_401, **_404, **_500},
-    summary="Get selfies by shift ID",
+    summary="Get selfies by shift IDs",
 )
 async def get_selfies_by_shift(
-    shift_id: int = Path(description="ID of the shift to retrieve selfies for"),
+    shift_ids: List[int] = Query(
+        ..., description="One or more shift IDs to retrieve selfies for"
+    ),
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Return all selfies recorded during a specific shift."""
+    """Return all selfies recorded during the specified shifts. At least one ID is required."""
+    if not shift_ids:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="At least one shift ID must be provided",
+        )
     try:
         selfies = (
             db.query(Selfie)
-            .filter(Selfie.shift_id == shift_id)
+            .filter(Selfie.shift_id.in_(shift_ids))
             .order_by(Selfie.timestamp)
             .all()
         )
         if not selfies:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"No selfies found for shift {shift_id}",
+                detail="No selfies found for the provided shift IDs",
             )
         return [SelfieResponse.model_validate(s) for s in selfies]
     except HTTPException:
@@ -437,22 +457,35 @@ async def get_all_photos(
     """Return every inspection photo record across all inspections with optional date range and limit."""
     try:
         query = db.query(Photo).order_by(Photo.timestamp.desc())
-        if params.daterange:
+        if params.start_date or params.end_date:
             try:
-                start_str, end_str = params.daterange.split(",")
-                start_dt = datetime.strptime(start_str.strip(), "%Y-%m-%d")
-                end_dt = datetime.strptime(end_str.strip(), "%Y-%m-%d").replace(
-                    hour=23, minute=59, second=59
-                )
+                start_dt = None
+                end_dt = None
+                if params.start_date:
+                    start_dt = datetime.strptime(params.start_date.strip(), "%Y-%m-%d")
+                    if params.start_time:
+                        t = datetime.strptime(params.start_time.strip(), "%H:%M:%S")
+                        start_dt = start_dt.replace(
+                            hour=t.hour, minute=t.minute, second=t.second
+                        )
+                if params.end_date:
+                    end_dt = datetime.strptime(params.end_date.strip(), "%Y-%m-%d")
+                    if params.end_time:
+                        t = datetime.strptime(params.end_time.strip(), "%H:%M:%S")
+                        end_dt = end_dt.replace(
+                            hour=t.hour, minute=t.minute, second=t.second
+                        )
+                    else:
+                        end_dt = end_dt.replace(hour=23, minute=59, second=59)
             except ValueError:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="daterange must be in the format 'YYYY-MM-DD,YYYY-MM-DD'",
+                    detail="start_date/end_date must be 'YYYY-MM-DD'; start_time/end_time must be 'HH:MM:SS'",
                 )
-            query = query.filter(
-                Photo.timestamp >= start_dt,
-                Photo.timestamp <= end_dt,
-            )
+            if start_dt:
+                query = query.filter(Photo.timestamp >= start_dt)
+            if end_dt:
+                query = query.filter(Photo.timestamp <= end_dt)
         if params.limit is not None:
             query = query.limit(params.limit)
         return [PhotoResponse.model_validate(p) for p in query.all()]
@@ -464,30 +497,35 @@ async def get_all_photos(
 
 
 @image_router.get(
-    "/photos/inspection/{inspection_id}",
+    "/photos/by_inspection_ids",
     response_model=List[PhotoResponse],
     responses={**_401, **_404, **_500},
-    summary="Get inspection photos by inspection ID",
+    summary="Get inspection photos by inspection IDs",
 )
 async def get_photos_by_inspection(
-    inspection_id: int = Path(
-        description="ID of the bus inspection to retrieve photos for"
+    inspection_ids: List[int] = Query(
+        ..., description="One or more inspection IDs to retrieve photos for"
     ),
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Return all photos attached to a specific bus inspection."""
+    """Return all photos attached to the specified bus inspections. At least one ID is required."""
+    if not inspection_ids:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="At least one inspection ID must be provided",
+        )
     try:
         photos = (
             db.query(Photo)
-            .filter(Photo.inspection_id == inspection_id)
+            .filter(Photo.inspection_id.in_(inspection_ids))
             .order_by(Photo.timestamp)
             .all()
         )
         if not photos:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"No photos found for inspection {inspection_id}",
+                detail="No photos found for the provided inspection IDs",
             )
         return [PhotoResponse.model_validate(p) for p in photos]
     except HTTPException:

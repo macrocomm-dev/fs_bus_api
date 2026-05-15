@@ -284,22 +284,35 @@ async def add_passenger_count(
 
 def _apply_date_range_limit(query, params: DateRangeLimitQueryParams):
     """Apply optional date-range and limit filters to a BusInspection query."""
-    if params.daterange:
+    if params.start_date or params.end_date:
         try:
-            start_str, end_str = params.daterange.split(",")
-            start_dt = datetime.strptime(start_str.strip(), "%Y-%m-%d")
-            end_dt = datetime.strptime(end_str.strip(), "%Y-%m-%d").replace(
-                hour=23, minute=59, second=59
-            )
+            start_dt = None
+            end_dt = None
+            if params.start_date:
+                start_dt = datetime.strptime(params.start_date.strip(), "%Y-%m-%d")
+                if params.start_time:
+                    t = datetime.strptime(params.start_time.strip(), "%H:%M:%S")
+                    start_dt = start_dt.replace(
+                        hour=t.hour, minute=t.minute, second=t.second
+                    )
+            if params.end_date:
+                end_dt = datetime.strptime(params.end_date.strip(), "%Y-%m-%d")
+                if params.end_time:
+                    t = datetime.strptime(params.end_time.strip(), "%H:%M:%S")
+                    end_dt = end_dt.replace(
+                        hour=t.hour, minute=t.minute, second=t.second
+                    )
+                else:
+                    end_dt = end_dt.replace(hour=23, minute=59, second=59)
         except ValueError:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="daterange must be in the format 'YYYY-MM-DD,YYYY-MM-DD'",
+                detail="start_date/end_date must be 'YYYY-MM-DD'; start_time/end_time must be 'HH:MM:SS'",
             )
-        query = query.filter(
-            BusInspection.inspection_time >= start_dt,
-            BusInspection.inspection_time <= end_dt,
-        )
+        if start_dt:
+            query = query.filter(BusInspection.inspection_time >= start_dt)
+        if end_dt:
+            query = query.filter(BusInspection.inspection_time <= end_dt)
     if params.limit is not None:
         query = query.limit(params.limit)
     return query
@@ -330,89 +343,32 @@ async def get_all_bus_inspections(
 
 
 @inspection_router.get(
-    "/bus_inspections/by_shift/{shift_id}",
+    "/bus_inspections/by_shift_ids",
     response_model=List[BusInspectionResponse],
     responses={**_401, **_404, **_500},
-    summary="Get bus inspections by shift ID with optional date range and limit",
+    summary="Get bus inspections by shift IDs with optional date range and limit",
 )
 async def get_bus_inspections_by_shift(
-    shift_id: int = Path(description="ID of the shift to retrieve inspections for"),
-    params: DateRangeLimitQueryParams = Depends(),
-    db: Session = Depends(get_db),
-    current_user: TokenData = Depends(get_current_user),
-):
-    try:
-        query = db.query(BusInspection).filter(BusInspection.shift_id == shift_id)
-        query = _apply_date_range_limit(query, params)
-        results = query.all()
-        if not results:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"No inspections found for shift {shift_id}",
-            )
-        return results
-    except HTTPException:
-        raise
-    except Exception as exc:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error fetching inspections for shift {shift_id}: {exc}",
-        )
-
-
-@inspection_router.get(
-    "/bus_inspections/by_bus/{bus_id}",
-    response_model=List[BusInspectionResponse],
-    responses={**_401, **_404, **_500},
-    summary="Get bus inspections by bus ID/Vin number with optional date range and limit",
-)
-async def get_bus_inspections_by_bus(
-    bus_id: str = Path(description="Vehicle VIN / bus_id to retrieve inspections for"),
-    params: DateRangeLimitQueryParams = Depends(),
-    db: Session = Depends(get_db),
-    current_user: TokenData = Depends(get_current_user),
-):
-    try:
-        query = db.query(BusInspection).filter(BusInspection.bus_id == bus_id)
-        query = _apply_date_range_limit(query, params)
-        results = query.all()
-        if not results:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"No inspections found for bus {bus_id}",
-            )
-        return results
-    except HTTPException:
-        raise
-    except Exception as exc:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error fetching inspections for bus {bus_id}: {exc}",
-        )
-
-
-@inspection_router.get(
-    "/bus_inspections/by_user/{user_id}",
-    response_model=List[BusInspectionResponse],
-    responses={**_401, **_404, **_500},
-    summary="Get bus inspections by user ID with optional date range and limit",
-)
-async def get_bus_inspections_by_user(
-    user_id: str = Path(
-        description="User ID of the monitor who recorded the inspections"
+    shift_ids: List[int] = Query(
+        ..., description="One or more shift IDs to retrieve inspections for"
     ),
     params: DateRangeLimitQueryParams = Depends(),
     db: Session = Depends(get_db),
     current_user: TokenData = Depends(get_current_user),
 ):
+    if not shift_ids:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="At least one shift ID must be provided",
+        )
     try:
-        query = db.query(BusInspection).filter(BusInspection.user_id == user_id)
+        query = db.query(BusInspection).filter(BusInspection.shift_id.in_(shift_ids))
         query = _apply_date_range_limit(query, params)
         results = query.all()
         if not results:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"No inspections found for user {user_id}",
+                detail="No inspections found for the provided shift IDs",
             )
         return results
     except HTTPException:
@@ -420,5 +376,83 @@ async def get_bus_inspections_by_user(
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error fetching inspections for user {user_id}: {exc}",
+            detail=f"Error fetching inspections: {exc}",
+        )
+
+
+@inspection_router.get(
+    "/bus_inspections/by_bus_ids",
+    response_model=List[BusInspectionResponse],
+    responses={**_401, **_404, **_500},
+    summary="Get bus inspections by bus IDs/VINs with optional date range and limit",
+)
+async def get_bus_inspections_by_bus(
+    bus_ids: List[str] = Query(
+        ...,
+        description="One or more vehicle VINs / bus IDs to retrieve inspections for",
+    ),
+    params: DateRangeLimitQueryParams = Depends(),
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    if not bus_ids:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="At least one bus ID must be provided",
+        )
+    try:
+        query = db.query(BusInspection).filter(BusInspection.bus_id.in_(bus_ids))
+        query = _apply_date_range_limit(query, params)
+        results = query.all()
+        if not results:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No inspections found for the provided bus IDs",
+            )
+        return results
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching inspections: {exc}",
+        )
+
+
+@inspection_router.get(
+    "/bus_inspections/by_user_ids",
+    response_model=List[BusInspectionResponse],
+    responses={**_401, **_404, **_500},
+    summary="Get bus inspections by user IDs with optional date range and limit",
+)
+async def get_bus_inspections_by_user(
+    user_ids: List[str] = Query(
+        ...,
+        description="One or more Firebase UIDs of monitors who recorded the inspections",
+    ),
+    params: DateRangeLimitQueryParams = Depends(),
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    if not user_ids:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="At least one user ID must be provided",
+        )
+    try:
+        query = db.query(BusInspection).filter(BusInspection.user_id.in_(user_ids))
+        query = _apply_date_range_limit(query, params)
+        results = query.all()
+        if not results:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No inspections found for the provided user IDs",
+            )
+        return results
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching inspections: {exc}",
         )
