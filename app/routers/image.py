@@ -7,6 +7,7 @@ from fastapi import (
     Form,
     HTTPException,
     APIRouter,
+    Path,
     Query,
     UploadFile,
     status,
@@ -242,7 +243,9 @@ async def upload_user_verification_photo(
     include_in_schema=False,
 )
 async def get_inspection_photos(
-    inspection_id: int,
+    inspection_id: int = Path(
+        description="ID of the bus inspection to retrieve photos for"
+    ),
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -300,7 +303,7 @@ async def get_inspection_photos(
     include_in_schema=False,
 )
 async def download_photo(
-    photo_id: int,
+    photo_id: int = Path(description="ID of the inspection photo to download"),
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -345,7 +348,7 @@ async def download_photo(
     "/selfies",
     response_model=List[SelfieResponse],
     responses={**_401, **_500},
-    summary="Get all selfies",
+    summary="Get all selfies with optional date range and limit",
 )
 async def get_all_selfies(
     params: DateRangeLimitQueryParams = Depends(),
@@ -388,7 +391,7 @@ async def get_all_selfies(
     summary="Get selfies by shift ID",
 )
 async def get_selfies_by_shift(
-    shift_id: int,
+    shift_id: int = Path(description="ID of the shift to retrieve selfies for"),
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -424,14 +427,14 @@ async def get_selfies_by_shift(
     "/photos",
     response_model=List[PhotoResponse],
     responses={**_401, **_500},
-    summary="Get all inspection photos",
+    summary="Get all inspection photos with optional date range and limit",
 )
 async def get_all_photos(
     params: DateRangeLimitQueryParams = Depends(),
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Return every inspection photo record across all inspections."""
+    """Return every inspection photo record across all inspections with optional date range and limit."""
     try:
         query = db.query(Photo).order_by(Photo.timestamp.desc())
         if params.daterange:
@@ -467,7 +470,9 @@ async def get_all_photos(
     summary="Get inspection photos by inspection ID",
 )
 async def get_photos_by_inspection(
-    inspection_id: int,
+    inspection_id: int = Path(
+        description="ID of the bus inspection to retrieve photos for"
+    ),
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):

@@ -331,7 +331,7 @@ async def create_shift_multipart(
     "/shifts",
     response_model=List[ShiftResponse],
     responses={**_401, **_500},
-    summary="Get all shifts",
+    summary="Get all shifts with optional date range and limit",
 )
 async def get_all_shifts(
     db: Session = Depends(get_db),
