@@ -67,7 +67,7 @@ class ExteriorInspectionIn(InspectionBaseIn):
 
 
 class InteriorInspectionIn(InspectionBaseIn):
-    fire_extinguisher_present: bool
+    fire_extinguisher_present: bool = False
     seats: InspectionItemIn
     aisle: InspectionItemIn
     other: InspectionItemIn
@@ -180,8 +180,8 @@ class InspectionIn(BaseModel):
 class BusIn(BaseModel):
     bus_id: str  # maps to bus_id / vin
     bus_number: Optional[str]  # maps to fleet_number
-    license_disk_scan_succeeded: Optional[bool] = None
-    destination_displayed: Optional[bool] = None
+    license_disk_scan_succeeded: Optional[bool] = True
+    destination_displayed: Optional[bool] = True
     inspections: BusInspectionsIn
 
 
@@ -297,7 +297,7 @@ class ExteriorInspectionMetaIn(InspectionBaseMetaIn):
 
 
 class InteriorInspectionMetaIn(InspectionBaseMetaIn):
-    fire_extinguisher_present: bool
+    fire_extinguisher_present: bool = False
     seats: InspectionItemMetaIn
     aisle: InspectionItemMetaIn
     other: InspectionItemMetaIn
@@ -404,8 +404,8 @@ class InspectionMetaIn(BaseModel):
 class BusMetaIn(BaseModel):
     bus_id: str
     bus_number: Optional[str] = None  # maps to fleet_number
-    license_disk_scan_succeeded: Optional[bool] = None
-    destination_displayed: Optional[bool] = None
+    license_disk_scan_succeeded: Optional[bool] = True
+    destination_displayed: Optional[bool] = True
     inspections: BusInspectionsMetaIn
 
 

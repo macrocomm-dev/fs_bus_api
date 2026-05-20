@@ -143,6 +143,42 @@ class ShiftContractTests(unittest.TestCase):
             "damage-photo",
         )
 
+    def test_shift_create_applies_requested_defaults(self):
+        payload = {
+            "user_id": "firebase_uid_abc123",
+            "start_time": "2026-05-01T07:00:00",
+            "end_time": "2026-05-01T15:30:00",
+            "start_lat": -26.2041,
+            "start_lon": 28.0473,
+            "end_lat": -26.2089,
+            "end_lon": 28.0512,
+            "device_id": "device_001",
+            "selfies": [],
+            "busses": [
+                {
+                    "bus_id": "VIN0001ZA",
+                    "bus_number": "GA 01 001 GP",
+                    "inspections": {
+                        "internal": {
+                            "internal_inspection_id": "int-1",
+                            "inspection_time": "2026-05-01T08:05:00",
+                            "inspection_lat": -26.2046,
+                            "inspection_lon": 28.0481,
+                            "seats": {"pass_": False, "reason": None, "photos": []},
+                            "aisle": {"pass_": False, "reason": None, "photos": []},
+                            "other": {"pass_": False, "reason": None, "photos": []},
+                        }
+                    },
+                }
+            ],
+        }
+
+        shift = ShiftCreate.model_validate(payload)
+
+        self.assertTrue(shift.busses[0].license_disk_scan_succeeded)
+        self.assertTrue(shift.busses[0].destination_displayed)
+        self.assertFalse(shift.busses[0].inspections.internal.fire_extinguisher_present)
+
     def test_group_bus_inspections_returns_nested_structure(self):
         timestamp = datetime(2026, 5, 1, 8, 0, 0)
         photo_created_at = datetime(2026, 5, 1, 8, 3, 0)
