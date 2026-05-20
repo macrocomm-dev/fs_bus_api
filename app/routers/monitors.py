@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.auth import TokenData, get_current_user
 from app.database import get_db
 from app.models.app_auth import AppUser
+from app.models.master_data import Vehicle
 from app.models.photo import Selfie, Photo
 from app.models.shift import Shift
 from app.models import BusInspection
@@ -108,18 +109,41 @@ def _persist_inspection(
         db.add(Photo(inspection_id=new_inspection.id, **photo_payload))
 
 
+def _resolve_bus_reference(db: Session, bus) -> tuple[str, str]:
+    if bus.bus_id and bus.bus_number:
+        return bus.bus_id, bus.bus_number
+
+    vehicle = None
+    if bus.bus_id:
+        vehicle = db.query(Vehicle).filter(Vehicle.vin == bus.bus_id).first()
+    elif bus.bus_number:
+        vehicle = (
+            db.query(Vehicle).filter(Vehicle.fleet_number == bus.bus_number).first()
+        )
+
+    if vehicle is None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Bus could not be resolved from bus_id or bus_number.",
+        )
+
+    return vehicle.vin, vehicle.fleet_number or vehicle.vin
+
+
 def _base_inspection_payload(
+    db: Session,
     shift_id: int,
     user_id: str,
     bus,
     inspection,
     inspection_type: str,
 ) -> dict:
+    bus_id, fleet_number = _resolve_bus_reference(db, bus)
     return {
         "user_id": user_id,
         "shift_id": shift_id,
-        "bus_id": bus.bus_id,
-        "fleet_number": bus.bus_number,
+        "bus_id": bus_id,
+        "fleet_number": fleet_number,
         "internal_inspection_id": inspection.internal_inspection_id,
         "inspection_type": inspection_type,
         "inspection_time": inspection.inspection_time,
@@ -130,9 +154,9 @@ def _base_inspection_payload(
     }
 
 
-def _external_inspection_record(shift_id: int, user_id: str, bus, inspection):
+def _external_inspection_record(db: Session, shift_id: int, user_id: str, bus, inspection):
     payload = _base_inspection_payload(
-        shift_id, user_id, bus, inspection, "external"
+        db, shift_id, user_id, bus, inspection, "external"
     )
     payload.update(
         {
@@ -164,9 +188,9 @@ def _external_inspection_record(shift_id: int, user_id: str, bus, inspection):
     return payload, photo_groups
 
 
-def _interior_inspection_record(shift_id: int, user_id: str, bus, inspection):
+def _interior_inspection_record(db: Session, shift_id: int, user_id: str, bus, inspection):
     payload = _base_inspection_payload(
-        shift_id, user_id, bus, inspection, "internal"
+        db, shift_id, user_id, bus, inspection, "internal"
     )
     payload.update(
         {
@@ -203,12 +227,12 @@ def _interior_inspection_record(shift_id: int, user_id: str, bus, inspection):
     return payload, photo_groups
 
 
-def _driver_inspection_record(shift_id: int, user_id: str, bus, inspection):
+def _driver_inspection_record(db: Session, shift_id: int, user_id: str, bus, inspection):
     boolean_checks = [
         inspection.prdp_scan_succeeded,
         inspection.driver_identified,
     ]
-    payload = _base_inspection_payload(shift_id, user_id, bus, inspection, "driver")
+    payload = _base_inspection_payload(db, shift_id, user_id, bus, inspection, "driver")
     payload.update(
         {
             "pass_": all(value for value in boolean_checks if value is not None),
@@ -223,8 +247,8 @@ def _driver_inspection_record(shift_id: int, user_id: str, bus, inspection):
     return payload, {}
 
 
-def _passenger_count_record(shift_id: int, user_id: str, bus, inspection):
-    payload = _base_inspection_payload(shift_id, user_id, bus, inspection, "count")
+def _passenger_count_record(db: Session, shift_id: int, user_id: str, bus, inspection):
+    payload = _base_inspection_payload(db, shift_id, user_id, bus, inspection, "count")
     payload.update(
         {
             "count": inspection.number_seated + inspection.number_standing,
@@ -235,9 +259,9 @@ def _passenger_count_record(shift_id: int, user_id: str, bus, inspection):
     return payload, {}
 
 
-def _behind_schedule_record(shift_id: int, user_id: str, bus, inspection):
+def _behind_schedule_record(db: Session, shift_id: int, user_id: str, bus, inspection):
     payload = _base_inspection_payload(
-        shift_id, user_id, bus, inspection, "behind_schedule"
+        db, shift_id, user_id, bus, inspection, "behind_schedule"
     )
     payload.update(
         {
@@ -285,6 +309,8 @@ async def create_shift(
                 detail="An error occurred while processing selfies or inspections",
             )
 
+    except HTTPException:
+        raise
     except Exception as e:
         db.rollback()
         raise HTTPException(
@@ -327,7 +353,7 @@ async def add_inspections(shift_id: int, user_id: str, buses: List[BusIn], db: S
         for bus in buses:
             if bus.inspections.external is not None:
                 inspection_payload, photo_groups = _external_inspection_record(
-                    shift_id, user_id, bus, bus.inspections.external
+                    db, shift_id, user_id, bus, bus.inspections.external
                 )
                 _persist_inspection(
                     db,
@@ -337,7 +363,7 @@ async def add_inspections(shift_id: int, user_id: str, buses: List[BusIn], db: S
 
             if bus.inspections.internal is not None:
                 inspection_payload, photo_groups = _interior_inspection_record(
-                    shift_id, user_id, bus, bus.inspections.internal
+                    db, shift_id, user_id, bus, bus.inspections.internal
                 )
                 _persist_inspection(
                     db,
@@ -347,24 +373,27 @@ async def add_inspections(shift_id: int, user_id: str, buses: List[BusIn], db: S
 
             if bus.inspections.driver is not None:
                 inspection_payload, _ = _driver_inspection_record(
-                    shift_id, user_id, bus, bus.inspections.driver
+                    db, shift_id, user_id, bus, bus.inspections.driver
                 )
                 _persist_inspection(db, inspection_payload)
 
             for passenger_count in bus.inspections.passenger_counts:
                 inspection_payload, _ = _passenger_count_record(
-                    shift_id, user_id, bus, passenger_count
+                    db, shift_id, user_id, bus, passenger_count
                 )
                 _persist_inspection(db, inspection_payload)
 
             for behind_schedule_report in bus.inspections.behind_schedule_reports:
                 inspection_payload, _ = _behind_schedule_record(
-                    shift_id, user_id, bus, behind_schedule_report
+                    db, shift_id, user_id, bus, behind_schedule_report
                 )
                 _persist_inspection(db, inspection_payload)
 
         db.commit()
         return True
+    except HTTPException:
+        db.rollback()
+        raise
     except Exception as e:
         db.rollback()
         raise HTTPException(
@@ -439,7 +468,7 @@ async def create_shift_multipart(
         for i, bus in enumerate(shift_data.busses):
             if bus.inspections.external is not None:
                 inspection_payload, photo_groups = _external_inspection_record(
-                    new_shift.id, shift_data.user_id, bus, bus.inspections.external
+                    db, new_shift.id, shift_data.user_id, bus, bus.inspections.external
                 )
                 photo_payloads = await _photo_payloads_from_multipart(
                     form, f"bus_{i}_external", photo_groups
@@ -448,7 +477,7 @@ async def create_shift_multipart(
 
             if bus.inspections.internal is not None:
                 inspection_payload, photo_groups = _interior_inspection_record(
-                    new_shift.id, shift_data.user_id, bus, bus.inspections.internal
+                    db, new_shift.id, shift_data.user_id, bus, bus.inspections.internal
                 )
                 photo_payloads = await _photo_payloads_from_multipart(
                     form, f"bus_{i}_internal", photo_groups
@@ -457,19 +486,19 @@ async def create_shift_multipart(
 
             if bus.inspections.driver is not None:
                 inspection_payload, _ = _driver_inspection_record(
-                    new_shift.id, shift_data.user_id, bus, bus.inspections.driver
+                    db, new_shift.id, shift_data.user_id, bus, bus.inspections.driver
                 )
                 _persist_inspection(db, inspection_payload)
 
             for passenger_count in bus.inspections.passenger_counts:
                 inspection_payload, _ = _passenger_count_record(
-                    new_shift.id, shift_data.user_id, bus, passenger_count
+                    db, new_shift.id, shift_data.user_id, bus, passenger_count
                 )
                 _persist_inspection(db, inspection_payload)
 
             for behind_schedule_report in bus.inspections.behind_schedule_reports:
                 inspection_payload, _ = _behind_schedule_record(
-                    new_shift.id, shift_data.user_id, bus, behind_schedule_report
+                    db, new_shift.id, shift_data.user_id, bus, behind_schedule_report
                 )
                 _persist_inspection(db, inspection_payload)
 

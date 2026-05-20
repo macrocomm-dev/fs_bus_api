@@ -188,10 +188,6 @@ class BusIn(BaseModel):
     def require_identifier(self):
         if not self.bus_id and not self.bus_number:
             raise ValueError("Either bus_id or bus_number must be provided")
-        if not self.bus_id:
-            self.bus_id = self.bus_number
-        if not self.bus_number:
-            self.bus_number = self.bus_id
         return self
 
 
@@ -422,10 +418,6 @@ class BusMetaIn(BaseModel):
     def require_identifier(self):
         if not self.bus_id and not self.bus_number:
             raise ValueError("Either bus_id or bus_number must be provided")
-        if not self.bus_id:
-            self.bus_id = self.bus_number
-        if not self.bus_number:
-            self.bus_number = self.bus_id
         return self
 
 
