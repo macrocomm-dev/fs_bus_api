@@ -65,6 +65,114 @@ _401 = {
 _403 = {403: {"model": ErrorResponse, "description": "Forbidden – insufficient role"}}
 _404 = {404: {"model": ErrorResponse, "description": "Resource not found"}}
 _500 = {500: {"model": ErrorResponse, "description": "Internal server error"}}
+_BUS_INSPECTIONS_200 = {
+    200: {
+        "description": "Grouped bus inspections",
+        "content": {
+            "application/json": {
+                "example": [
+                    {
+                        "shift_id": 10,
+                        "user_id": "firebase_uid_abc123",
+                        "bus_id": "VIN0001ZA",
+                        "fleet_number": "GA 01 001 GP",
+                        "license_disk_scan_succeeded": True,
+                        "destination_displayed": True,
+                        "inspections": {
+                            "external_inspected": True,
+                            "internal_inspected": True,
+                            "driver_inspected": True,
+                            "passenger_counts_done": True,
+                            "behind_schedule_reports_done": True,
+                            "external": {
+                                "inspection_id": 1,
+                                "internal_inspection_id": "ext-1",
+                                "inspection_time": "2026-05-01T08:00:00",
+                                "inspection_lat": -26.2045,
+                                "inspection_lon": 28.048,
+                                "pass_": False,
+                                "notes": "Body damage on left rear panel",
+                                "tyres": {"pass_": False, "reason": None, "photos": []},
+                                "windows": {
+                                    "pass_": False,
+                                    "reason": None,
+                                    "photos": [],
+                                },
+                                "other": {
+                                    "pass_": False,
+                                    "reason": "Body damage on left rear panel",
+                                    "photos": [
+                                        {
+                                            "id": 101,
+                                            "timestamp": "2026-05-01T08:02:00",
+                                            "lat": -26.2045,
+                                            "lon": 28.048,
+                                            "photo": "<base64_encoded_image>",
+                                            "created_at": "2026-05-01T08:03:00",
+                                        }
+                                    ],
+                                },
+                            },
+                            "internal": {
+                                "inspection_id": 2,
+                                "internal_inspection_id": "int-1",
+                                "inspection_time": "2026-05-01T08:05:00",
+                                "inspection_lat": -26.2046,
+                                "inspection_lon": 28.0481,
+                                "pass_": False,
+                                "notes": None,
+                                "fire_extinguisher_present": True,
+                                "seats": {"pass_": False, "reason": None, "photos": []},
+                                "aisle": {"pass_": False, "reason": None, "photos": []},
+                                "other": {"pass_": False, "reason": None, "photos": []},
+                            },
+                            "driver": {
+                                "inspection_id": 3,
+                                "internal_inspection_id": "drv-1",
+                                "inspection_time": "2026-05-01T08:07:00",
+                                "inspection_lat": -26.2047,
+                                "inspection_lon": 28.0482,
+                                "pass_": True,
+                                "notes": None,
+                                "prdp_scan_succeeded": True,
+                                "prdp_expiry_date": "2027-03-15T00:00:00",
+                                "driver_identified": True,
+                                "driver_fail_reason": None,
+                                "driver_name": "Sipho Nkosi",
+                            },
+                            "passenger_counts": [
+                                {
+                                    "inspection_id": 4,
+                                    "internal_inspection_id": "cnt-1",
+                                    "inspection_time": "2026-05-01T08:15:00",
+                                    "inspection_lat": -26.205,
+                                    "inspection_lon": 28.0488,
+                                    "pass_": False,
+                                    "notes": None,
+                                    "count": 40,
+                                    "number_seated": 32,
+                                    "number_standing": 8,
+                                }
+                            ],
+                            "behind_schedule_reports": [
+                                {
+                                    "inspection_id": 5,
+                                    "internal_inspection_id": "sch-1",
+                                    "inspection_time": "2026-05-01T08:20:00",
+                                    "inspection_lat": -26.2052,
+                                    "inspection_lon": 28.049,
+                                    "pass_": False,
+                                    "notes": None,
+                                    "behind_schedule_interval": "5-10 mins",
+                                }
+                            ],
+                        },
+                    }
+                ]
+            }
+        },
+    }
+}
 
 
 # Helper function to get or create AppUser based on Firebase UID
@@ -333,7 +441,14 @@ def _group_bus_inspection_rows(rows: list[BusInspection]) -> list[dict]:
                 "user_id": row.user_id,
                 "bus_id": row.bus_id,
                 "fleet_number": row.fleet_number,
+                "license_disk_scan_succeeded": row.license_disk_scan_succeeded,
+                "destination_displayed": row.destination_displayed,
                 "inspections": {
+                    "external_inspected": False,
+                    "internal_inspected": False,
+                    "driver_inspected": False,
+                    "passenger_counts_done": False,
+                    "behind_schedule_reports_done": False,
                     "external": None,
                     "internal": None,
                     "driver": None,
@@ -357,6 +472,7 @@ def _group_bus_inspection_rows(rows: list[BusInspection]) -> list[dict]:
         }
 
         if row.inspection_type == "external":
+            grouped[key]["inspections"]["external_inspected"] = True
             grouped[key]["inspections"]["external"] = {
                 **base,
                 "tyres": _inspection_item_response(
@@ -373,6 +489,7 @@ def _group_bus_inspection_rows(rows: list[BusInspection]) -> list[dict]:
                 ),
             }
         elif row.inspection_type == "internal":
+            grouped[key]["inspections"]["internal_inspected"] = True
             grouped[key]["inspections"]["internal"] = {
                 **base,
                 "fire_extinguisher_present": row.fire_extinguisher_present,
@@ -390,17 +507,25 @@ def _group_bus_inspection_rows(rows: list[BusInspection]) -> list[dict]:
                 ),
             }
         elif row.inspection_type == "driver":
+            grouped[key]["inspections"]["driver_inspected"] = True
             grouped[key]["inspections"]["driver"] = {
                 **base,
-                "license_disk_scan_succeeded": row.license_disk_scan_succeeded,
-                "destination_displayed": row.destination_displayed,
                 "prdp_scan_succeeded": row.prdp_scan_succeeded,
                 "prdp_expiry_date": row.prdp_expiry_date,
                 "driver_identified": row.driver_identified,
                 "driver_fail_reason": row.driver_fail_reason,
                 "driver_name": row.driver_name,
             }
-        elif row.inspection_type == "count":
+
+        if grouped[key]["license_disk_scan_succeeded"] is None:
+            grouped[key][
+                "license_disk_scan_succeeded"
+            ] = row.license_disk_scan_succeeded
+        if grouped[key]["destination_displayed"] is None:
+            grouped[key]["destination_displayed"] = row.destination_displayed
+
+        if row.inspection_type == "count":
+            grouped[key]["inspections"]["passenger_counts_done"] = True
             grouped[key]["inspections"]["passenger_counts"].append(
                 {
                     **base,
@@ -410,6 +535,7 @@ def _group_bus_inspection_rows(rows: list[BusInspection]) -> list[dict]:
                 }
             )
         elif row.inspection_type in {"behind_schedule", "technical"}:
+            grouped[key]["inspections"]["behind_schedule_reports_done"] = True
             grouped[key]["inspections"]["behind_schedule_reports"].append(
                 {
                     **base,
@@ -423,7 +549,7 @@ def _group_bus_inspection_rows(rows: list[BusInspection]) -> list[dict]:
 @inspection_router.get(
     "/bus_inspections",
     response_model=List[GroupedBusInspectionResponse],
-    responses={**_401, **_500},
+    responses={**_BUS_INSPECTIONS_200, **_401, **_500},
     summary="Get all bus inspections with optional date range and limit",
 )
 async def get_all_bus_inspections(
@@ -447,7 +573,7 @@ async def get_all_bus_inspections(
 @inspection_router.get(
     "/bus_inspections/by_shift_ids",
     response_model=List[GroupedBusInspectionResponse],
-    responses={**_401, **_404, **_500},
+    responses={**_BUS_INSPECTIONS_200, **_401, **_404, **_500},
     summary="Get bus inspections by shift IDs with optional date range and limit",
 )
 async def get_bus_inspections_by_shift(
@@ -486,7 +612,7 @@ async def get_bus_inspections_by_shift(
 @inspection_router.get(
     "/bus_inspections/by_bus_ids",
     response_model=List[GroupedBusInspectionResponse],
-    responses={**_401, **_404, **_500},
+    responses={**_BUS_INSPECTIONS_200, **_401, **_404, **_500},
     summary="Get bus inspections by bus IDs/VINs with optional date range and limit",
 )
 async def get_bus_inspections_by_bus(
@@ -526,7 +652,7 @@ async def get_bus_inspections_by_bus(
 @inspection_router.get(
     "/bus_inspections/by_user_ids",
     response_model=List[GroupedBusInspectionResponse],
-    responses={**_401, **_404, **_500},
+    responses={**_BUS_INSPECTIONS_200, **_401, **_404, **_500},
     summary="Get bus inspections by user IDs with optional date range and limit",
 )
 async def get_bus_inspections_by_user(

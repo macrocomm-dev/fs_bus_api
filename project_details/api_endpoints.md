@@ -4,51 +4,9 @@ Base URL: `https://bus-track-api-379989015900.africa-south1.run.app`
 
 ---
 
-## POST `/auth/token` — Get Access Token
-
-Exchange email and password for a Firebase ID token. The returned `id_token` is used as the `Bearer` token on all protected endpoints. Tokens expire after **1 hour**.
-
-**Request body:**
-
-```json
-{
-  "email": "user@example.com",
-  "password": "yourpassword"
-}
-```
-
-**cURL:**
-
-```bash
-curl -X 'POST' \
-  'https://bus-track-api-379989015900.africa-south1.run.app/auth/token' \
-  -H 'accept: application/json' \
-  -H 'Content-Type: application/json' \
-  -d '{
-  "email": "user@example.com",
-  "password": "yourpassword"
-}'
-```
-
-**Response `200`:**
-
-```json
-{
-  "provider": "firebase",
-  "id_token": "<id_token>",
-  "refresh_token": "<refresh_token>",
-  "expires_in": 3600,
-  "email": "user@example.com",
-  "local_id": "firebase_uid_abc123",
-  "registered": true
-}
-```
-
----
-
 ## POST `/auth/refresh` — Refresh Access Token
 
-Exchange a `refresh_token` for a new `id_token` when the current one has expired.
+Exchange a `refresh_token` for a new bearer token and the current app user context.
 
 **Request body:**
 
@@ -74,10 +32,14 @@ curl -X 'POST' \
 
 ```json
 {
-  "provider": "firebase",
-  "id_token": "<new_id_token>",
+  "access_token": "<new_id_token>",
   "refresh_token": "<new_refresh_token>",
-  "expires_in": 3600
+  "token_type": "bearer",
+  "role": "Supervisor",
+  "user_id": "firebase_uid_abc123",
+  "name": "Ada",
+  "surname": "Lovelace",
+  "expires_at": "2026-05-20T14:30:00Z"
 }
 ```
 
@@ -159,19 +121,26 @@ curl -X 'POST' \
       {
         "bus_id": "VIN0001ZA",
         "bus_number": "GA 01 001 GP",
+        "license_disk_scan_succeeded": true,
+        "destination_displayed": true,
         "inspections": {
+          "external_inspected": true,
+          "internal_inspected": true,
+          "driver_inspected": true,
+          "passenger_counts_done": true,
+          "behind_schedule_reports_done": true,
           "external": {
             "internal_inspection_id": "a1b2c3d4-0001-0001-0001-000000000001",
             "inspection_time": "2026-05-01T08:00:00",
             "inspection_lat": -26.2045,
             "inspection_lon": 28.0480,
             "tyres": {
-              "pass_": true,
+              "pass_": false,
               "reason": null,
               "photos": []
             },
             "windows": {
-              "pass_": true,
+              "pass_": false,
               "reason": null,
               "photos": []
             },
@@ -195,17 +164,17 @@ curl -X 'POST' \
             "inspection_lon": 28.0481,
             "fire_extinguisher_present": true,
             "seats": {
-              "pass_": true,
+              "pass_": false,
               "reason": null,
               "photos": []
             },
             "aisle": {
-              "pass_": true,
+              "pass_": false,
               "reason": null,
               "photos": []
             },
             "other": {
-              "pass_": true,
+              "pass_": false,
               "reason": null,
               "photos": []
             }
@@ -215,8 +184,6 @@ curl -X 'POST' \
             "inspection_time": "2026-05-01T08:07:00",
             "inspection_lat": -26.2047,
             "inspection_lon": 28.0482,
-            "license_disk_scan_succeeded": true,
-            "destination_displayed": true,
             "prdp_scan_succeeded": true,
             "prdp_expiry_date": "2027-03-15T00:00:00",
             "driver_identified": true,

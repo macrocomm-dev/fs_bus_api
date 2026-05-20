@@ -2,8 +2,7 @@ from datetime import date, datetime, time
 from enum import Enum
 from typing import List, Optional
 from fastapi import Query
-from pydantic import BaseModel, Field
-
+from pydantic import BaseModel, Field, model_validator
 
 class ErrorResponse(BaseModel):
     detail: str
@@ -49,7 +48,7 @@ class InspectionItemPhotoIn(BaseModel):
 
 
 class InspectionItemIn(BaseModel):
-    pass_: bool = True
+    pass_: bool = False
     reason: Optional[str] = None
     photos: list[InspectionItemPhotoIn] = []
 
@@ -75,8 +74,6 @@ class InteriorInspectionIn(InspectionBaseIn):
 
 
 class DriverInspectionIn(InspectionBaseIn):
-    license_disk_scan_succeeded: Optional[bool] = None
-    destination_displayed: Optional[bool] = None
     prdp_scan_succeeded: Optional[bool] = None
     prdp_expiry_date: Optional[datetime] = None
     driver_identified: Optional[bool] = None
@@ -94,11 +91,49 @@ class BehindScheduleReportIn(InspectionBaseIn):
 
 
 class BusInspectionsIn(BaseModel):
+    external_inspected: bool = False
+    internal_inspected: bool = False
+    driver_inspected: bool = False
+    passenger_counts_done: bool = False
+    behind_schedule_reports_done: bool = False
     external: Optional[ExteriorInspectionIn] = None
     internal: Optional[InteriorInspectionIn] = None
     driver: Optional[DriverInspectionIn] = None
     passenger_counts: list[PassengerCountIn] = []
     behind_schedule_reports: list[BehindScheduleReportIn] = []
+
+    @model_validator(mode="after")
+    def sync_done_flags(self):
+        if self.external is not None:
+            self.external_inspected = True
+        if self.internal is not None:
+            self.internal_inspected = True
+        if self.driver is not None:
+            self.driver_inspected = True
+        if self.passenger_counts:
+            self.passenger_counts_done = True
+        if self.behind_schedule_reports:
+            self.behind_schedule_reports_done = True
+
+        if self.external_inspected and self.external is None:
+            raise ValueError(
+                "external must be provided when external_inspected is true"
+            )
+        if self.internal_inspected and self.internal is None:
+            raise ValueError(
+                "internal must be provided when internal_inspected is true"
+            )
+        if self.driver_inspected and self.driver is None:
+            raise ValueError("driver must be provided when driver_inspected is true")
+        if self.passenger_counts_done and not self.passenger_counts:
+            raise ValueError(
+                "passenger_counts must be provided when passenger_counts_done is true"
+            )
+        if self.behind_schedule_reports_done and not self.behind_schedule_reports:
+            raise ValueError(
+                "behind_schedule_reports must be provided when behind_schedule_reports_done is true"
+            )
+        return self
 
 
 # ---------------------------------------------------------------------------
@@ -115,7 +150,7 @@ class InspectionIn(BaseModel):
     inspection_lat: float
     inspection_lon: float
     count: Optional[int] = 0
-    pass_: bool = True
+    pass_: bool = False
     notes: Optional[str] = None
     tyres_pass: Optional[bool] = None
     tyres_notes: Optional[str] = None
@@ -145,6 +180,8 @@ class InspectionIn(BaseModel):
 class BusIn(BaseModel):
     bus_id: str  # maps to bus_id / vin
     bus_number: Optional[str]  # maps to fleet_number
+    license_disk_scan_succeeded: Optional[bool] = None
+    destination_displayed: Optional[bool] = None
     inspections: BusInspectionsIn
 
 
@@ -241,7 +278,7 @@ class InspectionItemPhotoMetaIn(BaseModel):
 
 
 class InspectionItemMetaIn(BaseModel):
-    pass_: bool = True
+    pass_: bool = False
     reason: Optional[str] = None
     photos: list[InspectionItemPhotoMetaIn] = []
 
@@ -267,8 +304,6 @@ class InteriorInspectionMetaIn(InspectionBaseMetaIn):
 
 
 class DriverInspectionMetaIn(InspectionBaseMetaIn):
-    license_disk_scan_succeeded: Optional[bool] = None
-    destination_displayed: Optional[bool] = None
     prdp_scan_succeeded: Optional[bool] = None
     prdp_expiry_date: Optional[datetime] = None
     driver_identified: Optional[bool] = None
@@ -286,11 +321,49 @@ class BehindScheduleReportMetaIn(InspectionBaseMetaIn):
 
 
 class BusInspectionsMetaIn(BaseModel):
+    external_inspected: bool = False
+    internal_inspected: bool = False
+    driver_inspected: bool = False
+    passenger_counts_done: bool = False
+    behind_schedule_reports_done: bool = False
     external: Optional[ExteriorInspectionMetaIn] = None
     internal: Optional[InteriorInspectionMetaIn] = None
     driver: Optional[DriverInspectionMetaIn] = None
     passenger_counts: list[PassengerCountMetaIn] = []
     behind_schedule_reports: list[BehindScheduleReportMetaIn] = []
+
+    @model_validator(mode="after")
+    def sync_done_flags(self):
+        if self.external is not None:
+            self.external_inspected = True
+        if self.internal is not None:
+            self.internal_inspected = True
+        if self.driver is not None:
+            self.driver_inspected = True
+        if self.passenger_counts:
+            self.passenger_counts_done = True
+        if self.behind_schedule_reports:
+            self.behind_schedule_reports_done = True
+
+        if self.external_inspected and self.external is None:
+            raise ValueError(
+                "external must be provided when external_inspected is true"
+            )
+        if self.internal_inspected and self.internal is None:
+            raise ValueError(
+                "internal must be provided when internal_inspected is true"
+            )
+        if self.driver_inspected and self.driver is None:
+            raise ValueError("driver must be provided when driver_inspected is true")
+        if self.passenger_counts_done and not self.passenger_counts:
+            raise ValueError(
+                "passenger_counts must be provided when passenger_counts_done is true"
+            )
+        if self.behind_schedule_reports_done and not self.behind_schedule_reports:
+            raise ValueError(
+                "behind_schedule_reports must be provided when behind_schedule_reports_done is true"
+            )
+        return self
 
 
 class InspectionMetaIn(BaseModel):
@@ -302,7 +375,7 @@ class InspectionMetaIn(BaseModel):
     inspection_lat: float
     inspection_lon: float
     count: Optional[int] = 0
-    pass_: bool = True
+    pass_: bool = False
     notes: Optional[str] = None
     # Exterior inspection
     tyres_pass: Optional[bool] = None
@@ -331,6 +404,8 @@ class InspectionMetaIn(BaseModel):
 class BusMetaIn(BaseModel):
     bus_id: str
     bus_number: Optional[str] = None  # maps to fleet_number
+    license_disk_scan_succeeded: Optional[bool] = None
+    destination_displayed: Optional[bool] = None
     inspections: BusInspectionsMetaIn
 
 
@@ -408,7 +483,7 @@ class InspectionItemPhotoResponse(BaseModel):
 
 
 class InspectionItemResponse(BaseModel):
-    pass_: Optional[bool] = None
+    pass_: Optional[bool] = False
     reason: Optional[str] = None
     photos: list[InspectionItemPhotoResponse] = []
 
@@ -419,7 +494,7 @@ class InspectionEventResponse(BaseModel):
     inspection_time: datetime
     inspection_lat: float
     inspection_lon: float
-    pass_: Optional[bool] = True
+    pass_: Optional[bool] = False
     notes: Optional[str] = None
 
 
@@ -437,8 +512,6 @@ class InteriorInspectionResponse(InspectionEventResponse):
 
 
 class DriverInspectionResponse(InspectionEventResponse):
-    license_disk_scan_succeeded: Optional[bool] = None
-    destination_displayed: Optional[bool] = None
     prdp_scan_succeeded: Optional[bool] = None
     prdp_expiry_date: Optional[datetime] = None
     driver_identified: Optional[bool] = None
@@ -457,6 +530,11 @@ class BehindScheduleInspectionResponse(InspectionEventResponse):
 
 
 class BusInspectionGroupItemsResponse(BaseModel):
+    external_inspected: bool = False
+    internal_inspected: bool = False
+    driver_inspected: bool = False
+    passenger_counts_done: bool = False
+    behind_schedule_reports_done: bool = False
     external: Optional[ExteriorInspectionResponse] = None
     internal: Optional[InteriorInspectionResponse] = None
     driver: Optional[DriverInspectionResponse] = None
@@ -469,6 +547,8 @@ class GroupedBusInspectionResponse(BaseModel):
     user_id: str
     bus_id: str
     fleet_number: Optional[str] = None
+    license_disk_scan_succeeded: Optional[bool] = None
+    destination_displayed: Optional[bool] = None
     inspections: BusInspectionGroupItemsResponse
 
 
@@ -484,7 +564,7 @@ class BusInspectionResponse(BaseModel):
     inspection_lat: float
     inspection_lon: float
     count: Optional[int] = 0
-    pass_: Optional[bool] = True
+    pass_: Optional[bool] = False
     notes: Optional[str] = None
     tyres_pass: Optional[bool] = None
     tyres_notes: Optional[str] = None

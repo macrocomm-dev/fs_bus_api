@@ -125,6 +125,8 @@ def _base_inspection_payload(
         "inspection_time": inspection.inspection_time,
         "inspection_lat": inspection.inspection_lat,
         "inspection_lon": inspection.inspection_lon,
+        "license_disk_scan_succeeded": bus.license_disk_scan_succeeded,
+        "destination_displayed": bus.destination_displayed,
     }
 
 
@@ -203,8 +205,6 @@ def _interior_inspection_record(shift_id: int, user_id: str, bus, inspection):
 
 def _driver_inspection_record(shift_id: int, user_id: str, bus, inspection):
     boolean_checks = [
-        inspection.license_disk_scan_succeeded,
-        inspection.destination_displayed,
         inspection.prdp_scan_succeeded,
         inspection.driver_identified,
     ]
@@ -213,8 +213,6 @@ def _driver_inspection_record(shift_id: int, user_id: str, bus, inspection):
         {
             "pass_": all(value for value in boolean_checks if value is not None),
             "notes": inspection.driver_fail_reason,
-            "license_disk_scan_succeeded": inspection.license_disk_scan_succeeded,
-            "destination_displayed": inspection.destination_displayed,
             "prdp_scan_succeeded": inspection.prdp_scan_succeeded,
             "prdp_expiry_date": inspection.prdp_expiry_date,
             "driver_identified": inspection.driver_identified,

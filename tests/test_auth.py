@@ -21,6 +21,7 @@ from app.database import get_db
 from app.firebase_identity import (
     FirebaseInvalidCredentialsError,
     FirebasePasswordSignInResult,
+    FirebaseRefreshResult,
 )
 from app.main import app
 
@@ -252,6 +253,115 @@ class AuthTests(unittest.TestCase):
         self.assertEqual(response.json()["name"], "Ada")
         self.assertEqual(response.json()["surname"], "Lovelace")
         self.assertIsNotNone(response.json()["expires_at"])
+        self.assertIsNotNone(response.json()["expires_at"])
+
+    def test_auth_refresh_returns_name_surname_and_role(self):
+        result = FirebaseRefreshResult(
+            id_token="refreshed-id-token",
+            refresh_token="new-refresh-token",
+            expires_in=3600,
+        )
+
+        app_user = SimpleNamespace(
+            firebase_uid="firebase-local-id",
+            role="Supervisor",
+            name="Ada",
+            surname="Lovelace",
+            full_name="Ada Lovelace",
+        )
+
+        class FakeQuery:
+            def __init__(self, user):
+                self.user = user
+
+            def filter(self, *args, **kwargs):
+                return self
+
+            def first(self):
+                return self.user
+
+        class FakeDb:
+            def query(self, model):
+                return FakeQuery(app_user)
+
+        def override_db():
+            yield FakeDb()
+
+        app.dependency_overrides[get_db] = override_db
+
+        refreshed_token_data = TokenData(
+            sub="firebase-local-id",
+            name="Ada Lovelace",
+            email="ada@example.com",
+            role="Supervisor",
+        )
+
+        with patch("app.main.refresh_id_token", return_value=result), patch(
+            "app.main.decode_access_token",
+            return_value=refreshed_token_data,
+        ):
+            response = client.post(
+                "/auth/refresh",
+                json={
+                    "refresh_token": "old-refresh-token",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["access_token"], "refreshed-id-token")
+        self.assertEqual(response.json()["refresh_token"], "new-refresh-token")
+        self.assertEqual(response.json()["token_type"], "bearer")
+        self.assertEqual(response.json()["role"], "Supervisor")
+        self.assertEqual(response.json()["user_id"], "firebase-local-id")
+        self.assertEqual(response.json()["name"], "Ada")
+        self.assertEqual(response.json()["surname"], "Lovelace")
+
+    def test_auth_refresh_rejects_unknown_user(self):
+        result = FirebaseRefreshResult(
+            id_token="refreshed-id-token",
+            refresh_token="new-refresh-token",
+            expires_in=3600,
+        )
+
+        class FakeQuery:
+            def filter(self, *args, **kwargs):
+                return self
+
+            def first(self):
+                return None
+
+        class FakeDb:
+            def query(self, model):
+                return FakeQuery()
+
+        def override_db():
+            yield FakeDb()
+
+        app.dependency_overrides[get_db] = override_db
+
+        refreshed_token_data = TokenData(
+            sub="missing-user",
+            name="Missing User",
+            email="missing@example.com",
+            role="Supervisor",
+        )
+
+        with patch("app.main.refresh_id_token", return_value=result), patch(
+            "app.main.decode_access_token",
+            return_value=refreshed_token_data,
+        ):
+            response = client.post(
+                "/auth/refresh",
+                json={
+                    "refresh_token": "old-refresh-token",
+                },
+            )
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(
+            response.json()["detail"],
+            "User account not found. Contact an administrator.",
+        )
 
     def test_auth_test_token_rejects_invalid_credentials(self):
         with patch(

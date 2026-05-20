@@ -40,14 +40,21 @@ class ShiftContractTests(unittest.TestCase):
                 {
                     "bus_id": "VIN0001ZA",
                     "bus_number": "GA 01 001 GP",
+                    "license_disk_scan_succeeded": True,
+                    "destination_displayed": True,
                     "inspections": {
+                        "external_inspected": True,
+                        "internal_inspected": True,
+                        "driver_inspected": True,
+                        "passenger_counts_done": True,
+                        "behind_schedule_reports_done": True,
                         "external": {
                             "internal_inspection_id": "ext-1",
                             "inspection_time": "2026-05-01T08:00:00",
                             "inspection_lat": -26.2045,
                             "inspection_lon": 28.0480,
-                            "tyres": {"pass_": True, "reason": None, "photos": []},
-                            "windows": {"pass_": True, "reason": None, "photos": []},
+                            "tyres": {"pass_": False, "reason": None, "photos": []},
+                            "windows": {"pass_": False, "reason": None, "photos": []},
                             "other": {
                                 "pass_": False,
                                 "reason": "Body damage",
@@ -67,17 +74,15 @@ class ShiftContractTests(unittest.TestCase):
                             "inspection_lat": -26.2046,
                             "inspection_lon": 28.0481,
                             "fire_extinguisher_present": True,
-                            "seats": {"pass_": True, "reason": None, "photos": []},
-                            "aisle": {"pass_": True, "reason": None, "photos": []},
-                            "other": {"pass_": True, "reason": None, "photos": []},
+                            "seats": {"pass_": False, "reason": None, "photos": []},
+                            "aisle": {"pass_": False, "reason": None, "photos": []},
+                            "other": {"pass_": False, "reason": None, "photos": []},
                         },
                         "driver": {
                             "internal_inspection_id": "drv-1",
                             "inspection_time": "2026-05-01T08:07:00",
                             "inspection_lat": -26.2047,
                             "inspection_lon": 28.0482,
-                            "license_disk_scan_succeeded": True,
-                            "destination_displayed": True,
                             "prdp_scan_succeeded": True,
                             "prdp_expiry_date": "2027-03-15T00:00:00",
                             "driver_identified": True,
@@ -110,6 +115,13 @@ class ShiftContractTests(unittest.TestCase):
 
         shift = ShiftCreate.model_validate(payload)
 
+        self.assertTrue(shift.busses[0].license_disk_scan_succeeded)
+        self.assertTrue(shift.busses[0].destination_displayed)
+        self.assertTrue(shift.busses[0].inspections.external_inspected)
+        self.assertTrue(shift.busses[0].inspections.internal_inspected)
+        self.assertTrue(shift.busses[0].inspections.driver_inspected)
+        self.assertTrue(shift.busses[0].inspections.passenger_counts_done)
+        self.assertTrue(shift.busses[0].inspections.behind_schedule_reports_done)
         self.assertEqual(shift.busses[0].inspections.driver.driver_name, "Sipho Nkosi")
         self.assertEqual(
             shift.busses[0].inspections.passenger_counts[0].number_standing,
@@ -182,6 +194,8 @@ class ShiftContractTests(unittest.TestCase):
             make_row(
                 id=1,
                 inspection_type="external",
+                license_disk_scan_succeeded=None,
+                destination_displayed=None,
                 tyres_pass=True,
                 windows_pass=True,
                 ext_other_pass=False,
@@ -227,6 +241,13 @@ class ShiftContractTests(unittest.TestCase):
 
         self.assertEqual(len(grouped), 1)
         self.assertEqual(grouped[0]["bus_id"], "VIN0001ZA")
+        self.assertTrue(grouped[0]["license_disk_scan_succeeded"])
+        self.assertTrue(grouped[0]["destination_displayed"])
+        self.assertTrue(grouped[0]["inspections"]["external_inspected"])
+        self.assertTrue(grouped[0]["inspections"]["internal_inspected"])
+        self.assertTrue(grouped[0]["inspections"]["driver_inspected"])
+        self.assertTrue(grouped[0]["inspections"]["passenger_counts_done"])
+        self.assertTrue(grouped[0]["inspections"]["behind_schedule_reports_done"])
         self.assertEqual(grouped[0]["inspections"]["driver"]["driver_name"], "Sipho Nkosi")
         self.assertEqual(
             grouped[0]["inspections"]["external"]["other"]["photos"][0]["photo"],

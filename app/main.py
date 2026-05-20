@@ -4,6 +4,7 @@ FS Bus API — main application entry-point.
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 from html import escape
 from pathlib import Path
@@ -21,9 +22,11 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.auth import (
+    decode_access_token,
     expand_role_permissions,
     get_current_user,
     normalize_role,
+    split_user_name,
     TokenData,
 )
 from app.config import Settings, get_settings
@@ -38,7 +41,9 @@ from app.firebase_identity import (
     sign_in_with_email_password,
 )
 from app.database import get_db
+from app.models.app_auth import AppUser
 from app.routers.router_config import register_routers
+from app.schemas.authentication import UserRefreshResponse
 from app.services.audit_service import log_api_error
 from sqlalchemy.orm import Session
 
@@ -221,45 +226,13 @@ def _build_docs_html(settings: Settings) -> str:
     )
 
 
-@auth_router.post(
-    "/token",
-    response_model=FirebasePasswordSignInResult,
-    summary="Obtain an access token",
-    responses={
-        401: {"description": "Invalid email or password"},
-        503: {"description": "Service unavailable"},
-    },
-)
-def login(
-    request: FirebasePasswordSignInRequest,
-    settings: Annotated[Settings, Depends(get_settings)],
-):
-    """Exchange email and password for a Firebase ID token.
-
-    Use the returned ``id_token`` as a ``Bearer`` token on all protected endpoints.
-    The ``refresh_token`` can be used to obtain a new ``id_token`` when it expires.
-    """
-    try:
-        return sign_in_with_email_password(
-            api_key=settings.firebase_web_api_key,
-            email=request.email,
-            password=request.password,
-        )
-    except FirebaseInvalidCredentialsError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password.",
-        ) from exc
-    except FirebaseIdentityError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=str(exc),
-        ) from exc
+# /auth/token intentionally disabled for now.
+# Use /authentication/get_token for the app-facing login flow.
 
 
 @auth_router.post(
     "/refresh",
-    response_model=FirebaseRefreshResult,
+    response_model=UserRefreshResponse,
     summary="Refresh an expired access token",
     responses={
         401: {"description": "Invalid or expired refresh token"},
@@ -270,14 +243,16 @@ def login(
 def refresh_token(
     request: FirebaseRefreshRequest,
     settings: Annotated[Settings, Depends(get_settings)],
+    db: Session = Depends(get_db),
 ):
-    """Exchange a ``refresh_token`` for a new ``id_token``.
+    """Exchange a ``refresh_token`` for a new ``id_token`` and app user context.
 
-    Call this when the ``id_token`` from ``/auth/token`` has expired (after 1 hour).
-    The returned ``id_token`` replaces the old one for subsequent requests.
+    Call this when the bearer token has expired. The returned ``access_token``
+    replaces the old token for subsequent requests and includes the same user
+    context as ``/authentication/get_token``.
     """
     try:
-        return refresh_id_token(
+        firebase_result = refresh_id_token(
             api_key=settings.firebase_web_api_key,
             refresh_token=request.refresh_token,
         )
@@ -291,6 +266,30 @@ def refresh_token(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=str(exc),
         ) from exc
+
+    token_data = decode_access_token(firebase_result.id_token, settings)
+    app_user = db.query(AppUser).filter(AppUser.firebase_uid == token_data.sub).first()
+    if app_user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User account not found. Contact an administrator.",
+        )
+
+    name, surname = split_user_name(app_user.full_name)
+    expires_at = datetime.now(timezone.utc) + timedelta(
+        seconds=firebase_result.expires_in
+    )
+
+    return UserRefreshResponse(
+        access_token=firebase_result.id_token,
+        refresh_token=firebase_result.refresh_token,
+        token_type="bearer",
+        role=app_user.role,
+        user_id=app_user.firebase_uid,
+        name=app_user.name or name,
+        surname=app_user.surname or surname,
+        expires_at=expires_at,
+    )
 
 
 @auth_router.get(
