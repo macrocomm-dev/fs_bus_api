@@ -45,6 +45,208 @@ _422 = {
 _500 = {500: {"model": ErrorResponse, "description": "Internal server error"}}
 
 
+def _combine_reasons(*reasons: str | None) -> str | None:
+    combined = [reason for reason in reasons if reason]
+    return "; ".join(combined) if combined else None
+
+
+def _photo_payloads_from_inline(photo_groups: dict[str, list]) -> list[dict]:
+    payloads = []
+    for inspection_item, photos in photo_groups.items():
+        for photo in photos:
+            payloads.append(
+                {
+                    "timestamp": photo.timestamp,
+                    "lat": photo.lat,
+                    "lon": photo.lon,
+                    "inspection_item": inspection_item,
+                    "photo": photo.photo,
+                }
+            )
+    return payloads
+
+
+async def _photo_payloads_from_multipart(
+    form,
+    key_prefix: str,
+    photo_groups: dict[str, list],
+) -> list[dict]:
+    payloads = []
+    for inspection_item, photos in photo_groups.items():
+        for index, photo_meta in enumerate(photos):
+            file_key = f"{key_prefix}_{inspection_item}_photo_{index}"
+            file = form.get(file_key)
+            if file is None:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=f"Missing file: {file_key}",
+                )
+            photo_bytes = await file.read()
+            payloads.append(
+                {
+                    "timestamp": photo_meta.timestamp,
+                    "lat": photo_meta.lat,
+                    "lon": photo_meta.lon,
+                    "inspection_item": inspection_item,
+                    "photo": base64.b64encode(photo_bytes).decode(),
+                }
+            )
+    return payloads
+
+
+def _persist_inspection(
+    db: Session,
+    inspection_payload: dict,
+    photo_payloads: list[dict] | None = None,
+):
+    new_inspection = BusInspection(**inspection_payload)
+    db.add(new_inspection)
+    db.flush()
+    db.refresh(new_inspection)
+
+    for photo_payload in photo_payloads or []:
+        db.add(Photo(inspection_id=new_inspection.id, **photo_payload))
+
+
+def _base_inspection_payload(
+    shift_id: int,
+    user_id: str,
+    bus,
+    inspection,
+    inspection_type: str,
+) -> dict:
+    return {
+        "user_id": user_id,
+        "shift_id": shift_id,
+        "bus_id": bus.bus_id,
+        "fleet_number": bus.bus_number,
+        "internal_inspection_id": inspection.internal_inspection_id,
+        "inspection_type": inspection_type,
+        "inspection_time": inspection.inspection_time,
+        "inspection_lat": inspection.inspection_lat,
+        "inspection_lon": inspection.inspection_lon,
+        "license_disk_scan_succeeded": bus.license_disk_scan_succeeded,
+        "destination_displayed": bus.destination_displayed,
+    }
+
+
+def _external_inspection_record(shift_id: int, user_id: str, bus, inspection):
+    payload = _base_inspection_payload(
+        shift_id, user_id, bus, inspection, "external"
+    )
+    payload.update(
+        {
+            "pass_": all(
+                [
+                    inspection.tyres.pass_,
+                    inspection.windows.pass_,
+                    inspection.other.pass_,
+                ]
+            ),
+            "notes": _combine_reasons(
+                inspection.tyres.reason,
+                inspection.windows.reason,
+                inspection.other.reason,
+            ),
+            "tyres_pass": inspection.tyres.pass_,
+            "tyres_notes": inspection.tyres.reason,
+            "windows_pass": inspection.windows.pass_,
+            "windows_notes": inspection.windows.reason,
+            "ext_other_pass": inspection.other.pass_,
+            "ext_other_notes": inspection.other.reason,
+        }
+    )
+    photo_groups = {
+        "tyres": inspection.tyres.photos,
+        "windows": inspection.windows.photos,
+        "ext_other": inspection.other.photos,
+    }
+    return payload, photo_groups
+
+
+def _interior_inspection_record(shift_id: int, user_id: str, bus, inspection):
+    payload = _base_inspection_payload(
+        shift_id, user_id, bus, inspection, "internal"
+    )
+    payload.update(
+        {
+            "pass_": all(
+                [
+                    inspection.fire_extinguisher_present,
+                    inspection.seats.pass_,
+                    inspection.aisle.pass_,
+                    inspection.other.pass_,
+                ]
+            ),
+            "notes": _combine_reasons(
+                None
+                if inspection.fire_extinguisher_present
+                else "Fire extinguisher missing",
+                inspection.seats.reason,
+                inspection.aisle.reason,
+                inspection.other.reason,
+            ),
+            "fire_extinguisher_present": inspection.fire_extinguisher_present,
+            "seats_pass": inspection.seats.pass_,
+            "seats_notes": inspection.seats.reason,
+            "aisle_pass": inspection.aisle.pass_,
+            "aisle_notes": inspection.aisle.reason,
+            "int_other_pass": inspection.other.pass_,
+            "int_other_notes": inspection.other.reason,
+        }
+    )
+    photo_groups = {
+        "seats": inspection.seats.photos,
+        "aisle": inspection.aisle.photos,
+        "int_other": inspection.other.photos,
+    }
+    return payload, photo_groups
+
+
+def _driver_inspection_record(shift_id: int, user_id: str, bus, inspection):
+    boolean_checks = [
+        inspection.prdp_scan_succeeded,
+        inspection.driver_identified,
+    ]
+    payload = _base_inspection_payload(shift_id, user_id, bus, inspection, "driver")
+    payload.update(
+        {
+            "pass_": all(value for value in boolean_checks if value is not None),
+            "notes": inspection.driver_fail_reason,
+            "prdp_scan_succeeded": inspection.prdp_scan_succeeded,
+            "prdp_expiry_date": inspection.prdp_expiry_date,
+            "driver_identified": inspection.driver_identified,
+            "driver_fail_reason": inspection.driver_fail_reason,
+            "driver_name": inspection.driver_name,
+        }
+    )
+    return payload, {}
+
+
+def _passenger_count_record(shift_id: int, user_id: str, bus, inspection):
+    payload = _base_inspection_payload(shift_id, user_id, bus, inspection, "count")
+    payload.update(
+        {
+            "count": inspection.number_seated + inspection.number_standing,
+            "number_seated": inspection.number_seated,
+            "number_standing": inspection.number_standing,
+        }
+    )
+    return payload, {}
+
+
+def _behind_schedule_record(shift_id: int, user_id: str, bus, inspection):
+    payload = _base_inspection_payload(
+        shift_id, user_id, bus, inspection, "behind_schedule"
+    )
+    payload.update(
+        {
+            "behind_schedule_interval": inspection.behind_schedule_interval,
+        }
+    )
+    return payload, {}
+
+
 # We store all the shifts we will be receiving from the FE for the day
 @monitor_router.post(
     "/create_shift/",
@@ -53,42 +255,35 @@ _500 = {500: {"model": ErrorResponse, "description": "Internal server error"}}
     responses={**_401, **_422, **_500},
 )
 async def create_shift(
-    shifts: List[ShiftCreate],
+    shift_data: ShiftCreate,
     db: Session = Depends(get_db),
     current_user: TokenData = Depends(get_current_user),
 ):
 
     try:
-        completed_shifts = []
-        for shift_data in shifts:
+        create_shif = Shift(
+            user_id=shift_data.user_id,
+            start_time=shift_data.start_time,
+            end_time=shift_data.end_time,
+            start_lat=shift_data.start_lat,
+            start_lon=shift_data.start_lon,
+            end_lat=shift_data.end_lat,
+            end_lon=shift_data.end_lon,
+            device_id=shift_data.device_id,
+        )
 
-            create_shif = Shift(
-                user_id=shift_data.user_id,
-                start_time=shift_data.start_time,
-                end_time=shift_data.end_time,
-                start_lat=shift_data.start_lat,
-                start_lon=shift_data.start_lon,
-                end_lat=shift_data.end_lat,
-                end_lon=shift_data.end_lon,
-                device_id=shift_data.device_id,
+        db.add(create_shif)
+        db.commit()
+        db.refresh(create_shif)
+        selfies = await add_shift_selfies(create_shif.id, shift_data.selfies, db)
+        inspections = await add_inspections(
+            create_shif.id, shift_data.user_id, shift_data.busses, db
+        )
+        if not selfies or not inspections:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="An error occurred while processing selfies or inspections",
             )
-
-            db.add(create_shif)
-            db.commit()
-            db.refresh(create_shif)
-            selfies = await add_shift_selfies(create_shif.id, shift_data.selfies, db)
-            inspections = await add_inspections(
-                create_shif.id, shift_data.user_id, shift_data.busses, db
-            )
-            if selfies and inspections:
-                completed_shifts.append(
-                    ShiftCreatedResponse(status=201, message="success")
-                )
-            else:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="An error occurred while processing selfies or inspections",
-                )
 
     except Exception as e:
         db.rollback()
@@ -130,59 +325,43 @@ async def add_inspections(shift_id: int, user_id: str, buses: List[BusIn], db: S
 
     try:
         for bus in buses:
-            for inspection in bus.inspections:
-                new_inspection = BusInspection(
-                    user_id=user_id,
-                    shift_id=shift_id,
-                    bus_id=bus.bus_id,
-                    fleet_number=bus.bus_number,
-                    internal_inspection_id=inspection.internal_inspection_id,
-                    inspection_type=inspection.inspection_type,
-                    inspection_time=inspection.inspection_time,
-                    inspection_lat=inspection.inspection_lat,
-                    inspection_lon=inspection.inspection_lon,
-                    count=inspection.count,
-                    pass_=inspection.pass_,
-                    notes=inspection.notes,
-                    tyres_pass=inspection.tyres_pass,
-                    tyres_notes=inspection.tyres_notes,
-                    windows_pass=inspection.windows_pass,
-                    windows_notes=inspection.windows_notes,
-                    ext_other_pass=inspection.ext_other_pass,
-                    ext_other_notes=inspection.ext_other_notes,
-                    seats_pass=inspection.seats_pass,
-                    seats_notes=inspection.seats_notes,
-                    aisle_pass=inspection.aisle_pass,
-                    aisle_notes=inspection.aisle_notes,
-                    int_other_pass=inspection.int_other_pass,
-                    int_other_notes=inspection.int_other_notes,
-                    number_seated=inspection.number_seated,
-                    number_standing=inspection.number_standing,
-                    behind_schedule_interval=inspection.behind_schedule_interval,
-                    license_disk_scan_succeeded=bus.license_disk_scan_succeeded,
-                    destination_displayed=bus.destination_displayed,
-                    prdp_scan_succeeded=bus.prdp_scan_succeeded,
-                    prdp_expiry_date=bus.prdp_expiry_date,
-                    driver_identified=bus.driver_identified,
-                    driver_fail_reason=bus.driver_fail_reason,
-                    driver_name=bus.driver_name,
+            if bus.inspections.external is not None:
+                inspection_payload, photo_groups = _external_inspection_record(
+                    shift_id, user_id, bus, bus.inspections.external
                 )
-                db.add(new_inspection)
-                db.flush()  # Get the ID of the newly created inspection
-                db.refresh(new_inspection)
+                _persist_inspection(
+                    db,
+                    inspection_payload,
+                    _photo_payloads_from_inline(photo_groups),
+                )
 
-                # Add photos for this inspection
+            if bus.inspections.internal is not None:
+                inspection_payload, photo_groups = _interior_inspection_record(
+                    shift_id, user_id, bus, bus.inspections.internal
+                )
+                _persist_inspection(
+                    db,
+                    inspection_payload,
+                    _photo_payloads_from_inline(photo_groups),
+                )
 
-                for photo in inspection.photos:
-                    new_photo = Photo(
-                        inspection_id=new_inspection.id,
-                        timestamp=photo.timestamp,
-                        lat=photo.lat,
-                        lon=photo.lon,
-                        inspection_item=photo.inspection_item,
-                        photo=photo.photo,
-                    )
-                    db.add(new_photo)
+            if bus.inspections.driver is not None:
+                inspection_payload, _ = _driver_inspection_record(
+                    shift_id, user_id, bus, bus.inspections.driver
+                )
+                _persist_inspection(db, inspection_payload)
+
+            for passenger_count in bus.inspections.passenger_counts:
+                inspection_payload, _ = _passenger_count_record(
+                    shift_id, user_id, bus, passenger_count
+                )
+                _persist_inspection(db, inspection_payload)
+
+            for behind_schedule_report in bus.inspections.behind_schedule_reports:
+                inspection_payload, _ = _behind_schedule_record(
+                    shift_id, user_id, bus, behind_schedule_report
+                )
+                _persist_inspection(db, inspection_payload)
 
         db.commit()
         return True
@@ -200,7 +379,8 @@ async def add_inspections(shift_id: int, user_id: str, buses: List[BusIn], db: S
 # Send as multipart/form-data:
 #   data          — JSON string of ShiftCreateMeta (no photo bytes)
 #   selfie_{i}    — image file for selfies[i]
-#   bus_{i}_inspection_{j}_photo_{k} — image file for that photo
+#   bus_{i}_external_{item}_photo_{k} — image file for an exterior item photo
+#   bus_{i}_internal_{item}_photo_{k} — image file for an interior item photo
 # ---------------------------------------------------------------------------
 
 
@@ -255,69 +435,46 @@ async def create_shift_multipart(
                 )
             )
 
-        # Inspections + photos — file key: bus_{i}_inspection_{j}_photo_{k}
+        # Inspections + item photos — file keys are scoped by bus, section and item.
         for i, bus in enumerate(shift_data.busses):
-            for j, inspection in enumerate(bus.inspections):
-                new_inspection = BusInspection(
-                    shift_id=new_shift.id,
-                    bus_id=bus.bus_id,
-                    fleet_number=bus.bus_number,
-                    internal_inspection_id=inspection.internal_inspection_id,
-                    inspection_type=inspection.inspection_type,
-                    inspection_time=inspection.inspection_time,
-                    inspection_lat=inspection.inspection_lat,
-                    inspection_lon=inspection.inspection_lon,
-                    count=inspection.count,
-                    pass_=inspection.pass_,
-                    notes=inspection.notes,
-                    tyres_pass=inspection.tyres_pass,
-                    tyres_notes=inspection.tyres_notes,
-                    windows_pass=inspection.windows_pass,
-                    windows_notes=inspection.windows_notes,
-                    ext_other_pass=inspection.ext_other_pass,
-                    ext_other_notes=inspection.ext_other_notes,
-                    seats_pass=inspection.seats_pass,
-                    seats_notes=inspection.seats_notes,
-                    aisle_pass=inspection.aisle_pass,
-                    aisle_notes=inspection.aisle_notes,
-                    int_other_pass=inspection.int_other_pass,
-                    int_other_notes=inspection.int_other_notes,
-                    number_seated=inspection.number_seated,
-                    number_standing=inspection.number_standing,
-                    behind_schedule_interval=inspection.behind_schedule_interval,
-                    license_disk_scan_succeeded=bus.license_disk_scan_succeeded,
-                    destination_displayed=bus.destination_displayed,
-                    prdp_scan_succeeded=bus.prdp_scan_succeeded,
-                    prdp_expiry_date=bus.prdp_expiry_date,
-                    driver_identified=bus.driver_identified,
-                    driver_fail_reason=bus.driver_fail_reason,
-                    driver=bus.driver,
+            if bus.inspections.external is not None:
+                inspection_payload, photo_groups = _external_inspection_record(
+                    new_shift.id, shift_data.user_id, bus, bus.inspections.external
                 )
-                db.add(new_inspection)
-                db.flush()
-                db.refresh(new_inspection)
+                photo_payloads = await _photo_payloads_from_multipart(
+                    form, f"bus_{i}_external", photo_groups
+                )
+                _persist_inspection(db, inspection_payload, photo_payloads)
 
-                for k, photo_meta in enumerate(inspection.photos):
-                    file = form.get(f"bus_{i}_inspection_{j}_photo_{k}")
-                    if file is None:
-                        raise HTTPException(
-                            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                            detail=f"Missing file: bus_{i}_inspection_{j}_photo_{k}",
-                        )
-                    photo_bytes = await file.read()
-                    db.add(
-                        Photo(
-                            inspection_id=new_inspection.id,
-                            timestamp=photo_meta.timestamp,
-                            lat=photo_meta.lat,
-                            lon=photo_meta.lon,
-                            inspection_item=photo_meta.inspection_item,
-                            photo=base64.b64encode(photo_bytes).decode(),
-                        )
-                    )
+            if bus.inspections.internal is not None:
+                inspection_payload, photo_groups = _interior_inspection_record(
+                    new_shift.id, shift_data.user_id, bus, bus.inspections.internal
+                )
+                photo_payloads = await _photo_payloads_from_multipart(
+                    form, f"bus_{i}_internal", photo_groups
+                )
+                _persist_inspection(db, inspection_payload, photo_payloads)
+
+            if bus.inspections.driver is not None:
+                inspection_payload, _ = _driver_inspection_record(
+                    new_shift.id, shift_data.user_id, bus, bus.inspections.driver
+                )
+                _persist_inspection(db, inspection_payload)
+
+            for passenger_count in bus.inspections.passenger_counts:
+                inspection_payload, _ = _passenger_count_record(
+                    new_shift.id, shift_data.user_id, bus, passenger_count
+                )
+                _persist_inspection(db, inspection_payload)
+
+            for behind_schedule_report in bus.inspections.behind_schedule_reports:
+                inspection_payload, _ = _behind_schedule_record(
+                    new_shift.id, shift_data.user_id, bus, behind_schedule_report
+                )
+                _persist_inspection(db, inspection_payload)
 
         db.commit()
-        return ShiftCreatedResponse(shift_id=new_shift.id, message="success")
+        return ShiftCreatedResponse(status=201, message="success")
 
     except HTTPException:
         raise

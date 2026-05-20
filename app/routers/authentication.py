@@ -10,6 +10,7 @@ from app.firebase_identity import (
     FirebaseInvalidCredentialsError,
     sign_in_with_email_password,
 )
+from app.auth import split_user_name
 from app.models.app_auth import AppUser
 from app.schemas.authentication import UserLoginRequest, UserLoginResponse
 
@@ -56,11 +57,14 @@ async def get_token(
     expires_at = datetime.now(timezone.utc) + timedelta(
         seconds=firebase_result.expires_in
     )
+    name, surname = split_user_name(app_user.full_name)
 
     return UserLoginResponse(
         access_token=firebase_result.id_token,
         token_type="bearer",
         role=app_user.role,
         user_id=app_user.firebase_uid,
+        name=app_user.name or name,
+        surname=app_user.surname or surname,
         expires_at=expires_at,
     )

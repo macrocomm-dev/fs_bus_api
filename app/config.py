@@ -89,6 +89,7 @@ class Settings(BaseSettings):
 
     # Google Cloud Storage
     gcs_bucket_name: str = ""
+    load_gcp_secrets: bool = True
 
     class Config:
         env_file = ".env"
@@ -113,6 +114,9 @@ class Settings(BaseSettings):
         import logging  # noqa: PLC0415
 
         logger = logging.getLogger(__name__)
+        if not self.load_gcp_secrets:
+            logger.info("Skipping Secret Manager lookup because load_gcp_secrets=false")
+            return
         for field, secret_id in self._SECRET_MAP.items():
             if not getattr(self, field):
                 value = _fetch_secret(self.google_cloud_project, secret_id)

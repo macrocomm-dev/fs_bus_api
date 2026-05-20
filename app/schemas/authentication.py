@@ -17,4 +17,10 @@ class UserLoginResponse(BaseModel):
     token_type: str
     role: str
     user_id: str
+    name: str | None = None
+    surname: str | None = None
     expires_at: datetime | None = None
+
+
+class UserRefreshResponse(UserLoginResponse):
+    refresh_token: str

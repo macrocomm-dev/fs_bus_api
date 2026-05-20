@@ -110,6 +110,18 @@ def expand_role_permissions(role: str | None) -> tuple[str, ...]:
     return ROLE_HIERARCHY[normalized_role.lower()]
 
 
+def split_user_name(full_name: str | None) -> tuple[str | None, str | None]:
+    if full_name is None:
+        return None, None
+
+    parts = [part for part in full_name.strip().split() if part]
+    if not parts:
+        return None, None
+    if len(parts) == 1:
+        return parts[0], None
+    return parts[0], " ".join(parts[1:])
+
+
 def require_role(required_role: str):
     normalized_required_role = normalize_role(required_role)
     if normalized_required_role is None:
