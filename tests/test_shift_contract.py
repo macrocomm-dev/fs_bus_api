@@ -179,6 +179,76 @@ class ShiftContractTests(unittest.TestCase):
         self.assertTrue(shift.busses[0].destination_displayed)
         self.assertFalse(shift.busses[0].inspections.internal.fire_extinguisher_present)
 
+    def test_shift_create_accepts_bus_number_without_bus_id(self):
+        payload = {
+            "user_id": "firebase_uid_abc123",
+            "start_time": "2026-05-01T07:00:00",
+            "end_time": "2026-05-01T15:30:00",
+            "start_lat": -26.2041,
+            "start_lon": 28.0473,
+            "end_lat": -26.2089,
+            "end_lon": 28.0512,
+            "device_id": "device_001",
+            "selfies": [],
+            "busses": [
+                {
+                    "bus_number": "GA 01 001 GP",
+                    "inspections": {
+                        "driver": {
+                            "internal_inspection_id": "drv-1",
+                            "inspection_time": "2026-05-01T08:07:00",
+                            "inspection_lat": -26.2047,
+                            "inspection_lon": 28.0482,
+                            "prdp_scan_succeeded": True,
+                            "driver_identified": True,
+                            "driver_name": "Sipho Nkosi"
+                        }
+                    },
+                }
+            ],
+        }
+
+        shift = ShiftCreate.model_validate(payload)
+
+        self.assertEqual(shift.busses[0].bus_id, "GA 01 001 GP")
+        self.assertEqual(shift.busses[0].bus_number, "GA 01 001 GP")
+
+    def test_shift_create_requires_bus_id_or_bus_number(self):
+        payload = {
+            "user_id": "firebase_uid_abc123",
+            "start_time": "2026-05-01T07:00:00",
+            "end_time": "2026-05-01T15:30:00",
+            "start_lat": -26.2041,
+            "start_lon": 28.0473,
+            "end_lat": -26.2089,
+            "end_lon": 28.0512,
+            "device_id": "device_001",
+            "selfies": [],
+            "busses": [
+                {
+                    "inspections": {
+                        "driver": {
+                            "internal_inspection_id": "drv-1",
+                            "inspection_time": "2026-05-01T08:07:00",
+                            "inspection_lat": -26.2047,
+                            "inspection_lon": 28.0482,
+                            "prdp_scan_succeeded": True,
+                            "driver_identified": True,
+                            "driver_name": "Sipho Nkosi"
+                        }
+                    },
+                }
+            ],
+        }
+
+        with self.assertRaises(ValueError) as raised:
+            ShiftCreate.model_validate(payload)
+
+        self.assertIn(
+            "Either bus_id or bus_number must be provided",
+            str(raised.exception),
+        )
+
     def test_group_bus_inspections_returns_nested_structure(self):
         timestamp = datetime(2026, 5, 1, 8, 0, 0)
         photo_created_at = datetime(2026, 5, 1, 8, 3, 0)

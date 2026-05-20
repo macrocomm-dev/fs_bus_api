@@ -178,11 +178,21 @@ class InspectionIn(BaseModel):
 
 
 class BusIn(BaseModel):
-    bus_id: str  # maps to bus_id / vin
-    bus_number: Optional[str]  # maps to fleet_number
+    bus_id: Optional[str] = None  # maps to bus_id / vin
+    bus_number: Optional[str] = None  # maps to fleet_number
     license_disk_scan_succeeded: Optional[bool] = True
     destination_displayed: Optional[bool] = True
     inspections: BusInspectionsIn
+
+    @model_validator(mode="after")
+    def require_identifier(self):
+        if not self.bus_id and not self.bus_number:
+            raise ValueError("Either bus_id or bus_number must be provided")
+        if not self.bus_id:
+            self.bus_id = self.bus_number
+        if not self.bus_number:
+            self.bus_number = self.bus_id
+        return self
 
 
 # ---------------------------------------------------------------------------
@@ -402,11 +412,21 @@ class InspectionMetaIn(BaseModel):
 
 
 class BusMetaIn(BaseModel):
-    bus_id: str
+    bus_id: Optional[str] = None
     bus_number: Optional[str] = None  # maps to fleet_number
     license_disk_scan_succeeded: Optional[bool] = True
     destination_displayed: Optional[bool] = True
     inspections: BusInspectionsMetaIn
+
+    @model_validator(mode="after")
+    def require_identifier(self):
+        if not self.bus_id and not self.bus_number:
+            raise ValueError("Either bus_id or bus_number must be provided")
+        if not self.bus_id:
+            self.bus_id = self.bus_number
+        if not self.bus_number:
+            self.bus_number = self.bus_id
+        return self
 
 
 class ShiftCreateMeta(BaseModel):
