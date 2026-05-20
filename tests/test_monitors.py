@@ -36,6 +36,7 @@ class MonitorRouterTests(unittest.IsolatedAsyncioTestCase):
         db = SimpleNamespace(
             add=Mock(),
             flush=Mock(),
+            refresh=Mock(),
             commit=Mock(),
             rollback=Mock(),
         )
@@ -52,6 +53,7 @@ class MonitorRouterTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(response, {"status": 201, "message": "success"})
         db.flush.assert_called_once()
+        db.refresh.assert_called_once()
         db.commit.assert_called_once()
         db.rollback.assert_not_called()
         add_shift_selfies.assert_awaited_once()
