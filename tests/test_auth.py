@@ -197,7 +197,7 @@ class AuthTests(unittest.TestCase):
         self.assertEqual(response.json()["id_token"], "firebase-id-token")
         self.assertEqual(response.json()["provider"], "firebase")
 
-    def test_authentication_get_token_returns_name_surname_and_role(self):
+    def test_auth_get_token_returns_name_surname_and_role(self):
         result = FirebasePasswordSignInResult(
             id_token="firebase-id-token",
             refresh_token="firebase-refresh-token",
@@ -234,12 +234,9 @@ class AuthTests(unittest.TestCase):
 
         app.dependency_overrides[get_db] = override_db
 
-        with patch(
-            "app.routers.authentication.sign_in_with_email_password",
-            return_value=result,
-        ):
+        with patch("app.main.sign_in_with_email_password", return_value=result):
             response = client.post(
-                "/authentication/get_token",
+                "/auth/get_token",
                 json={
                     "email": "ada@example.com",
                     "password": "example-password",

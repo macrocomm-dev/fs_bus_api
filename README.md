@@ -91,7 +91,7 @@ The API is available at <http://localhost:8000>.
 Firebase Authentication is now the identity provider for API bearer-token validation.
 
 - Protected API routes require `Authorization: Bearer <firebase-id-token>`.
-- `/auth/token` is intentionally disabled; use `/authentication/get_token` for the app-facing login flow.
+- `/auth/token` is intentionally disabled; use `/auth/get_token` for the app-facing login flow.
 - The mobile app should obtain its Firebase ID token from Firebase Auth itself, typically through the Firebase client SDK or Firebase Auth REST API, not from this backend.
 - `/auth/test/whoami` and `/me` are the simplest endpoints to validate that a Firebase ID token is being accepted by the API.
 - `/auth/test/token` is a temporary backend proxy that exchanges email/password for a Firebase ID token for smoke testing only.

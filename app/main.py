@@ -36,14 +36,17 @@ from app.firebase_identity import (
     FirebasePasswordSignInRequest,
     FirebasePasswordSignInResult,
     FirebaseRefreshRequest,
-    FirebaseRefreshResult,
     refresh_id_token,
     sign_in_with_email_password,
 )
 from app.database import get_db
 from app.models.app_auth import AppUser
 from app.routers.router_config import register_routers
-from app.schemas.authentication import UserRefreshResponse
+from app.schemas.authentication import (
+    UserLoginRequest,
+    UserLoginResponse,
+    UserRefreshResponse,
+)
 from app.services.audit_service import log_api_error
 from sqlalchemy.orm import Session
 
@@ -227,7 +230,66 @@ def _build_docs_html(settings: Settings) -> str:
 
 
 # /auth/token intentionally disabled for now.
-# Use /authentication/get_token for the app-facing login flow.
+# Use /auth/get_token for the app-facing login flow.
+
+
+@auth_router.post(
+    "/get_token",
+    response_model=UserLoginResponse,
+    summary="Get app login token and user context",
+    responses={
+        401: {"description": "Invalid email or password"},
+        502: {"description": "Authentication service unavailable"},
+    },
+)
+async def get_token(
+    payload: UserLoginRequest,
+    db: Session = Depends(get_db),
+) -> UserLoginResponse:
+    settings = get_settings()
+
+    try:
+        firebase_result = sign_in_with_email_password(
+            api_key=settings.firebase_web_api_key,
+            email=payload.email,
+            password=payload.password,
+        )
+    except FirebaseInvalidCredentialsError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password",
+        )
+    except FirebaseIdentityError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Authentication service error: {exc}",
+        )
+
+    app_user = (
+        db.query(AppUser)
+        .filter(AppUser.firebase_uid == firebase_result.local_id)
+        .first()
+    )
+    if app_user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User account not found. Contact an administrator.",
+        )
+
+    expires_at = datetime.now(timezone.utc) + timedelta(
+        seconds=firebase_result.expires_in
+    )
+    name, surname = split_user_name(app_user.full_name)
+
+    return UserLoginResponse(
+        access_token=firebase_result.id_token,
+        token_type="bearer",
+        role=app_user.role,
+        user_id=app_user.firebase_uid,
+        name=app_user.name or name,
+        surname=app_user.surname or surname,
+        expires_at=expires_at,
+    )
 
 
 @auth_router.post(
@@ -249,7 +311,7 @@ def refresh_token(
 
     Call this when the bearer token has expired. The returned ``access_token``
     replaces the old token for subsequent requests and includes the same user
-    context as ``/authentication/get_token``.
+    context as ``/auth/get_token``.
     """
     try:
         firebase_result = refresh_id_token(

@@ -52,7 +52,7 @@ curl -X 'POST' \
 
 ---
 
-## POST `/authentication/get_token` — Get App Login Context
+## POST `/auth/get_token` — Get App Login Context
 
 Exchange email and password for a Firebase ID token plus the app user context stored in the database.
 
