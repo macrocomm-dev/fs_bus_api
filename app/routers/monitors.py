@@ -291,7 +291,7 @@ async def create_shift(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An error occurred while creating the shift: {str(e)}",
         )
-    return {"status": 201, "message": "success"}
+    return ShiftCreatedResponse(status=201, message="success", shift_id=create_shif.id)
 
 
 # We add selfies captured during the shift to the selfies table, linked to the shift_id
@@ -474,7 +474,7 @@ async def create_shift_multipart(
                 _persist_inspection(db, inspection_payload)
 
         db.commit()
-        return ShiftCreatedResponse(status=201, message="success")
+        return ShiftCreatedResponse(status=201, message="success", shift_id=new_shift.id)
 
     except HTTPException:
         raise

@@ -70,6 +70,7 @@ Exchange email and password for a Firebase ID token plus the app user context st
 ```json
 {
   "access_token": "<id_token>",
+  "refresh_token": "<refresh_token>",
   "token_type": "bearer",
   "role": "Supervisor",
   "user_id": "firebase_uid_abc123",
@@ -220,7 +221,8 @@ curl -X 'POST' \
 ```json
 {
   "status": 201,
-  "message": "success"
+  "message": "success",
+  "shift_id": 12345
 }
 ```
 

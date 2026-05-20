@@ -432,6 +432,7 @@ class MessageResponse(str, Enum):
 class ShiftCreatedResponse(BaseModel):
     status: int
     message: MessageResponse
+    shift_id: int
 
 
 class ShiftResponse(BaseModel):

@@ -12,11 +12,22 @@ os.environ.setdefault("DB_NAME", "test")
 os.environ.setdefault("SECRET_KEY", "test")
 os.environ.setdefault("GCS_BUCKET_NAME", "test")
 
+from app.auth import TokenData, get_current_user
 from app.routers.inspection import _group_bus_inspection_rows
 from app.schemas.shift import ShiftCreate
+from fastapi.testclient import TestClient
+
+from app.database import get_db
+from app.main import app
+
+
+client = TestClient(app)
 
 
 class ShiftContractTests(unittest.TestCase):
+
+    def tearDown(self):
+        app.dependency_overrides.clear()
 
     def test_shift_create_accepts_nested_bus_inspections(self):
         payload = {
@@ -261,6 +272,57 @@ class ShiftContractTests(unittest.TestCase):
             grouped[0]["inspections"]["behind_schedule_reports"][0]["behind_schedule_interval"],
             "5-10 mins",
         )
+
+    def test_create_shift_returns_internal_shift_id(self):
+        payload = {
+            "user_id": "firebase_uid_abc123",
+            "start_time": "2026-05-01T07:00:00",
+            "end_time": "2026-05-01T15:30:00",
+            "start_lat": -26.2041,
+            "start_lon": 28.0473,
+            "end_lat": -26.2089,
+            "end_lon": 28.0512,
+            "device_id": "device_001",
+            "selfies": [],
+            "busses": [],
+        }
+
+        class FakeDb:
+            def add(self, obj):
+                if obj.__class__.__name__ == "Shift":
+                    obj.id = 321
+
+            def commit(self):
+                return None
+
+            def refresh(self, obj):
+                return None
+
+            def rollback(self):
+                return None
+
+        def override_db():
+            yield FakeDb()
+
+        app.dependency_overrides[get_db] = override_db
+
+        app.dependency_overrides[get_current_user] = lambda: TokenData(
+            sub="firebase_uid_abc123",
+            name="Ada Lovelace",
+            email="ada@example.com",
+            role="Supervisor",
+        )
+
+        response = client.post(
+            "/shift/create_shift/",
+            json=payload,
+            headers={"Authorization": "Bearer test-token"},
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()["status"], 201)
+        self.assertEqual(response.json()["message"], "success")
+        self.assertEqual(response.json()["shift_id"], 321)
 
 
 if __name__ == "__main__":

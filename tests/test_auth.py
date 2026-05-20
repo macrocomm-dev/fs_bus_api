@@ -245,11 +245,11 @@ class AuthTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["access_token"], "firebase-id-token")
+        self.assertEqual(response.json()["refresh_token"], "firebase-refresh-token")
         self.assertEqual(response.json()["role"], "Supervisor")
         self.assertEqual(response.json()["user_id"], "firebase-local-id")
         self.assertEqual(response.json()["name"], "Ada")
         self.assertEqual(response.json()["surname"], "Lovelace")
-        self.assertIsNotNone(response.json()["expires_at"])
         self.assertIsNotNone(response.json()["expires_at"])
 
     def test_auth_refresh_returns_name_surname_and_role(self):

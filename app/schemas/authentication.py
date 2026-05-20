@@ -14,6 +14,7 @@ class UserLoginRequest(BaseModel):
 
 class UserLoginResponse(BaseModel):
     access_token: str
+    refresh_token: str
     token_type: str
     role: str
     user_id: str
@@ -23,4 +24,4 @@ class UserLoginResponse(BaseModel):
 
 
 class UserRefreshResponse(UserLoginResponse):
-    refresh_token: str
+    pass

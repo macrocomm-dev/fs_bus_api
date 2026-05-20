@@ -283,6 +283,7 @@ async def get_token(
 
     return UserLoginResponse(
         access_token=firebase_result.id_token,
+        refresh_token=firebase_result.refresh_token,
         token_type="bearer",
         role=app_user.role,
         user_id=app_user.firebase_uid,
