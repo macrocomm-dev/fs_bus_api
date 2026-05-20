@@ -33,6 +33,13 @@ CLOUD_SQL_INSTANCE="${CLOUD_SQL_INSTANCE:-bus-track-480813:africa-south1:fs-bus-
 DB_HOST="${DB_HOST:-127.0.0.1}"
 DB_PORT="${DB_PORT:-5432}"
 API_PORT="${API_PORT:-8000}"
+LOAD_GCP_SECRETS="${LOAD_GCP_SECRETS:-true}"
+
+export GOOGLE_CLOUD_PROJECT CLOUD_SQL_INSTANCE DB_HOST DB_PORT API_PORT LOAD_GCP_SECRETS
+
+if [[ "${LOAD_GCP_SECRETS}" != "true" ]]; then
+    echo "[start] Secret Manager lookup disabled for local startup (set LOAD_GCP_SECRETS=true to enable)"
+fi
 
 # ---------------------------------------------------------------------------
 # 2. Ensure virtual environment is active

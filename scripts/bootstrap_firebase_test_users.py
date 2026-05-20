@@ -8,6 +8,8 @@ import sys
 
 from firebase_admin import auth, get_app, initialize_app
 
+from app.auth import split_user_name
+
 # Allow running from project root without installing the package.
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -89,6 +91,7 @@ def upsert_db_user(
 
     db = SessionLocal()
     try:
+        name, surname = split_user_name(full_name)
         operator = (
             db.query(Operator).filter(Operator.operator_name == operator_name).first()
         )
@@ -108,6 +111,8 @@ def upsert_db_user(
                     firebase_uid=firebase_uid,
                     email=email,
                     full_name=full_name,
+                    name=name,
+                    surname=surname,
                     role=role,
                     operator_id=operator_id,
                     is_active=True,
@@ -119,6 +124,8 @@ def upsert_db_user(
             user.firebase_uid = firebase_uid
             user.email = email
             user.full_name = full_name
+            user.name = name
+            user.surname = surname
             user.role = role
             user.operator_id = operator_id
             user.is_active = True

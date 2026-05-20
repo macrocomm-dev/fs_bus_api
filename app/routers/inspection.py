@@ -1,3 +1,4 @@
+from collections import defaultdict
 from datetime import date, datetime, time
 from typing import Annotated, List, Optional
 
@@ -13,9 +14,9 @@ from fastapi import (
     status,
 )
 from fastapi.responses import JSONResponse
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
-from app.auth import TokenData, get_current_user
+from app.auth import TokenData, get_current_user, split_user_name
 from app.database import get_db
 from app.models.app_auth import AppUser
 from app.models.master_data import Operator, Route, Vehicle
@@ -27,8 +28,8 @@ from app.models.operations import (
     PassengerCount,
 )
 from app.schemas.shift import (
-    BusInspectionResponse,
     DateRangeLimitQueryParams,
+    GroupedBusInspectionResponse,
     date_range_params,
 )
 
@@ -72,10 +73,13 @@ async def get_user_id_from_token(current_user: TokenData, db: Session) -> int:
         db.query(AppUser).filter(AppUser.firebase_uid == current_user.sub).first()
     )
     if app_user is None:
+        name, surname = split_user_name(current_user.name)
         app_user = AppUser(
             firebase_uid=current_user.sub,
             email=current_user.email,
             full_name=current_user.name,
+            name=name,
+            surname=surname,
             role=current_user.role,
             is_active=True,
         )
@@ -299,9 +303,126 @@ def _apply_date_range_limit(query, params: DateRangeLimitQueryParams):
     return query
 
 
+def _serialize_group_photo(photo) -> dict:
+    return {
+        "id": photo.id,
+        "timestamp": photo.timestamp,
+        "lat": photo.lat,
+        "lon": photo.lon,
+        "photo": photo.photo,
+        "created_at": photo.created_at,
+    }
+
+
+def _inspection_item_response(pass_value, reason, photos_by_item, inspection_item: str):
+    return {
+        "pass_": pass_value,
+        "reason": reason,
+        "photos": photos_by_item.get(inspection_item, []),
+    }
+
+
+def _group_bus_inspection_rows(rows: list[BusInspection]) -> list[dict]:
+    grouped: dict[tuple[int, str], dict] = {}
+
+    for row in rows:
+        key = (row.shift_id, row.bus_id)
+        if key not in grouped:
+            grouped[key] = {
+                "shift_id": row.shift_id,
+                "user_id": row.user_id,
+                "bus_id": row.bus_id,
+                "fleet_number": row.fleet_number,
+                "inspections": {
+                    "external": None,
+                    "internal": None,
+                    "driver": None,
+                    "passenger_counts": [],
+                    "behind_schedule_reports": [],
+                },
+            }
+
+        photos_by_item = defaultdict(list)
+        for photo in row.photos:
+            photos_by_item[photo.inspection_item].append(_serialize_group_photo(photo))
+
+        base = {
+            "inspection_id": row.id,
+            "internal_inspection_id": row.internal_inspection_id,
+            "inspection_time": row.inspection_time,
+            "inspection_lat": row.inspection_lat,
+            "inspection_lon": row.inspection_lon,
+            "pass_": row.pass_,
+            "notes": row.notes,
+        }
+
+        if row.inspection_type == "external":
+            grouped[key]["inspections"]["external"] = {
+                **base,
+                "tyres": _inspection_item_response(
+                    row.tyres_pass, row.tyres_notes, photos_by_item, "tyres"
+                ),
+                "windows": _inspection_item_response(
+                    row.windows_pass, row.windows_notes, photos_by_item, "windows"
+                ),
+                "other": _inspection_item_response(
+                    row.ext_other_pass,
+                    row.ext_other_notes,
+                    photos_by_item,
+                    "ext_other",
+                ),
+            }
+        elif row.inspection_type == "internal":
+            grouped[key]["inspections"]["internal"] = {
+                **base,
+                "fire_extinguisher_present": row.fire_extinguisher_present,
+                "seats": _inspection_item_response(
+                    row.seats_pass, row.seats_notes, photos_by_item, "seats"
+                ),
+                "aisle": _inspection_item_response(
+                    row.aisle_pass, row.aisle_notes, photos_by_item, "aisle"
+                ),
+                "other": _inspection_item_response(
+                    row.int_other_pass,
+                    row.int_other_notes,
+                    photos_by_item,
+                    "int_other",
+                ),
+            }
+        elif row.inspection_type == "driver":
+            grouped[key]["inspections"]["driver"] = {
+                **base,
+                "license_disk_scan_succeeded": row.license_disk_scan_succeeded,
+                "destination_displayed": row.destination_displayed,
+                "prdp_scan_succeeded": row.prdp_scan_succeeded,
+                "prdp_expiry_date": row.prdp_expiry_date,
+                "driver_identified": row.driver_identified,
+                "driver_fail_reason": row.driver_fail_reason,
+                "driver_name": row.driver_name,
+            }
+        elif row.inspection_type == "count":
+            grouped[key]["inspections"]["passenger_counts"].append(
+                {
+                    **base,
+                    "count": row.count,
+                    "number_seated": row.number_seated,
+                    "number_standing": row.number_standing,
+                }
+            )
+        elif row.inspection_type in {"behind_schedule", "technical"}:
+            grouped[key]["inspections"]["behind_schedule_reports"].append(
+                {
+                    **base,
+                    "behind_schedule_interval": row.behind_schedule_interval,
+                }
+            )
+
+    return list(grouped.values())
+
+
 @inspection_router.get(
     "/bus_inspections",
-    response_model=List[BusInspectionResponse],
+    response_model=List[GroupedBusInspectionResponse],
     responses={**_401, **_500},
     summary="Get all bus inspections with optional date range and limit",
 )
@@ -311,9 +432,9 @@ async def get_all_bus_inspections(
     current_user: TokenData = Depends(get_current_user),
 ):
     try:
-        query = db.query(BusInspection)
+        query = db.query(BusInspection).options(selectinload(BusInspection.photos))
         query = _apply_date_range_limit(query, params)
-        return query.all()
+        return _group_bus_inspection_rows(query.all())
     except HTTPException:
         raise
     except Exception as exc:
@@ -325,7 +446,7 @@ async def get_all_bus_inspections(
 
 @inspection_router.get(
     "/bus_inspections/by_shift_ids",
-    response_model=List[BusInspectionResponse],
+    response_model=List[GroupedBusInspectionResponse],
     responses={**_401, **_404, **_500},
     summary="Get bus inspections by shift IDs with optional date range and limit",
 )
@@ -343,9 +464,10 @@ async def get_bus_inspections_by_shift(
             detail="At least one shift ID must be provided",
         )
     try:
-        query = db.query(BusInspection).filter(BusInspection.shift_id.in_(shift_ids))
+        query = db.query(BusInspection).options(selectinload(BusInspection.photos))
+        query = query.filter(BusInspection.shift_id.in_(shift_ids))
         query = _apply_date_range_limit(query, params)
-        results = query.all()
+        results = _group_bus_inspection_rows(query.all())
         if not results:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -363,7 +485,7 @@ async def get_bus_inspections_by_shift(
 
 @inspection_router.get(
     "/bus_inspections/by_bus_ids",
-    response_model=List[BusInspectionResponse],
+    response_model=List[GroupedBusInspectionResponse],
     responses={**_401, **_404, **_500},
     summary="Get bus inspections by bus IDs/VINs with optional date range and limit",
 )
@@ -382,9 +504,10 @@ async def get_bus_inspections_by_bus(
             detail="At least one bus ID must be provided",
         )
     try:
-        query = db.query(BusInspection).filter(BusInspection.bus_id.in_(bus_ids))
+        query = db.query(BusInspection).options(selectinload(BusInspection.photos))
+        query = query.filter(BusInspection.bus_id.in_(bus_ids))
         query = _apply_date_range_limit(query, params)
-        results = query.all()
+        results = _group_bus_inspection_rows(query.all())
         if not results:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -402,7 +525,7 @@ async def get_bus_inspections_by_bus(
 
 @inspection_router.get(
     "/bus_inspections/by_user_ids",
-    response_model=List[BusInspectionResponse],
+    response_model=List[GroupedBusInspectionResponse],
     responses={**_401, **_404, **_500},
     summary="Get bus inspections by user IDs with optional date range and limit",
 )
@@ -421,9 +544,10 @@ async def get_bus_inspections_by_user(
             detail="At least one user ID must be provided",
         )
     try:
-        query = db.query(BusInspection).filter(BusInspection.user_id.in_(user_ids))
+        query = db.query(BusInspection).options(selectinload(BusInspection.photos))
+        query = query.filter(BusInspection.user_id.in_(user_ids))
         query = _apply_date_range_limit(query, params)
-        results = query.all()
+        results = _group_bus_inspection_rows(query.all())
         if not results:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

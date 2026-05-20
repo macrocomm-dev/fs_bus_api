@@ -15,7 +15,7 @@ from fastapi.responses import Response
 from firebase_admin import db
 from sqlalchemy.orm import Session
 
-from app.auth import TokenData, get_current_user
+from app.auth import TokenData, get_current_user, split_user_name
 from app.database import get_db
 from app.models.app_auth import AppUser
 from app.models.master_data import Operator, Route, Vehicle
@@ -71,10 +71,13 @@ async def get_user_id_from_token(current_user: TokenData, db: Session) -> int:
         db.query(AppUser).filter(AppUser.firebase_uid == current_user.sub).first()
     )
     if app_user is None:
+        name, surname = split_user_name(current_user.name)
         app_user = AppUser(
             firebase_uid=current_user.sub,
             email=current_user.email,
             full_name=current_user.name,
+            name=name,
+            surname=surname,
             role=current_user.role,
             is_active=True,
         )

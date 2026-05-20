@@ -18,6 +18,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.auth import (
     expand_role_permissions,
@@ -53,6 +54,8 @@ app = FastAPI(
     redoc_url=None,
     openapi_url=None,
 )
+
+app.openapi_version = "3.0.3"
 
 
 def _get_cors_origins(settings: Settings) -> list[str]:
@@ -124,6 +127,34 @@ app.add_middleware(
 
 auth_router = APIRouter(prefix="/auth", tags=["auth"])
 DOCS_TEMPLATE_PATH = Path(__file__).with_name("templates") / "docs.html"
+SWAGGER_UI_CSS_CDN = "https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css"
+SWAGGER_UI_BUNDLE_CDN = (
+    "https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js"
+)
+
+
+def _get_local_swagger_ui_dir() -> Path | None:
+    try:
+        import swagger_ui_bundle  # noqa: PLC0415
+    except ImportError:
+        return None
+
+    package_dir = Path(swagger_ui_bundle.__file__).resolve().parent
+    vendor_root = package_dir / "vendor"
+    candidates = sorted(vendor_root.glob("swagger-ui-*"))
+    if not candidates:
+        return None
+    return candidates[-1]
+
+
+LOCAL_SWAGGER_UI_DIR = _get_local_swagger_ui_dir()
+
+if LOCAL_SWAGGER_UI_DIR is not None:
+    app.mount(
+        "/_static/swagger-ui",
+        StaticFiles(directory=str(LOCAL_SWAGGER_UI_DIR)),
+        name="swagger-ui-static",
+    )
 
 
 def _serialize_user(current_user: TokenData) -> dict[str, object]:
@@ -159,10 +190,22 @@ def _load_docs_template() -> str:
 def _build_docs_html(settings: Settings) -> str:
     required_role = escape(settings.docs_required_role or "any authenticated user")
     test_auth_enabled = settings.enable_test_auth_endpoints
+    swagger_ui_css_url = (
+        "/_static/swagger-ui/swagger-ui.css"
+        if LOCAL_SWAGGER_UI_DIR is not None
+        else SWAGGER_UI_CSS_CDN
+    )
+    swagger_ui_bundle_url = (
+        "/_static/swagger-ui/swagger-ui-bundle.js"
+        if LOCAL_SWAGGER_UI_DIR is not None
+        else SWAGGER_UI_BUNDLE_CDN
+    )
     return (
         _load_docs_template()
         .replace("__APP_TITLE__", escape(app.title))
         .replace("__REQUIRED_ROLE__", required_role)
+        .replace("__SWAGGER_UI_CSS_URL__", swagger_ui_css_url)
+        .replace("__SWAGGER_UI_BUNDLE_URL__", swagger_ui_bundle_url)
         .replace(
             "__TEST_AUTH_SECTION_CLASS__",
             "" if test_auth_enabled else "hidden",
@@ -307,6 +350,7 @@ def openapi_schema(
             title=app.title,
             version=app.version,
             description=app.description,
+            openapi_version=app.openapi_version,
             routes=app.routes,
         )
     )

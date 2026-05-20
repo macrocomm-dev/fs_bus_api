@@ -14,7 +14,15 @@ class InspectionType(str, Enum):
     internal = "internal"
     count = "count"
     driver = "driver"
+    behind_schedule = "behind_schedule"
     technical = "technical"
+
+
+class BehindScheduleInterval(str, Enum):
+    zero_to_five = "0-5 mins"
+    five_to_ten = "5-10 mins"
+    ten_to_fifteen = "10-15 mins"
+    fifteen_plus = "15+ mins"
 
 
 # ---------------------------------------------------------------------------
@@ -26,15 +34,71 @@ class PhotoIn(BaseModel):
     timestamp: datetime
     lat: float
     lon: float
-    inspection_item: str
     photo: str  # base64-encoded image string
 
 
-class SelfieIn(BaseModel):
+class SelfieIn(PhotoIn):
+    pass
+
+
+class InspectionItemPhotoIn(BaseModel):
     timestamp: datetime
     lat: float
     lon: float
     photo: str  # base64-encoded image string
+
+
+class InspectionItemIn(BaseModel):
+    pass_: bool = True
+    reason: Optional[str] = None
+    photos: list[InspectionItemPhotoIn] = []
+
+
+class InspectionBaseIn(BaseModel):
+    internal_inspection_id: str
+    inspection_time: datetime
+    inspection_lat: float
+    inspection_lon: float
+
+
+class ExteriorInspectionIn(InspectionBaseIn):
+    tyres: InspectionItemIn
+    windows: InspectionItemIn
+    other: InspectionItemIn
+
+
+class InteriorInspectionIn(InspectionBaseIn):
+    fire_extinguisher_present: bool
+    seats: InspectionItemIn
+    aisle: InspectionItemIn
+    other: InspectionItemIn
+
+
+class DriverInspectionIn(InspectionBaseIn):
+    license_disk_scan_succeeded: Optional[bool] = None
+    destination_displayed: Optional[bool] = None
+    prdp_scan_succeeded: Optional[bool] = None
+    prdp_expiry_date: Optional[datetime] = None
+    driver_identified: Optional[bool] = None
+    driver_fail_reason: Optional[str] = None
+    driver_name: Optional[str] = None
+
+
+class PassengerCountIn(InspectionBaseIn):
+    number_seated: int
+    number_standing: int
+
+
+class BehindScheduleReportIn(InspectionBaseIn):
+    behind_schedule_interval: BehindScheduleInterval
+
+
+class BusInspectionsIn(BaseModel):
+    external: Optional[ExteriorInspectionIn] = None
+    internal: Optional[InteriorInspectionIn] = None
+    driver: Optional[DriverInspectionIn] = None
+    passenger_counts: list[PassengerCountIn] = []
+    behind_schedule_reports: list[BehindScheduleReportIn] = []
 
 
 # ---------------------------------------------------------------------------
@@ -43,6 +107,8 @@ class SelfieIn(BaseModel):
 
 
 class InspectionIn(BaseModel):
+    """Legacy alias retained temporarily while create-shift is migrated."""
+
     internal_inspection_id: str
     inspection_type: InspectionType
     inspection_time: datetime
@@ -51,24 +117,20 @@ class InspectionIn(BaseModel):
     count: Optional[int] = 0
     pass_: bool = True
     notes: Optional[str] = None
-    # Exterior inspection
     tyres_pass: Optional[bool] = None
     tyres_notes: Optional[str] = None
     windows_pass: Optional[bool] = None
     windows_notes: Optional[str] = None
     ext_other_pass: Optional[bool] = None
     ext_other_notes: Optional[str] = None
-    # Interior inspection
     seats_pass: Optional[bool] = None
     seats_notes: Optional[str] = None
     aisle_pass: Optional[bool] = None
     aisle_notes: Optional[str] = None
     int_other_pass: Optional[bool] = None
     int_other_notes: Optional[str] = None
-    # Passenger count
     number_seated: Optional[int] = None
     number_standing: Optional[int] = None
-    # Behind schedule
     behind_schedule_interval: Optional[str] = None
     photos: list[PhotoIn]
 
@@ -83,15 +145,7 @@ class InspectionIn(BaseModel):
 class BusIn(BaseModel):
     bus_id: str  # maps to bus_id / vin
     bus_number: Optional[str]  # maps to fleet_number
-    # Bus / driver identification
-    license_disk_scan_succeeded: Optional[bool] = None
-    destination_displayed: Optional[bool] = None
-    prdp_scan_succeeded: Optional[bool] = None
-    prdp_expiry_date: Optional[datetime] = None
-    driver_identified: Optional[bool] = None
-    driver_fail_reason: Optional[str] = None
-    driver_name: Optional[str] = None
-    inspections: list[InspectionIn]
+    inspections: BusInspectionsIn
 
 
 # ---------------------------------------------------------------------------
@@ -174,16 +228,74 @@ class PhotoMetaIn(BaseModel):
     timestamp: datetime
     lat: float
     lon: float
-    inspection_item: str
 
 
-class SelfieMetaIn(BaseModel):
+class SelfieMetaIn(PhotoMetaIn):
+    pass
+
+
+class InspectionItemPhotoMetaIn(BaseModel):
     timestamp: datetime
     lat: float
     lon: float
 
 
+class InspectionItemMetaIn(BaseModel):
+    pass_: bool = True
+    reason: Optional[str] = None
+    photos: list[InspectionItemPhotoMetaIn] = []
+
+
+class InspectionBaseMetaIn(BaseModel):
+    internal_inspection_id: str
+    inspection_time: datetime
+    inspection_lat: float
+    inspection_lon: float
+
+
+class ExteriorInspectionMetaIn(InspectionBaseMetaIn):
+    tyres: InspectionItemMetaIn
+    windows: InspectionItemMetaIn
+    other: InspectionItemMetaIn
+
+
+class InteriorInspectionMetaIn(InspectionBaseMetaIn):
+    fire_extinguisher_present: bool
+    seats: InspectionItemMetaIn
+    aisle: InspectionItemMetaIn
+    other: InspectionItemMetaIn
+
+
+class DriverInspectionMetaIn(InspectionBaseMetaIn):
+    license_disk_scan_succeeded: Optional[bool] = None
+    destination_displayed: Optional[bool] = None
+    prdp_scan_succeeded: Optional[bool] = None
+    prdp_expiry_date: Optional[datetime] = None
+    driver_identified: Optional[bool] = None
+    driver_fail_reason: Optional[str] = None
+    driver_name: Optional[str] = None
+
+
+class PassengerCountMetaIn(InspectionBaseMetaIn):
+    number_seated: int
+    number_standing: int
+
+
+class BehindScheduleReportMetaIn(InspectionBaseMetaIn):
+    behind_schedule_interval: BehindScheduleInterval
+
+
+class BusInspectionsMetaIn(BaseModel):
+    external: Optional[ExteriorInspectionMetaIn] = None
+    internal: Optional[InteriorInspectionMetaIn] = None
+    driver: Optional[DriverInspectionMetaIn] = None
+    passenger_counts: list[PassengerCountMetaIn] = []
+    behind_schedule_reports: list[BehindScheduleReportMetaIn] = []
+
+
 class InspectionMetaIn(BaseModel):
+    """Legacy alias retained temporarily while multipart create-shift is migrated."""
+
     internal_inspection_id: str
     inspection_type: InspectionType
     inspection_time: datetime
@@ -219,15 +331,7 @@ class InspectionMetaIn(BaseModel):
 class BusMetaIn(BaseModel):
     bus_id: str
     bus_number: Optional[str] = None  # maps to fleet_number
-    # Bus / driver identification
-    license_disk_scan_succeeded: Optional[bool] = None
-    destination_displayed: Optional[bool] = None
-    prdp_scan_succeeded: Optional[bool] = None
-    prdp_expiry_date: Optional[datetime] = None
-    driver_identified: Optional[bool] = None
-    driver_fail_reason: Optional[str] = None
-    driver_name: Optional[str] = None
-    inspections: list[InspectionMetaIn] = []
+    inspections: BusInspectionsMetaIn
 
 
 class ShiftCreateMeta(BaseModel):
@@ -292,6 +396,80 @@ class PhotoResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class InspectionItemPhotoResponse(BaseModel):
+    id: int
+    timestamp: datetime
+    lat: float
+    lon: float
+    photo: str
+    created_at: datetime
+
+
+class InspectionItemResponse(BaseModel):
+    pass_: Optional[bool] = None
+    reason: Optional[str] = None
+    photos: list[InspectionItemPhotoResponse] = []
+
+
+class InspectionEventResponse(BaseModel):
+    inspection_id: int
+    internal_inspection_id: str
+    inspection_time: datetime
+    inspection_lat: float
+    inspection_lon: float
+    pass_: Optional[bool] = True
+    notes: Optional[str] = None
+
+
+class ExteriorInspectionResponse(InspectionEventResponse):
+    tyres: InspectionItemResponse
+    windows: InspectionItemResponse
+    other: InspectionItemResponse
+
+
+class InteriorInspectionResponse(InspectionEventResponse):
+    fire_extinguisher_present: Optional[bool] = None
+    seats: InspectionItemResponse
+    aisle: InspectionItemResponse
+    other: InspectionItemResponse
+
+
+class DriverInspectionResponse(InspectionEventResponse):
+    license_disk_scan_succeeded: Optional[bool] = None
+    destination_displayed: Optional[bool] = None
+    prdp_scan_succeeded: Optional[bool] = None
+    prdp_expiry_date: Optional[datetime] = None
+    driver_identified: Optional[bool] = None
+    driver_fail_reason: Optional[str] = None
+    driver_name: Optional[str] = None
+
+
+class PassengerCountInspectionResponse(InspectionEventResponse):
+    count: Optional[int] = 0
+    number_seated: Optional[int] = None
+    number_standing: Optional[int] = None
+
+
+class BehindScheduleInspectionResponse(InspectionEventResponse):
+    behind_schedule_interval: Optional[str] = None
+
+
+class BusInspectionGroupItemsResponse(BaseModel):
+    external: Optional[ExteriorInspectionResponse] = None
+    internal: Optional[InteriorInspectionResponse] = None
+    driver: Optional[DriverInspectionResponse] = None
+    passenger_counts: list[PassengerCountInspectionResponse] = []
+    behind_schedule_reports: list[BehindScheduleInspectionResponse] = []
+
+
+class GroupedBusInspectionResponse(BaseModel):
+    shift_id: int
+    user_id: str
+    bus_id: str
+    fleet_number: Optional[str] = None
+    inspections: BusInspectionGroupItemsResponse
 
 
 class BusInspectionResponse(BaseModel):

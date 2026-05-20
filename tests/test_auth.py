@@ -1,11 +1,23 @@
+import os
+import sys
 import unittest
+from types import SimpleNamespace
 from unittest.mock import patch
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+os.environ.setdefault("DB_USER", "test")
+os.environ.setdefault("DB_PASSWORD", "test")
+os.environ.setdefault("DB_NAME", "test")
+os.environ.setdefault("SECRET_KEY", "test")
+os.environ.setdefault("GCS_BUCKET_NAME", "test")
 
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from app.auth import TokenData, expand_role_permissions, require_role
 from app.config import Settings, get_settings
+from app.database import get_db
 from app.firebase_identity import (
     FirebaseInvalidCredentialsError,
     FirebasePasswordSignInResult,
@@ -159,6 +171,7 @@ class AuthTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["info"]["title"], "FS Bus API")
+        self.assertEqual(response.json()["openapi"], "3.0.3")
 
     def test_auth_test_token_returns_firebase_token_payload(self):
         result = FirebasePasswordSignInResult(
@@ -182,6 +195,63 @@ class AuthTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["id_token"], "firebase-id-token")
         self.assertEqual(response.json()["provider"], "firebase")
+
+    def test_authentication_get_token_returns_name_surname_and_role(self):
+        result = FirebasePasswordSignInResult(
+            id_token="firebase-id-token",
+            refresh_token="firebase-refresh-token",
+            expires_in=3600,
+            email="ada@example.com",
+            local_id="firebase-local-id",
+            registered=True,
+        )
+
+        app_user = SimpleNamespace(
+            firebase_uid="firebase-local-id",
+            role="Supervisor",
+            name="Ada",
+            surname="Lovelace",
+            full_name="Ada Lovelace",
+        )
+
+        class FakeQuery:
+            def __init__(self, user):
+                self.user = user
+
+            def filter(self, *args, **kwargs):
+                return self
+
+            def first(self):
+                return self.user
+
+        class FakeDb:
+            def query(self, model):
+                return FakeQuery(app_user)
+
+        def override_db():
+            yield FakeDb()
+
+        app.dependency_overrides[get_db] = override_db
+
+        with patch(
+            "app.routers.authentication.sign_in_with_email_password",
+            return_value=result,
+        ):
+            response = client.post(
+                "/authentication/get_token",
+                json={
+                    "email": "ada@example.com",
+                    "password": "example-password",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["access_token"], "firebase-id-token")
+        self.assertEqual(response.json()["role"], "Supervisor")
+        self.assertEqual(response.json()["user_id"], "firebase-local-id")
+        self.assertEqual(response.json()["name"], "Ada")
+        self.assertEqual(response.json()["surname"], "Lovelace")
+        self.assertIsNotNone(response.json()["expires_at"])
 
     def test_auth_test_token_rejects_invalid_credentials(self):
         with patch(

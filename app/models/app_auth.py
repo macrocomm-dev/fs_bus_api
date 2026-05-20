@@ -20,6 +20,8 @@ class AppUser(Base):
     user_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     firebase_uid: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     full_name: Mapped[str] = mapped_column(String, nullable=False)
+    name: Mapped[str | None] = mapped_column(String, nullable=True)
+    surname: Mapped[str | None] = mapped_column(String, nullable=True)
     email: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     role: Mapped[str] = mapped_column(String, nullable=False)
     operator_id: Mapped[int | None] = mapped_column(

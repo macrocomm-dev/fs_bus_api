@@ -63,6 +63,9 @@ class BusInspection(Base):
     windows_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     ext_other_pass: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     ext_other_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    fire_extinguisher_present: Mapped[bool | None] = mapped_column(
+        Boolean, nullable=True
+    )
     seats_pass: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     seats_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     aisle_pass: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
