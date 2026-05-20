@@ -10,6 +10,8 @@ from app.database import Base
 
 
 class Inspection(Base):
+    """Legacy operations inspection row."""
+
     __tablename__ = "inspection"
     __table_args__ = {"schema": "operations"}
 
@@ -34,6 +36,8 @@ class Inspection(Base):
 
 
 class InspectionCheck(Base):
+    """Legacy checklist row attached to an operations inspection."""
+
     __tablename__ = "inspection_check"
     __table_args__ = {"schema": "operations"}
 
@@ -52,6 +56,8 @@ class InspectionCheck(Base):
 
 
 class InspectionPhoto(Base):
+    """Legacy binary photo row attached to an operations inspection."""
+
     __tablename__ = "inspection_photo"
     __table_args__ = {"schema": "operations"}
 
@@ -68,6 +74,8 @@ class InspectionPhoto(Base):
 
 
 class UserVerificationPhoto(Base):
+    """Legacy binary photo row used for user verification workflows."""
+
     __tablename__ = "user_verification_photo"
     __table_args__ = {"schema": "operations"}
 
@@ -82,6 +90,8 @@ class UserVerificationPhoto(Base):
 
 
 class PassengerCount(Base):
+    """Legacy passenger-count row used by the operations workflow."""
+
     __tablename__ = "passenger_count"
     __table_args__ = {"schema": "operations"}
 

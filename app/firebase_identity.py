@@ -13,19 +13,27 @@ DEFAULT_FIREBASE_WEB_API_KEY = "AIzaSyDh21k62KCpURRdmM_zQXozBtJJQ3HHxhA"
 
 
 class FirebaseIdentityError(Exception):
+    """Base error raised when Firebase identity operations fail."""
+
     pass
 
 
 class FirebaseInvalidCredentialsError(FirebaseIdentityError):
+    """Raised when Firebase reports that the login or refresh token is invalid."""
+
     pass
 
 
 class FirebasePasswordSignInRequest(BaseModel):
+    """Request body for email-and-password Firebase sign-in."""
+
     email: str
     password: str
 
 
 class FirebasePasswordSignInResult(BaseModel):
+    """Normalized result returned after a successful Firebase password sign-in."""
+
     provider: str = "firebase"
     id_token: str
     refresh_token: str
@@ -36,10 +44,14 @@ class FirebasePasswordSignInResult(BaseModel):
 
 
 class FirebaseRefreshRequest(BaseModel):
+    """Request body used to exchange a refresh token for a new ID token."""
+
     refresh_token: str
 
 
 class FirebaseRefreshResult(BaseModel):
+    """Normalized result returned after a successful token refresh."""
+
     provider: str = "firebase"
     id_token: str
     refresh_token: str
@@ -47,6 +59,11 @@ class FirebaseRefreshResult(BaseModel):
 
 
 def _extract_error_code(response: httpx.Response) -> str:
+    """Pull Firebase's machine-readable error code out of an HTTP response.
+
+    Firebase wraps errors inside a nested JSON structure. This helper isolates
+    that parsing so the sign-in and refresh functions can share the same logic.
+    """
     try:
         data = response.json()
     except ValueError:
@@ -64,6 +81,12 @@ def sign_in_with_email_password(
     password: str,
     timeout_seconds: float = 10.0,
 ) -> FirebasePasswordSignInResult:
+    """Call Firebase's password sign-in API and normalize the response.
+
+    This function is intentionally small and predictable: it sends the request,
+    translates common Firebase error codes into domain-specific exceptions, and
+    returns a typed result object for the rest of the application.
+    """
     if not api_key:
         raise FirebaseIdentityError("Firebase Web API key is not configured.")
 
@@ -106,6 +129,12 @@ def refresh_id_token(
     refresh_token: str,
     timeout_seconds: float = 10.0,
 ) -> FirebaseRefreshResult:
+    """Exchange a Firebase refresh token for a new ID token.
+
+    Clients call this when their short-lived ID token expires. The refresh
+    token is longer lived, so Firebase can issue a fresh access token without
+    forcing the user to sign in again.
+    """
     if not api_key:
         raise FirebaseIdentityError("Firebase Web API key is not configured.")
 

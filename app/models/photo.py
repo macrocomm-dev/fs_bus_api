@@ -14,6 +14,8 @@ if TYPE_CHECKING:
 
 
 class Photo(Base):
+    """Database row for one inspection photo in the new shift-based workflow."""
+
     __tablename__ = "photos"
     __table_args__ = {"schema": "photos"}
 
@@ -39,6 +41,8 @@ class Photo(Base):
 
 
 class Selfie(Base):
+    """Database row for one selfie captured during a shift."""
+
     __tablename__ = "selfies"
     __table_args__ = {"schema": "photos"}
 

@@ -35,10 +35,12 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def verify_password(plain: str, hashed: str) -> bool:
+    """Check whether a plain-text password matches a stored hash."""
     return pwd_context.verify(plain, hashed)
 
 
 def hash_password(plain: str) -> str:
+    """Hash a plain-text password before saving it to storage."""
     return pwd_context.hash(plain)
 
 
@@ -47,11 +49,20 @@ def hash_password(plain: str) -> str:
 # ---------------------------------------------------------------------------
 
 class Token(BaseModel):
+    """Simple bearer-token response model used by auth-style endpoints."""
+
     access_token: str
     token_type: str
 
 
 class TokenData(BaseModel):
+    """Normalized identity information extracted from an incoming bearer token.
+
+    This is the object route handlers receive after authentication succeeds.
+    It intentionally contains only the user details the API needs for access
+    control and auditing.
+    """
+
     sub: str
     name: str | None = None
     email: str | None = None
@@ -72,6 +83,11 @@ ROLE_HIERARCHY: dict[str, tuple[str, ...]] = {
 
 @lru_cache
 def get_firebase_app(project_id: str):
+    """Return the shared Firebase Admin app instance.
+
+    Firebase Admin only needs to be initialized once per process. Caching the
+    result avoids repeated setup work and prevents duplicate-app errors.
+    """
     try:
         return get_app()
     except ValueError:
@@ -83,6 +99,11 @@ def create_access_token(
     settings: Settings,
     expires_delta: timedelta | None = None,
 ) -> str:
+    """Create a signed JWT using the app's own secret key.
+
+    Most current auth flows use Firebase tokens, but this helper remains useful
+    for internal tokens and for keeping the auth module self-contained.
+    """
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + (
         expires_delta
@@ -94,6 +115,11 @@ def create_access_token(
 
 
 def normalize_role(role: str | None) -> str | None:
+    """Convert role input into the API's canonical role names.
+
+    Normalization lets the rest of the code compare roles reliably without
+    caring whether the incoming value was upper-case, lower-case, or mixed.
+    """
     if role is None:
         return None
     return {
@@ -104,6 +130,11 @@ def normalize_role(role: str | None) -> str | None:
 
 
 def expand_role_permissions(role: str | None) -> tuple[str, ...]:
+    """Expand one role into every permission level it should inherit.
+
+    For example, an Admin is also allowed to do Supervisor and Monitor work, so
+    this helper returns the full set of effective permissions.
+    """
     normalized_role = normalize_role(role)
     if normalized_role is None:
         return ()
@@ -111,6 +142,12 @@ def expand_role_permissions(role: str | None) -> tuple[str, ...]:
 
 
 def split_user_name(full_name: str | None) -> tuple[str | None, str | None]:
+    """Split a display name into first-name and surname-style parts.
+
+    This is a pragmatic formatter for APIs that store ``name`` and ``surname``
+    separately even when the identity provider gives the application a single
+    full display name string.
+    """
     if full_name is None:
         return None, None
 
@@ -123,6 +160,12 @@ def split_user_name(full_name: str | None) -> tuple[str | None, str | None]:
 
 
 def require_role(required_role: str):
+    """Build a FastAPI dependency that enforces a minimum application role.
+
+    The returned dependency can be plugged directly into a route. It reads the
+    already-authenticated ``TokenData`` object and rejects users whose role does
+    not include the required permission level.
+    """
     normalized_required_role = normalize_role(required_role)
     if normalized_required_role is None:
         raise ValueError(f"Unsupported role: {required_role}")
@@ -130,6 +173,7 @@ def require_role(required_role: str):
     def role_dependency(
         current_user: Annotated[TokenData, Depends(get_current_user)],
     ) -> TokenData:
+        """Validate the current user against the role requirement."""
         if normalized_required_role not in expand_role_permissions(current_user.role):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -141,6 +185,13 @@ def require_role(required_role: str):
 
 
 def decode_access_token(token: str, settings: Settings) -> TokenData:
+    """Validate an incoming Firebase ID token and map it into ``TokenData``.
+
+    The Firebase Admin SDK does the heavy lifting here: signature validation,
+    expiration checks, optional revocation checks, and clock skew handling.
+    This function converts the provider-specific payload into the smaller shape
+    the rest of the API consumes.
+    """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -177,7 +228,12 @@ def get_current_user(
     ],
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> TokenData:
-    """Dependency that validates the Bearer token and returns the token data."""
+    """FastAPI dependency that authenticates the request bearer token.
+
+    Route handlers use this dependency instead of manually reading headers.
+    That keeps authentication logic centralized and makes routes easier to
+    read, test, and secure consistently.
+    """
     if credentials is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

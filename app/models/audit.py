@@ -11,6 +11,8 @@ from app.database import Base
 
 
 class ApiErrorLog(Base):
+    """Audit table row that captures one API error event."""
+
     __tablename__ = "api_error_log"
     __table_args__ = {"schema": "audit"}
 

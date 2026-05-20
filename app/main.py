@@ -67,6 +67,7 @@ app.openapi_version = "3.0.3"
 
 
 def _get_cors_origins(settings: Settings) -> list[str]:
+    """Split the configured comma-separated CORS origin string into a list."""
     return [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
 
 
@@ -77,6 +78,7 @@ def _get_cors_origins(settings: Settings) -> list[str]:
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
+    """Log handled HTTP errors before returning FastAPI's normal response."""
     await log_api_error(
         request=request,
         status_code=exc.status_code,
@@ -90,6 +92,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Log request validation failures with structured validation details."""
     await log_api_error(
         request=request,
         status_code=422,
@@ -104,6 +107,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception):
+    """Catch unexpected exceptions, log them, and return a safe 500 response."""
     await log_api_error(
         request=request,
         status_code=500,
@@ -142,6 +146,11 @@ SWAGGER_UI_BUNDLE_CDN = (
 
 
 def _get_local_swagger_ui_dir() -> Path | None:
+    """Find the vendored Swagger UI assets installed in the Python environment.
+
+    When these assets are available locally, the docs page can render without
+    depending on public CDNs.
+    """
     try:
         import swagger_ui_bundle  # noqa: PLC0415
     except ImportError:
@@ -166,6 +175,7 @@ if LOCAL_SWAGGER_UI_DIR is not None:
 
 
 def _serialize_user(current_user: TokenData) -> dict[str, object]:
+    """Convert ``TokenData`` into the JSON shape exposed by user-facing routes."""
     return {
         "sub": current_user.sub,
         "name": current_user.name,
@@ -179,6 +189,7 @@ def _require_docs_user(
     current_user: Annotated[TokenData, Depends(get_current_user)],
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> TokenData:
+    """Restrict access to the generated API documentation by application role."""
     required_role = normalize_role(settings.docs_required_role)
     if required_role is None:
         return current_user
@@ -192,10 +203,16 @@ def _require_docs_user(
 
 @lru_cache
 def _load_docs_template() -> str:
+    """Load and cache the custom HTML template used for `/docs`."""
     return DOCS_TEMPLATE_PATH.read_text(encoding="utf-8")
 
 
 def _build_docs_html(settings: Settings) -> str:
+    """Render the custom docs HTML with environment-specific placeholders.
+
+    The template supports different Swagger asset locations and can optionally
+    show or hide the test-auth helper UI depending on configuration.
+    """
     required_role = escape(settings.docs_required_role or "any authenticated user")
     test_auth_enabled = settings.enable_test_auth_endpoints
     swagger_ui_css_url = (
@@ -246,6 +263,12 @@ async def get_token(
     payload: UserLoginRequest,
     db: Session = Depends(get_db),
 ) -> UserLoginResponse:
+    """Sign in through Firebase and return the app's enriched login payload.
+
+    Firebase issues the tokens, but the application also needs local user data
+    such as role, split name fields, and the Firebase UID stored in the app's
+    own database.
+    """
     settings = get_settings()
 
     try:
@@ -361,6 +384,7 @@ def refresh_token(
 def auth_test_whoami(
     current_user: Annotated[TokenData, Depends(get_current_user)],
 ):
+    """Return the decoded Firebase caller identity for smoke testing."""
     return {
         "provider": "firebase",
         "user": _serialize_user(current_user),
@@ -376,6 +400,11 @@ def auth_test_token(
     request: FirebasePasswordSignInRequest,
     settings: Annotated[Settings, Depends(get_settings)],
 ):
+    """Temporary helper endpoint that proxies Firebase test sign-in.
+
+    This is intentionally hidden from the public schema because it exists for
+    local testing and docs exploration, not for production client use.
+    """
     if not settings.enable_test_auth_endpoints:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -407,6 +436,7 @@ app.include_router(auth_router)
 def openapi_schema(
     current_user: Annotated[TokenData, Depends(_require_docs_user)],
 ):
+    """Return the protected OpenAPI schema used by the custom docs page."""
     return JSONResponse(
         get_openapi(
             title=app.title,
@@ -420,6 +450,7 @@ def openapi_schema(
 
 @app.get("/docs", include_in_schema=False)
 def docs_index(settings: Annotated[Settings, Depends(get_settings)]):
+    """Serve the custom docs shell that later loads the protected OpenAPI JSON."""
     return HTMLResponse(_build_docs_html(settings))
 
 

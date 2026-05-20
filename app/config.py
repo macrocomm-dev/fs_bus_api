@@ -110,7 +110,15 @@ class Settings(BaseSettings):
     }
 
     def load_from_secret_manager(self) -> None:
-        """Populate empty fields from GCloud Secret Manager."""
+        """Populate any still-empty settings from Google Secret Manager.
+
+        The normal precedence is:
+        1. environment variables or values from ``.env``
+        2. Secret Manager fallback for selected sensitive fields
+
+        This lets local development override values directly while production
+        can keep secrets out of the filesystem and deployment manifests.
+        """
         import logging  # noqa: PLC0415
 
         logger = logging.getLogger(__name__)
@@ -131,6 +139,12 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
+    """Return a cached ``Settings`` instance for the lifetime of the process.
+
+    Loading configuration can trigger Secret Manager lookups, so we cache the
+    result once and reuse it everywhere. This keeps startup predictable and
+    avoids repeated network calls during request handling.
+    """
     settings = Settings()
     settings.load_from_secret_manager()
     return settings

@@ -21,6 +21,8 @@ if TYPE_CHECKING:
 
 
 class Shift(Base):
+    """Database row representing one monitor shift."""
+
     __tablename__ = "shifts"
     __table_args__ = {"schema": "shifts"}
 

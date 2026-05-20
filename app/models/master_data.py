@@ -24,6 +24,8 @@ if TYPE_CHECKING:
 
 
 class Route(Base):
+    """Master-data route definition used for lookups and filtering."""
+
     __tablename__ = "route"
     __table_args__ = (
         UniqueConstraint("route_code", "operator_name", name="uq_route_code_operator"),
@@ -49,6 +51,8 @@ class Route(Base):
 
 
 class RouteStop(Base):
+    """One stop that belongs to a master-data route."""
+
     __tablename__ = "route_stop"
     __table_args__ = ({"schema": "master_data"},)
 
@@ -73,6 +77,8 @@ class RouteStop(Base):
 
 
 class Vehicle(Base):
+    """Master-data vehicle record keyed by VIN."""
+
     __tablename__ = "vehicle"
     __table_args__ = {"schema": "master_data"}
 
@@ -107,6 +113,8 @@ class Vehicle(Base):
 
 
 class Operator(Base):
+    """Master-data bus operator record."""
+
     __tablename__ = "operator"
     __table_args__ = {"schema": "master_data"}
 

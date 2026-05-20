@@ -1,4 +1,10 @@
 import datetime
+"""Routes and helpers for creating and listing monitor shifts.
+
+This module turns the nested shift contract used by the mobile/web clients into
+the flatter database rows stored in the existing schema.
+"""
+
 from datetime import date, time
 from typing import Annotated, List, Optional
 
@@ -47,11 +53,18 @@ _500 = {500: {"model": ErrorResponse, "description": "Internal server error"}}
 
 
 def _combine_reasons(*reasons: str | None) -> str | None:
+    """Join multiple optional failure reasons into one readable string."""
     combined = [reason for reason in reasons if reason]
     return "; ".join(combined) if combined else None
 
 
 def _photo_payloads_from_inline(photo_groups: dict[str, list]) -> list[dict]:
+    """Flatten grouped inline photo models into rows ready for ``Photo`` inserts.
+
+    The request schema groups photos under inspection items like ``tyres`` or
+    ``seats``. The database stores one photo row at a time, so this helper
+    expands the nested structure into a simple list of dictionaries.
+    """
     payloads = []
     for inspection_item, photos in photo_groups.items():
         for photo in photos:
@@ -72,6 +85,12 @@ async def _photo_payloads_from_multipart(
     key_prefix: str,
     photo_groups: dict[str, list],
 ) -> list[dict]:
+    """Build photo payloads from multipart uploads and matching metadata.
+
+    Multipart requests send image bytes separately from the JSON metadata. This
+    helper looks up each uploaded file by its expected form key, reads the file,
+    base64-encodes it, and returns the same row structure used by the JSON flow.
+    """
     payloads = []
     for inspection_item, photos in photo_groups.items():
         for index, photo_meta in enumerate(photos):
@@ -100,6 +119,12 @@ def _persist_inspection(
     inspection_payload: dict,
     photo_payloads: list[dict] | None = None,
 ):
+    """Insert one inspection row and any child photo rows linked to it.
+
+    ``db.flush()`` is important here because it asks SQLAlchemy to send the
+    inspection insert immediately so the database-generated inspection ID becomes
+    available for related photo rows in the same transaction.
+    """
     new_inspection = BusInspection(**inspection_payload)
     db.add(new_inspection)
     db.flush()
@@ -110,6 +135,12 @@ def _persist_inspection(
 
 
 def _resolve_bus_reference(db: Session, bus) -> tuple[str, str]:
+    """Resolve a bus request into the VIN and fleet number required by storage.
+
+    Clients may send either ``bus_id`` (VIN) or ``bus_number`` (fleet number).
+    This helper looks up the missing identifier from ``master_data.vehicle`` so
+    the write path always inserts a complete, valid pair.
+    """
     if bus.bus_id and bus.bus_number:
         return bus.bus_id, bus.bus_number
 
@@ -138,6 +169,12 @@ def _base_inspection_payload(
     inspection,
     inspection_type: str,
 ) -> dict:
+    """Create the common database payload shared by all inspection types.
+
+    Every inspection row stores the same core fields such as shift, bus, user,
+    time, and location. Type-specific helpers call this first and then add only
+    the fields that are unique to their inspection category.
+    """
     bus_id, fleet_number = _resolve_bus_reference(db, bus)
     return {
         "user_id": user_id,
@@ -155,6 +192,7 @@ def _base_inspection_payload(
 
 
 def _external_inspection_record(db: Session, shift_id: int, user_id: str, bus, inspection):
+    """Convert one nested external inspection into a flat DB row payload."""
     payload = _base_inspection_payload(
         db, shift_id, user_id, bus, inspection, "external"
     )
@@ -189,6 +227,7 @@ def _external_inspection_record(db: Session, shift_id: int, user_id: str, bus, i
 
 
 def _interior_inspection_record(db: Session, shift_id: int, user_id: str, bus, inspection):
+    """Convert one nested internal inspection into a flat DB row payload."""
     payload = _base_inspection_payload(
         db, shift_id, user_id, bus, inspection, "internal"
     )
@@ -228,6 +267,7 @@ def _interior_inspection_record(db: Session, shift_id: int, user_id: str, bus, i
 
 
 def _driver_inspection_record(db: Session, shift_id: int, user_id: str, bus, inspection):
+    """Convert one nested driver inspection into a flat DB row payload."""
     boolean_checks = [
         inspection.prdp_scan_succeeded,
         inspection.driver_identified,
@@ -248,6 +288,7 @@ def _driver_inspection_record(db: Session, shift_id: int, user_id: str, bus, ins
 
 
 def _passenger_count_record(db: Session, shift_id: int, user_id: str, bus, inspection):
+    """Convert one passenger count event into the flat inspection storage shape."""
     payload = _base_inspection_payload(db, shift_id, user_id, bus, inspection, "count")
     payload.update(
         {
@@ -260,6 +301,7 @@ def _passenger_count_record(db: Session, shift_id: int, user_id: str, bus, inspe
 
 
 def _behind_schedule_record(db: Session, shift_id: int, user_id: str, bus, inspection):
+    """Convert one behind-schedule report into the flat inspection storage shape."""
     payload = _base_inspection_payload(
         db, shift_id, user_id, bus, inspection, "behind_schedule"
     )
@@ -283,6 +325,12 @@ async def create_shift(
     db: Session = Depends(get_db),
     current_user: TokenData = Depends(get_current_user),
 ):
+    """Create a shift, then attach its selfies and nested bus inspections.
+
+    The shift row is written first because child rows need the database-assigned
+    ``shift_id``. After that, selfies and inspections are persisted using the
+    nested request payload supplied by the client.
+    """
 
     try:
         create_shif = Shift(
@@ -322,6 +370,7 @@ async def create_shift(
 
 # We add selfies captured during the shift to the selfies table, linked to the shift_id
 async def add_shift_selfies(shift_id: int, selfies: List[SelfieIn], db: Session):
+    """Insert all selfie rows that belong to one newly created shift."""
     if not selfies:
         return True  # No selfies to add, but not an error
 
@@ -346,6 +395,12 @@ async def add_shift_selfies(shift_id: int, selfies: List[SelfieIn], db: Session)
 
 
 async def add_inspections(shift_id: int, user_id: str, buses: List[BusIn], db: Session):
+    """Flatten and insert every inspection event contained in a shift payload.
+
+    Each bus may contain several logical sections, but the database stores those
+    sections as separate rows in the inspections table. This function walks the
+    nested contract and persists each concrete inspection event one by one.
+    """
     if not buses:
         return True  # No inspections to add, but not an error
 
@@ -427,6 +482,12 @@ async def create_shift_multipart(
     db: Session = Depends(get_db),
     current_user: TokenData = Depends(get_current_user),
 ):
+    """Create a shift from multipart form-data instead of a pure JSON body.
+
+    This endpoint exists for clients that prefer uploading raw image files in
+    the same request rather than base64 strings inside JSON. The metadata still
+    follows the same nested shift contract.
+    """
     try:
         shift_data = ShiftCreateMeta.model_validate_json(data)
         form = await request.form()
@@ -526,7 +587,12 @@ async def get_all_shifts(
     db: Session = Depends(get_db),
     current_user: TokenData = Depends(get_current_user),
 ):
-    """Return all shifts ordered by most recent first."""
+    """Return shift rows with optional date-range filtering and pagination size.
+
+    Despite the name ``limit``, this endpoint still returns a plain list of
+    shift records. The filters are applied directly at the database query level
+    to avoid loading unnecessary rows into memory.
+    """
     try:
         query = db.query(Shift).order_by(Shift.created_at.desc())
 
@@ -564,7 +630,7 @@ async def get_shifts_by_ids(
     db: Session = Depends(get_db),
     current_user: TokenData = Depends(get_current_user),
 ):
-    """Return shifts matching the provided IDs. At least one ID is required."""
+    """Return only the shifts whose database IDs were explicitly requested."""
     if not ids:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

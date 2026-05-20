@@ -5,10 +5,14 @@ from fastapi import Query
 from pydantic import BaseModel, Field, model_validator
 
 class ErrorResponse(BaseModel):
+    """Minimal error response used by shift-related endpoints."""
+
     detail: str
 
 
 class InspectionType(str, Enum):
+    """Flat inspection row types stored in the shift inspection table."""
+
     external = "external"
     internal = "internal"
     count = "count"
@@ -18,6 +22,8 @@ class InspectionType(str, Enum):
 
 
 class BehindScheduleInterval(str, Enum):
+    """Allowed labels for behind-schedule reports."""
+
     zero_to_five = "0-5 mins"
     five_to_ten = "5-10 mins"
     ten_to_fifteen = "10-15 mins"
@@ -30,6 +36,8 @@ class BehindScheduleInterval(str, Enum):
 
 
 class PhotoIn(BaseModel):
+    """Base64 photo payload supplied inline inside JSON requests."""
+
     timestamp: datetime
     lat: float
     lon: float
@@ -37,10 +45,14 @@ class PhotoIn(BaseModel):
 
 
 class SelfieIn(PhotoIn):
+    """Inline selfie payload captured as part of a shift."""
+
     pass
 
 
 class InspectionItemPhotoIn(BaseModel):
+    """Inline image attached to one checklist item inside an inspection."""
+
     timestamp: datetime
     lat: float
     lon: float
@@ -48,12 +60,16 @@ class InspectionItemPhotoIn(BaseModel):
 
 
 class InspectionItemIn(BaseModel):
+    """Pass/fail result, optional reason, and optional photos for one item."""
+
     pass_: bool = False
     reason: Optional[str] = None
     photos: list[InspectionItemPhotoIn] = []
 
 
 class InspectionBaseIn(BaseModel):
+    """Fields common to every nested inspection event sent by the client."""
+
     internal_inspection_id: str
     inspection_time: datetime
     inspection_lat: float
@@ -61,12 +77,16 @@ class InspectionBaseIn(BaseModel):
 
 
 class ExteriorInspectionIn(InspectionBaseIn):
+    """Nested request model for one external bus inspection."""
+
     tyres: InspectionItemIn
     windows: InspectionItemIn
     other: InspectionItemIn
 
 
 class InteriorInspectionIn(InspectionBaseIn):
+    """Nested request model for one internal bus inspection."""
+
     fire_extinguisher_present: bool = False
     seats: InspectionItemIn
     aisle: InspectionItemIn
@@ -74,6 +94,8 @@ class InteriorInspectionIn(InspectionBaseIn):
 
 
 class DriverInspectionIn(InspectionBaseIn):
+    """Nested request model for one driver inspection event."""
+
     prdp_scan_succeeded: Optional[bool] = None
     prdp_expiry_date: Optional[datetime] = None
     driver_identified: Optional[bool] = None
@@ -82,15 +104,21 @@ class DriverInspectionIn(InspectionBaseIn):
 
 
 class PassengerCountIn(InspectionBaseIn):
+    """Nested request model for one passenger count event."""
+
     number_seated: int
     number_standing: int
 
 
 class BehindScheduleReportIn(InspectionBaseIn):
+    """Nested request model for one behind-schedule report."""
+
     behind_schedule_interval: BehindScheduleInterval
 
 
 class BusInspectionsIn(BaseModel):
+    """All inspection sections that can belong to one bus within a shift."""
+
     external_inspected: bool = False
     internal_inspected: bool = False
     driver_inspected: bool = False
@@ -104,6 +132,12 @@ class BusInspectionsIn(BaseModel):
 
     @model_validator(mode="after")
     def sync_done_flags(self):
+        """Keep done flags and payload sections in sync after validation.
+
+        If a section is present, its corresponding flag is automatically turned
+        on. If a flag says work is done but the section data is missing, the
+        payload is rejected as inconsistent.
+        """
         if self.external is not None:
             self.external_inspected = True
         if self.internal is not None:
@@ -178,6 +212,8 @@ class InspectionIn(BaseModel):
 
 
 class BusIn(BaseModel):
+    """One bus entry inside a shift creation request."""
+
     bus_id: Optional[str] = None  # maps to bus_id / vin
     bus_number: Optional[str] = None  # maps to fleet_number
     license_disk_scan_succeeded: Optional[bool] = True
@@ -186,6 +222,7 @@ class BusIn(BaseModel):
 
     @model_validator(mode="after")
     def require_identifier(self):
+        """Require at least one bus identifier so the API can resolve the bus."""
         if not self.bus_id and not self.bus_number:
             raise ValueError("Either bus_id or bus_number must be provided")
         return self
@@ -197,6 +234,8 @@ class BusIn(BaseModel):
 
 
 class ShiftCreate(BaseModel):
+    """Top-level JSON payload for creating one complete shift."""
+
     user_id: str
     start_time: datetime
     end_time: datetime
@@ -268,28 +307,38 @@ class ShiftCreate(BaseModel):
 
 
 class PhotoMetaIn(BaseModel):
+    """Photo metadata used by multipart requests where files travel separately."""
+
     timestamp: datetime
     lat: float
     lon: float
 
 
 class SelfieMetaIn(PhotoMetaIn):
+    """Selfie metadata used by multipart shift creation requests."""
+
     pass
 
 
 class InspectionItemPhotoMetaIn(BaseModel):
+    """Inspection-item photo metadata for multipart requests."""
+
     timestamp: datetime
     lat: float
     lon: float
 
 
 class InspectionItemMetaIn(BaseModel):
+    """Checklist item data for multipart requests."""
+
     pass_: bool = False
     reason: Optional[str] = None
     photos: list[InspectionItemPhotoMetaIn] = []
 
 
 class InspectionBaseMetaIn(BaseModel):
+    """Base inspection metadata shared by multipart request sections."""
+
     internal_inspection_id: str
     inspection_time: datetime
     inspection_lat: float
@@ -297,12 +346,16 @@ class InspectionBaseMetaIn(BaseModel):
 
 
 class ExteriorInspectionMetaIn(InspectionBaseMetaIn):
+    """Multipart metadata for one external inspection."""
+
     tyres: InspectionItemMetaIn
     windows: InspectionItemMetaIn
     other: InspectionItemMetaIn
 
 
 class InteriorInspectionMetaIn(InspectionBaseMetaIn):
+    """Multipart metadata for one internal inspection."""
+
     fire_extinguisher_present: bool = False
     seats: InspectionItemMetaIn
     aisle: InspectionItemMetaIn
@@ -310,6 +363,8 @@ class InteriorInspectionMetaIn(InspectionBaseMetaIn):
 
 
 class DriverInspectionMetaIn(InspectionBaseMetaIn):
+    """Multipart metadata for one driver inspection."""
+
     prdp_scan_succeeded: Optional[bool] = None
     prdp_expiry_date: Optional[datetime] = None
     driver_identified: Optional[bool] = None
@@ -318,15 +373,21 @@ class DriverInspectionMetaIn(InspectionBaseMetaIn):
 
 
 class PassengerCountMetaIn(InspectionBaseMetaIn):
+    """Multipart metadata for one passenger-count event."""
+
     number_seated: int
     number_standing: int
 
 
 class BehindScheduleReportMetaIn(InspectionBaseMetaIn):
+    """Multipart metadata for one behind-schedule report."""
+
     behind_schedule_interval: BehindScheduleInterval
 
 
 class BusInspectionsMetaIn(BaseModel):
+    """All multipart inspection sections that can belong to one bus."""
+
     external_inspected: bool = False
     internal_inspected: bool = False
     driver_inspected: bool = False
@@ -340,6 +401,7 @@ class BusInspectionsMetaIn(BaseModel):
 
     @model_validator(mode="after")
     def sync_done_flags(self):
+        """Keep multipart done flags consistent with the included sections."""
         if self.external is not None:
             self.external_inspected = True
         if self.internal is not None:
@@ -408,6 +470,8 @@ class InspectionMetaIn(BaseModel):
 
 
 class BusMetaIn(BaseModel):
+    """One bus entry inside a multipart shift creation request."""
+
     bus_id: Optional[str] = None
     bus_number: Optional[str] = None  # maps to fleet_number
     license_disk_scan_succeeded: Optional[bool] = True
@@ -416,6 +480,7 @@ class BusMetaIn(BaseModel):
 
     @model_validator(mode="after")
     def require_identifier(self):
+        """Require at least one bus identifier so the API can resolve the bus."""
         if not self.bus_id and not self.bus_number:
             raise ValueError("Either bus_id or bus_number must be provided")
         return self
@@ -437,17 +502,23 @@ class ShiftCreateMeta(BaseModel):
 
 
 class MessageResponse(str, Enum):
+    """Success/error marker used in shift responses."""
+
     success = "success"
     error = "error"
 
 
 class ShiftCreatedResponse(BaseModel):
+    """Response returned after a shift row and its child records are created."""
+
     status: int
     message: MessageResponse
     shift_id: int
 
 
 class ShiftResponse(BaseModel):
+    """Read model for one stored shift row."""
+
     id: int
     start_time: datetime
     end_time: datetime
@@ -462,6 +533,8 @@ class ShiftResponse(BaseModel):
 
 
 class SelfieResponse(BaseModel):
+    """Read model for one stored shift selfie."""
+
     id: int
     shift_id: int
     timestamp: datetime
@@ -474,6 +547,8 @@ class SelfieResponse(BaseModel):
 
 
 class PhotoResponse(BaseModel):
+    """Read model for one stored inspection photo."""
+
     id: int
     inspection_id: int
     timestamp: datetime
@@ -487,6 +562,8 @@ class PhotoResponse(BaseModel):
 
 
 class InspectionItemPhotoResponse(BaseModel):
+    """Photo response nested inside grouped checklist items."""
+
     id: int
     timestamp: datetime
     lat: float
@@ -496,12 +573,16 @@ class InspectionItemPhotoResponse(BaseModel):
 
 
 class InspectionItemResponse(BaseModel):
+    """Grouped checklist item response with pass/fail status and photos."""
+
     pass_: Optional[bool] = False
     reason: Optional[str] = None
     photos: list[InspectionItemPhotoResponse] = []
 
 
 class InspectionEventResponse(BaseModel):
+    """Fields shared by every grouped inspection event response."""
+
     inspection_id: int
     internal_inspection_id: str
     inspection_time: datetime
@@ -512,12 +593,16 @@ class InspectionEventResponse(BaseModel):
 
 
 class ExteriorInspectionResponse(InspectionEventResponse):
+    """Grouped response model for one external inspection."""
+
     tyres: InspectionItemResponse
     windows: InspectionItemResponse
     other: InspectionItemResponse
 
 
 class InteriorInspectionResponse(InspectionEventResponse):
+    """Grouped response model for one internal inspection."""
+
     fire_extinguisher_present: Optional[bool] = None
     seats: InspectionItemResponse
     aisle: InspectionItemResponse
@@ -525,6 +610,8 @@ class InteriorInspectionResponse(InspectionEventResponse):
 
 
 class DriverInspectionResponse(InspectionEventResponse):
+    """Grouped response model for one driver inspection."""
+
     prdp_scan_succeeded: Optional[bool] = None
     prdp_expiry_date: Optional[datetime] = None
     driver_identified: Optional[bool] = None
@@ -533,16 +620,22 @@ class DriverInspectionResponse(InspectionEventResponse):
 
 
 class PassengerCountInspectionResponse(InspectionEventResponse):
+    """Grouped response model for one passenger-count event."""
+
     count: Optional[int] = 0
     number_seated: Optional[int] = None
     number_standing: Optional[int] = None
 
 
 class BehindScheduleInspectionResponse(InspectionEventResponse):
+    """Grouped response model for one behind-schedule event."""
+
     behind_schedule_interval: Optional[str] = None
 
 
 class BusInspectionGroupItemsResponse(BaseModel):
+    """Nested grouped inspection sections for one bus in a read response."""
+
     external_inspected: bool = False
     internal_inspected: bool = False
     driver_inspected: bool = False
@@ -556,6 +649,8 @@ class BusInspectionGroupItemsResponse(BaseModel):
 
 
 class GroupedBusInspectionResponse(BaseModel):
+    """Top-level grouped read model returned by bus-inspection endpoints."""
+
     shift_id: int
     user_id: str
     bus_id: str
@@ -566,6 +661,8 @@ class GroupedBusInspectionResponse(BaseModel):
 
 
 class BusInspectionResponse(BaseModel):
+    """Flat read model mirroring one stored bus inspection row."""
+
     id: int
     shift_id: int
     user_id: str
@@ -606,6 +703,8 @@ class BusInspectionResponse(BaseModel):
 
 
 class DateRangeLimitQueryParams(BaseModel):
+    """Shared query-parameter model for date-range and limit filtering."""
+
     start_date: Optional[date] = Field(
         None,
         description="Start date filter",
@@ -656,6 +755,7 @@ def date_range_params(
         100, description="Maximum number of records to return", examples=[100]
     ),
 ) -> DateRangeLimitQueryParams:
+    """Build ``DateRangeLimitQueryParams`` from FastAPI query parameters."""
     return DateRangeLimitQueryParams(
         start_date=start_date,
         end_date=end_date,

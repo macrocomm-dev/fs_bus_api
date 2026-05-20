@@ -14,6 +14,8 @@ if TYPE_CHECKING:
 
 
 class AppUser(Base):
+    """Application-local user record linked to a Firebase identity."""
+
     __tablename__ = "app_user"
     __table_args__ = {"schema": "app_auth"}
 

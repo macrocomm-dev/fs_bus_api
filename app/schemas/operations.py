@@ -15,6 +15,8 @@ from fastapi import Form
 
 
 class Inspectiontype(str, Enum):
+    """Legacy inspection categories used by the operations endpoints."""
+
     inside = "In-Transit Monitoring"
     outside = "Physical Bus Inspection"
     full = "Full"
@@ -22,6 +24,8 @@ class Inspectiontype(str, Enum):
 
 
 class InspectionCreate(BaseModel):
+    """Multipart-friendly inspection creation payload used by older endpoints."""
+
     vehicle_id: str
     user_id: int
     inspection_type: Inspectiontype
@@ -48,6 +52,7 @@ def inspection_create_form(
     date_of_inspection: datetime | None = Form(None),
     device_id: str | None = Form(None),
 ) -> InspectionCreate:
+    """Adapt multipart form fields into the ``InspectionCreate`` schema."""
     return InspectionCreate(
         vehicle_id=vehicle_id,
         user_id=user_id,
@@ -64,6 +69,8 @@ def inspection_create_form(
 
 
 class ErrorResponse(BaseModel):
+    """Minimal error body returned by many operations endpoints."""
+
     detail: str
 
 
@@ -71,11 +78,15 @@ class ErrorResponse(BaseModel):
 
 
 class MessageResponse(str, Enum):
+    """Common success/fail flags reused in envelope responses."""
+
     success = "pass"
     fail = "fail"
 
 
 class InspectionCreatedResponse(BaseModel):
+    """Response returned after creating a legacy inspection."""
+
     message: MessageResponse
     inspection_id: int
     vehicle_id: str
@@ -84,24 +95,32 @@ class InspectionCreatedResponse(BaseModel):
 
 
 class InspectionCheckCreatedResponse(BaseModel):
+    """Response returned after creating one legacy inspection check."""
+
     message: MessageResponse
     inspection_check_id: int
     inspection_id: int
 
 
 class InspectionPhotoCreatedResponse(BaseModel):
+    """Response returned after creating one legacy inspection photo."""
+
     message: MessageResponse
     photo_id: int
     inspection_id: int
 
 
 class PhotoUploadResponse(BaseModel):
+    """Response returned after uploading an inspection-related image."""
+
     message: MessageResponse
     photo_id: int
     inspection_id: int
 
 
 class PassengerCountCreatedResponse(BaseModel):
+    """Response returned after creating one legacy passenger count."""
+
     message: MessageResponse
     count_id: int
     vehicle_id: str
@@ -109,6 +128,8 @@ class PassengerCountCreatedResponse(BaseModel):
 
 
 class InspectionCreate(BaseModel):
+    """JSON inspection creation schema used by the legacy operations router."""
+
     vehicle_id: str
     route_id: str | None = None
     route_text: str | None = None
@@ -124,6 +145,7 @@ class InspectionCreate(BaseModel):
     @field_validator("latitude")
     @classmethod
     def validate_latitude(cls, v: Decimal | None) -> Decimal | None:
+        """Reject latitude values outside the valid geographic range."""
         if v is not None and not (-90 <= v <= 90):
             raise ValueError("latitude must be between -90 and 90")
         return v
@@ -131,12 +153,15 @@ class InspectionCreate(BaseModel):
     @field_validator("longitude")
     @classmethod
     def validate_longitude(cls, v: Decimal | None) -> Decimal | None:
+        """Reject longitude values outside the valid geographic range."""
         if v is not None and not (-180 <= v <= 180):
             raise ValueError("longitude must be between -180 and 180")
         return v
 
 
 class InspectionCheckCreate(BaseModel):
+    """Payload for adding one checklist row to a legacy inspection."""
+
     inspection_id: int
     section: Literal["Inside", "Outside"]
     check_code: str
@@ -149,11 +174,15 @@ class InspectionCheckCreate(BaseModel):
 
 
 class InspectionPhotoCreate(BaseModel):
+    """Minimal payload for creating a legacy inspection photo record."""
+
     inspection_id: int
     inspection_check_id: int | None = None
 
 
 class PassengerCountCreate(BaseModel):
+    """Payload for creating a legacy passenger-count row."""
+
     vehicle_id: str
     route_id: str | None = None
     route_text: str | None = None
@@ -168,6 +197,7 @@ class PassengerCountCreate(BaseModel):
     @field_validator("latitude")
     @classmethod
     def validate_latitude(cls, v: Decimal | None) -> Decimal | None:
+        """Reject latitude values outside the valid geographic range."""
         if v is not None and not (-90 <= v <= 90):
             raise ValueError("latitude must be between -90 and 90")
         return v
@@ -175,6 +205,7 @@ class PassengerCountCreate(BaseModel):
     @field_validator("longitude")
     @classmethod
     def validate_longitude(cls, v: Decimal | None) -> Decimal | None:
+        """Reject longitude values outside the valid geographic range."""
         if v is not None and not (-180 <= v <= 180):
             raise ValueError("longitude must be between -180 and 180")
         return v
@@ -184,6 +215,8 @@ class PassengerCountCreate(BaseModel):
 
 
 class InspectionResponse(BaseModel):
+    """Read model for one legacy inspection row."""
+
     model_config = ConfigDict(from_attributes=True)
 
     inspection_id: int
@@ -202,6 +235,8 @@ class InspectionResponse(BaseModel):
 
 
 class InspectionCheckResponse(BaseModel):
+    """Read model for one legacy inspection-check row."""
+
     model_config = ConfigDict(from_attributes=True)
 
     inspection_check_id: int
@@ -215,6 +250,8 @@ class InspectionCheckResponse(BaseModel):
 
 
 class InspectionPhotoResponse(BaseModel):
+    """Read model for one legacy inspection-photo row."""
+
     model_config = ConfigDict(from_attributes=True)
 
     photo_id: int
@@ -225,6 +262,8 @@ class InspectionPhotoResponse(BaseModel):
 
 
 class PassengerCountResponse(BaseModel):
+    """Read model for one legacy passenger-count row."""
+
     model_config = ConfigDict(from_attributes=True)
 
     count_id: int
@@ -244,26 +283,36 @@ class PassengerCountResponse(BaseModel):
 
 
 class InspectionEnvelope(BaseModel):
+    """Single-inspection response wrapper."""
+
     message: MessageResponse
     inspection: InspectionResponse
 
 
 class InspectionListEnvelope(BaseModel):
+    """List response wrapper for legacy inspections."""
+
     message: MessageResponse
     inspections: List[InspectionResponse]
 
 
 class InspectionChecksEnvelope(BaseModel):
+    """List response wrapper for inspection checks."""
+
     message: MessageResponse
     checks: List[InspectionCheckResponse]
 
 
 class InspectionPhotosEnvelope(BaseModel):
+    """List response wrapper for inspection photos."""
+
     message: MessageResponse
     photos: List[InspectionPhotoResponse]
 
 
 class PassengerCountEnvelope(BaseModel):
+    """Single-passenger-count response wrapper."""
+
     message: MessageResponse
     passenger_count: PassengerCountResponse
 
@@ -272,6 +321,8 @@ class PassengerCountEnvelope(BaseModel):
 
 
 class OperatorSummary(BaseModel):
+    """Compact operator representation nested inside master-data responses."""
+
     model_config = ConfigDict(from_attributes=True)
 
     operator_id: int
@@ -280,6 +331,8 @@ class OperatorSummary(BaseModel):
 
 
 class VehicleResponse(BaseModel):
+    """API response model for master-data vehicles."""
+
     vehicle_id: int
     vin: str
     registration_number: str | None
@@ -299,11 +352,15 @@ class VehicleResponse(BaseModel):
 
 
 class VehicleEnvelope(BaseModel):
+    """Single-vehicle response wrapper."""
+
     message: MessageResponse
     vehicle: VehicleResponse
 
 
 class VehicleListEnvelope(BaseModel):
+    """Paginated vehicle list response wrapper."""
+
     message: MessageResponse
     total: int
     page: int
@@ -312,6 +369,8 @@ class VehicleListEnvelope(BaseModel):
 
 
 class RouteResponse(BaseModel):
+    """API response model for master-data routes."""
+
     route_id: int
     route_code: str
     route_name: str | None
@@ -324,11 +383,15 @@ class RouteResponse(BaseModel):
 
 
 class RouteEnvelope(BaseModel):
+    """Single-route response wrapper."""
+
     message: MessageResponse
     route: RouteResponse
 
 
 class RouteListEnvelope(BaseModel):
+    """Paginated route list response wrapper."""
+
     message: MessageResponse
     total: int
     page: int

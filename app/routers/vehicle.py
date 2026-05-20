@@ -1,3 +1,5 @@
+"""Vehicle lookup endpoints and related access-control helpers."""
+
 from datetime import datetime
 from typing import List, Optional
 
@@ -49,6 +51,7 @@ _500 = {500: {"model": ErrorResponse, "description": "Internal server error"}}
 
 # Helper function to get or create AppUser based on Firebase UID
 async def get_user_id_from_token(current_user: TokenData, db: Session) -> int:
+    """Get or auto-create the local ``AppUser`` row for the authenticated user."""
     app_user = (
         db.query(AppUser).filter(AppUser.firebase_uid == current_user.sub).first()
     )
@@ -76,6 +79,11 @@ MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
 # Resolve the AppUser and their Operator from a Firebase token.
 # Raises 401 if the user has never been provisioned in the database.
 async def _resolve_app_user(current_user: TokenData, db: Session):
+    """Load the caller's app user row and optional operator context.
+
+    Many endpoints need both pieces of data to decide whether the caller should
+    see all data or only the rows owned by their operator.
+    """
     app_user = (
         db.query(AppUser).filter(AppUser.firebase_uid == current_user.sub).first()
     )
@@ -102,6 +110,7 @@ def _is_internal(operator) -> bool:
 def _build_vehicle_response(
     vehicle: Vehicle, operator: Optional[Operator]
 ) -> VehicleResponse:
+    """Convert ORM vehicle rows into the API response schema."""
     return VehicleResponse(
         vehicle_id=vehicle.vehicle_id,
         vin=vehicle.vin,
@@ -137,6 +146,7 @@ async def get_vehicles(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """Return a filtered, paginated list of vehicles visible to the caller."""
     try:
         app_user, operator = await _resolve_app_user(current_user, db)
 
@@ -189,6 +199,7 @@ async def get_vehicle(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """Return one vehicle identified by VIN, enforcing operator scoping rules."""
     try:
         app_user, operator = await _resolve_app_user(current_user, db)
 

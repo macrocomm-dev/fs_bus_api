@@ -1,3 +1,5 @@
+"""Endpoints for reading grouped bus inspections and legacy inspection data."""
+
 from collections import defaultdict
 from datetime import date, datetime, time
 from typing import Annotated, List, Optional
@@ -177,6 +179,7 @@ _BUS_INSPECTIONS_200 = {
 
 # Helper function to get or create AppUser based on Firebase UID
 async def get_user_id_from_token(current_user: TokenData, db: Session) -> int:
+    """Get or create the local app-user row tied to the authenticated token."""
     app_user = (
         db.query(AppUser).filter(AppUser.firebase_uid == current_user.sub).first()
     )
@@ -200,6 +203,7 @@ async def get_user_id_from_token(current_user: TokenData, db: Session) -> int:
 # Resolve the AppUser and their Operator from a Firebase token.
 # Raises 401 if the user has never been provisioned in the database.
 async def _resolve_app_user(current_user: TokenData, db: Session):
+    """Load the caller's app-user row and optional operator for scoping."""
     app_user = (
         db.query(AppUser).filter(AppUser.firebase_uid == current_user.sub).first()
     )
@@ -237,6 +241,7 @@ async def create_inspection(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """Create one legacy inspection row and optionally one attached legacy photo."""
     try:
         if current_user.role not in ["Monitor", "Supervisor", "Admin"]:
             raise HTTPException(
@@ -317,6 +322,7 @@ async def add_inspection_check(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """Add one legacy checklist row underneath an inspection."""
     try:
 
         new_check = InspectionCheck(
@@ -364,6 +370,7 @@ async def add_passenger_count(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """Create one legacy passenger-count record."""
     try:
         new_count = PassengerCount(
             vehicle_id=payload.vehicle_id,
@@ -399,7 +406,7 @@ async def add_passenger_count(
 
 
 def _apply_date_range_limit(query, params: DateRangeLimitQueryParams):
-    """Apply optional date-range and limit filters to a BusInspection query."""
+    """Apply optional date-range and limit filters to a grouped inspection query."""
     if params.start_date:
         start_dt = datetime.combine(params.start_date, params.start_time or time.min)
         query = query.filter(BusInspection.inspection_time >= start_dt)
@@ -412,6 +419,7 @@ def _apply_date_range_limit(query, params: DateRangeLimitQueryParams):
 
 
 def _serialize_group_photo(photo) -> dict:
+    """Convert a stored inspection photo row into the grouped response shape."""
     return {
         "id": photo.id,
         "timestamp": photo.timestamp,
@@ -423,6 +431,7 @@ def _serialize_group_photo(photo) -> dict:
 
 
 def _inspection_item_response(pass_value, reason, photos_by_item, inspection_item: str):
+    """Build the nested response object for one inspection checklist item."""
     return {
         "pass_": pass_value,
         "reason": reason,
@@ -431,6 +440,12 @@ def _inspection_item_response(pass_value, reason, photos_by_item, inspection_ite
 
 
 def _group_bus_inspection_rows(rows: list[BusInspection]) -> list[dict]:
+    """Rebuild grouped bus inspections from the flat storage table.
+
+    The database stores one row per inspection event, but the client expects a
+    nested per-bus structure. This function is the inverse of the flattening
+    logic used during shift creation.
+    """
     grouped: dict[tuple[int, str], dict] = {}
 
     for row in rows:
@@ -557,6 +572,7 @@ async def get_all_bus_inspections(
     db: Session = Depends(get_db),
     current_user: TokenData = Depends(get_current_user),
 ):
+    """Return grouped bus inspections across all shifts that match the filters."""
     try:
         query = db.query(BusInspection).options(selectinload(BusInspection.photos))
         query = _apply_date_range_limit(query, params)
@@ -584,6 +600,7 @@ async def get_bus_inspections_by_shift(
     db: Session = Depends(get_db),
     current_user: TokenData = Depends(get_current_user),
 ):
+    """Return grouped bus inspections for a selected set of shift IDs."""
     if not shift_ids:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -624,6 +641,7 @@ async def get_bus_inspections_by_bus(
     db: Session = Depends(get_db),
     current_user: TokenData = Depends(get_current_user),
 ):
+    """Return grouped bus inspections for a selected set of VINs / bus IDs."""
     if not bus_ids:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -664,6 +682,7 @@ async def get_bus_inspections_by_user(
     db: Session = Depends(get_db),
     current_user: TokenData = Depends(get_current_user),
 ):
+    """Return grouped bus inspections recorded by selected monitor user IDs."""
     if not user_ids:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

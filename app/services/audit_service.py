@@ -25,7 +25,13 @@ _MAX_BODY_BYTES = 10_240  # 10 KB — skip capturing larger payloads
 
 
 def _resolve_user_id(request: Request, db) -> Optional[int]:
-    """Extract the numeric user_id from the Bearer token without a Firebase network call."""
+    """Map the bearer token in a request to the local numeric ``user_id``.
+
+    Audit logging should be cheap and resilient, so this helper reads JWT claims
+    without doing a network verification call. It is good enough for linking an
+    error record back to the local user row when the token contains a Firebase
+    UID.
+    """
     try:
         auth_header = request.headers.get("authorization", "")
         if not auth_header.startswith("Bearer "):
@@ -50,7 +56,12 @@ async def log_api_error(
     validation_errors: Optional[dict] = None,
     exc: Optional[BaseException] = None,
 ) -> None:
-    """Persist one audit row.  Never raises — logging must not affect the response."""
+    """Persist one API error audit row without ever breaking the response path.
+
+    This function is deliberately defensive. Even if request-body parsing,
+    token inspection, or the audit insert itself fails, the caller should still
+    be able to return the original API error response to the client.
+    """
     try:
         # ---- request body (best-effort, size-capped) ----------------------
         request_body: Optional[dict] = None

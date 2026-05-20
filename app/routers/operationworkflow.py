@@ -1,3 +1,5 @@
+"""Legacy operations endpoints kept alongside the newer grouped shift APIs."""
+
 from datetime import datetime
 from typing import List, Optional
 
@@ -67,6 +69,7 @@ _500 = {500: {"model": ErrorResponse, "description": "Internal server error"}}
 
 # Helper function to get or create AppUser based on Firebase UID
 async def get_user_id_from_token(current_user: TokenData, db: Session) -> int:
+    """Get or create the local app-user row for the authenticated Firebase user."""
     app_user = (
         db.query(AppUser).filter(AppUser.firebase_uid == current_user.sub).first()
     )
@@ -94,6 +97,7 @@ MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
 # Resolve the AppUser and their Operator from a Firebase token.
 # Raises 401 if the user has never been provisioned in the database.
 async def _resolve_app_user(current_user: TokenData, db: Session):
+    """Load the caller's app-user row and operator context for data scoping."""
     app_user = (
         db.query(AppUser).filter(AppUser.firebase_uid == current_user.sub).first()
     )
@@ -129,6 +133,7 @@ async def create_inspection(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """Create one legacy inspection row in the operations schema."""
     if current_user.role not in ["Monitor", "Supervisor", "Admin"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -178,6 +183,7 @@ async def add_inspection_check(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """Add one legacy inspection check row to an existing inspection."""
     try:
 
         new_check = InspectionCheck(
@@ -227,6 +233,7 @@ async def upload_photo(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """Upload one legacy inspection photo and store the raw bytes in the DB."""
     if current_user.role not in ["Monitor", "Supervisor", "Admin"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -283,6 +290,7 @@ async def add_passenger_count(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """Create one legacy passenger-count row."""
     try:
         new_count = PassengerCount(
             vehicle_id=payload.vehicle_id,
@@ -323,6 +331,7 @@ async def get_inspection(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """Return one legacy inspection record by inspection ID."""
     app_user, operator = await _resolve_app_user(current_user, db)
 
     query = db.query(Inspection).filter(Inspection.inspection_id == inspection_id)
@@ -352,6 +361,7 @@ async def get_all_inspections(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """Return all legacy inspections visible to the current user."""
     app_user, operator = await _resolve_app_user(current_user, db)
 
     query = db.query(Inspection)
@@ -384,6 +394,7 @@ async def get_inspection_checks(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """Return all checklist rows attached to one legacy inspection."""
     try:
         app_user, operator = await _resolve_app_user(current_user, db)
 
@@ -425,6 +436,7 @@ async def get_inspection_photos(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """Return all legacy inspection photos attached to one inspection."""
     try:
         app_user, operator = await _resolve_app_user(current_user, db)
 
@@ -476,6 +488,7 @@ async def download_photo(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """Download the raw bytes for one legacy inspection photo."""
     app_user, operator = await _resolve_app_user(current_user, db)
 
     query = db.query(InspectionPhoto).filter(InspectionPhoto.photo_id == photo_id)
@@ -507,6 +520,7 @@ async def get_passenger_count(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """Return one passenger-count row by its primary key."""
     try:
         app_user, operator = await _resolve_app_user(current_user, db)
 
@@ -544,6 +558,7 @@ async def get_passenger_count_user_user(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """Return the first passenger-count row recorded for the given user ID."""
     try:
         app_user, operator = await _resolve_app_user(current_user, db)
 
@@ -576,6 +591,7 @@ async def get_passenger_count_user_user(
 def _build_vehicle_response(
     vehicle: Vehicle, operator: Optional[Operator]
 ) -> VehicleResponse:
+    """Convert ORM vehicle rows into the legacy operations response shape."""
     return VehicleResponse(
         vehicle_id=vehicle.vehicle_id,
         vin=vehicle.vin,
@@ -597,6 +613,7 @@ def _build_vehicle_response(
 
 
 def _build_route_response(route: Route, operator: Optional[Operator]) -> RouteResponse:
+    """Convert ORM route rows into the legacy operations response shape."""
     return RouteResponse(
         route_id=route.route_id,
         route_code=route.route_code,
@@ -625,6 +642,7 @@ async def get_vehicles(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """Return a paginated list of vehicles visible to the current caller."""
     app_user, operator = await _resolve_app_user(current_user, db)
 
     query = db.query(Vehicle, Operator).outerjoin(
@@ -666,6 +684,7 @@ async def get_vehicle(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """Return one vehicle by numeric vehicle ID."""
     app_user, operator = await _resolve_app_user(current_user, db)
 
     query = (
@@ -708,6 +727,7 @@ async def get_routes(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """Return a paginated list of routes visible to the current caller."""
     app_user, operator = await _resolve_app_user(current_user, db)
 
     query = db.query(Route, Operator).outerjoin(
@@ -749,6 +769,7 @@ async def get_route(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """Return one route by numeric route ID."""
     app_user, operator = await _resolve_app_user(current_user, db)
 
     query = (
@@ -784,6 +805,7 @@ async def get_vehicle_route(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """Placeholder endpoint for future vehicle-to-route lookup behavior."""
     app_user, operator = await _resolve_app_user(current_user, db)
 
     # query = (

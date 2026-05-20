@@ -1,3 +1,5 @@
+"""Endpoints for uploading and reading photo-like resources."""
+
 from datetime import date, datetime, time
 from typing import Annotated, List, Optional
 
@@ -50,6 +52,7 @@ _500 = {500: {"model": ErrorResponse, "description": "Internal server error"}}
 
 # Helper function to get or create AppUser based on Firebase UID
 async def get_user_id_from_token(current_user: TokenData, db: Session) -> int:
+    """Get or create the local app-user row tied to the authenticated token."""
     app_user = (
         db.query(AppUser).filter(AppUser.firebase_uid == current_user.sub).first()
     )
@@ -77,6 +80,7 @@ MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
 # Resolve the AppUser and their Operator from a Firebase token.
 # Raises 401 if the user has never been provisioned in the database.
 async def _resolve_app_user(current_user: TokenData, db: Session):
+    """Load the caller's app-user row plus operator information for scoping."""
     app_user = (
         db.query(AppUser).filter(AppUser.firebase_uid == current_user.sub).first()
     )
@@ -122,6 +126,7 @@ async def upload_inspection_photo(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """Store one legacy inspection photo directly in the database."""
     try:
         if current_user.role not in ["Monitor", "Supervisor", "Admin"]:
             raise HTTPException(
@@ -191,6 +196,7 @@ async def upload_user_verification_photo(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """Store one user verification image in the database."""
     try:
         if current_user.role not in ["Monitor", "Supervisor", "Admin"]:
             raise HTTPException(
@@ -252,6 +258,7 @@ async def get_inspection_photos(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """Return every legacy inspection photo attached to one inspection."""
     try:
         app_user, operator = await _resolve_app_user(current_user, db)
 
@@ -310,6 +317,7 @@ async def download_photo(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """Download the raw bytes of one legacy inspection photo."""
     try:
         app_user, operator = await _resolve_app_user(current_user, db)
 
@@ -358,7 +366,7 @@ async def get_all_selfies(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Return every selfie record across all shifts."""
+    """Return selfie rows, optionally filtered by timestamp range."""
     try:
         query = db.query(Selfie).order_by(Selfie.timestamp.desc())
         if params.start_date:
@@ -394,7 +402,7 @@ async def get_selfies_by_shift(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Return all selfies recorded during the specified shifts. At least one ID is required."""
+    """Return all selfies that belong to the specified shift IDs."""
     if not shift_ids:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -438,7 +446,7 @@ async def get_all_photos(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Return every inspection photo record across all inspections with optional date range and limit."""
+    """Return inspection photo rows, optionally filtered by timestamp range."""
     try:
         query = db.query(Photo).order_by(Photo.timestamp.desc())
         if params.start_date:
@@ -474,7 +482,7 @@ async def get_photos_by_inspection(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Return all photos attached to the specified bus inspections. At least one ID is required."""
+    """Return all shift-inspection photos attached to the specified inspection IDs."""
     if not inspection_ids:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

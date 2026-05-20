@@ -24,6 +24,13 @@ if TYPE_CHECKING:
 
 
 class BusInspection(Base):
+    """Flat inspection storage row used by the shift workflow.
+
+    Even though the API speaks in grouped sections like external/internal/
+    driver, the database stores each inspection event as its own row in this
+    table.
+    """
+
     __tablename__ = "inspections"
     __table_args__ = {"schema": "inspections"}
 
