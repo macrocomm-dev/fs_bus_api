@@ -78,6 +78,8 @@ _BUS_INSPECTIONS_200 = {
                         "user_id": "firebase_uid_abc123",
                         "bus_id": "VIN0001ZA",
                         "fleet_number": "GA 01 001 GP",
+                        "duty_number": "DUTY-101",
+                        "replacement_bus": False,
                         "license_disk_scan_succeeded": True,
                         "destination_displayed": True,
                         "inspections": {
@@ -141,6 +143,16 @@ _BUS_INSPECTIONS_200 = {
                                 "driver_identified": True,
                                 "driver_fail_reason": None,
                                 "driver_name": "Sipho Nkosi",
+                                "photos": [
+                                    {
+                                        "id": 102,
+                                        "timestamp": "2026-05-01T08:07:30",
+                                        "lat": -26.2047,
+                                        "lon": 28.0482,
+                                        "photo": "<base64_encoded_image>",
+                                        "created_at": "2026-05-01T08:08:00",
+                                    }
+                                ],
                             },
                             "passenger_counts": [
                                 {
@@ -446,16 +458,18 @@ def _group_bus_inspection_rows(rows: list[BusInspection]) -> list[dict]:
     nested per-bus structure. This function is the inverse of the flattening
     logic used during shift creation.
     """
-    grouped: dict[tuple[int, str], dict] = {}
+    grouped: dict[tuple[int, str, str | None, bool], dict] = {}
 
     for row in rows:
-        key = (row.shift_id, row.bus_id)
+        key = (row.shift_id, row.bus_id, row.duty_number, row.replacement_bus)
         if key not in grouped:
             grouped[key] = {
                 "shift_id": row.shift_id,
                 "user_id": row.user_id,
                 "bus_id": row.bus_id,
                 "fleet_number": row.fleet_number,
+                "duty_number": row.duty_number,
+                "replacement_bus": row.replacement_bus,
                 "license_disk_scan_succeeded": row.license_disk_scan_succeeded,
                 "destination_displayed": row.destination_displayed,
                 "inspections": {
@@ -530,6 +544,7 @@ def _group_bus_inspection_rows(rows: list[BusInspection]) -> list[dict]:
                 "driver_identified": row.driver_identified,
                 "driver_fail_reason": row.driver_fail_reason,
                 "driver_name": row.driver_name,
+                "photos": photos_by_item.get("driver", []),
             }
 
         if grouped[key]["license_disk_scan_succeeded"] is None:

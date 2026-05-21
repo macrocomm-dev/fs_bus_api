@@ -52,6 +52,8 @@ class ShiftContractTests(unittest.TestCase):
                 {
                     "bus_id": "VIN0001ZA",
                     "bus_number": "GA 01 001 GP",
+                    "duty_number": "DUTY-101",
+                    "replacement_bus": True,
                     "license_disk_scan_succeeded": True,
                     "destination_displayed": True,
                     "inspections": {
@@ -86,7 +88,18 @@ class ShiftContractTests(unittest.TestCase):
                             "inspection_lat": -26.2046,
                             "inspection_lon": 28.0481,
                             "fire_extinguisher_present": True,
-                            "seats": {"pass_": False, "reason": None, "photos": []},
+                            "seats": {
+                                "pass_": False,
+                                "reason": None,
+                                "photos": [
+                                    {
+                                        "timestamp": "2026-05-01T08:05:30",
+                                        "lat": -26.2046,
+                                        "lon": 28.0481,
+                                        "photo": "seat-photo",
+                                    }
+                                ],
+                            },
                             "aisle": {"pass_": False, "reason": None, "photos": []},
                             "other": {"pass_": False, "reason": None, "photos": []},
                         },
@@ -100,6 +113,14 @@ class ShiftContractTests(unittest.TestCase):
                             "driver_identified": True,
                             "driver_fail_reason": None,
                             "driver_name": "Sipho Nkosi",
+                            "photos": [
+                                {
+                                    "timestamp": "2026-05-01T08:07:30",
+                                    "lat": -26.2047,
+                                    "lon": 28.0482,
+                                    "photo": "driver-photo",
+                                }
+                            ],
                         },
                         "passenger_counts": [
                             {
@@ -129,6 +150,8 @@ class ShiftContractTests(unittest.TestCase):
 
         self.assertTrue(shift.busses[0].license_disk_scan_succeeded)
         self.assertTrue(shift.busses[0].destination_displayed)
+        self.assertEqual(shift.busses[0].duty_number, "DUTY-101")
+        self.assertTrue(shift.busses[0].replacement_bus)
         self.assertTrue(shift.busses[0].inspections.external_inspected)
         self.assertTrue(shift.busses[0].inspections.internal_inspected)
         self.assertTrue(shift.busses[0].inspections.driver_inspected)
@@ -142,6 +165,10 @@ class ShiftContractTests(unittest.TestCase):
         self.assertEqual(
             shift.busses[0].inspections.external.other.photos[0].photo,
             "damage-photo",
+        )
+        self.assertEqual(
+            shift.busses[0].inspections.driver.photos[0].photo,
+            "driver-photo",
         )
 
     def test_shift_create_applies_requested_defaults(self):
@@ -159,6 +186,7 @@ class ShiftContractTests(unittest.TestCase):
                 {
                     "bus_id": "VIN0001ZA",
                     "bus_number": "GA 01 001 GP",
+                    "duty_number": "DUTY-102",
                     "inspections": {
                         "internal": {
                             "internal_inspection_id": "int-1",
@@ -166,7 +194,18 @@ class ShiftContractTests(unittest.TestCase):
                             "inspection_lat": -26.2046,
                             "inspection_lon": 28.0481,
                             "seats": {"pass_": False, "reason": None, "photos": []},
-                            "aisle": {"pass_": False, "reason": None, "photos": []},
+                            "aisle": {
+                                "pass_": False,
+                                "reason": None,
+                                "photos": [
+                                    {
+                                        "timestamp": "2026-05-01T08:05:45",
+                                        "lat": -26.2046,
+                                        "lon": 28.0481,
+                                        "photo": "aisle-photo",
+                                    }
+                                ],
+                            },
                             "other": {"pass_": False, "reason": None, "photos": []},
                         }
                     },
@@ -176,6 +215,7 @@ class ShiftContractTests(unittest.TestCase):
 
         shift = ShiftCreate.model_validate(payload)
 
+        self.assertFalse(shift.busses[0].replacement_bus)
         self.assertTrue(shift.busses[0].license_disk_scan_succeeded)
         self.assertTrue(shift.busses[0].destination_displayed)
         self.assertFalse(shift.busses[0].inspections.internal.fire_extinguisher_present)
@@ -194,6 +234,7 @@ class ShiftContractTests(unittest.TestCase):
             "busses": [
                 {
                     "bus_number": "GA 01 001 GP",
+                    "duty_number": "DUTY-103",
                     "inspections": {
                         "driver": {
                             "internal_inspection_id": "drv-1",
@@ -202,7 +243,15 @@ class ShiftContractTests(unittest.TestCase):
                             "inspection_lon": 28.0482,
                             "prdp_scan_succeeded": True,
                             "driver_identified": True,
-                            "driver_name": "Sipho Nkosi"
+                            "driver_name": "Sipho Nkosi",
+                            "photos": [
+                                {
+                                    "timestamp": "2026-05-01T08:07:30",
+                                    "lat": -26.2047,
+                                    "lon": 28.0482,
+                                    "photo": "driver-photo",
+                                }
+                            ],
                         }
                     },
                 }
@@ -213,6 +262,110 @@ class ShiftContractTests(unittest.TestCase):
 
         self.assertIsNone(shift.busses[0].bus_id)
         self.assertEqual(shift.busses[0].bus_number, "GA 01 001 GP")
+        self.assertFalse(shift.busses[0].replacement_bus)
+
+    def test_shift_create_requires_duty_number(self):
+        payload = {
+            "user_id": "firebase_uid_abc123",
+            "start_time": "2026-05-01T07:00:00",
+            "end_time": "2026-05-01T15:30:00",
+            "start_lat": -26.2041,
+            "start_lon": 28.0473,
+            "end_lat": -26.2089,
+            "end_lon": 28.0512,
+            "device_id": "device_001",
+            "selfies": [],
+            "busses": [
+                {
+                    "bus_id": "VIN0001ZA",
+                    "inspections": {
+                        "driver": {
+                            "internal_inspection_id": "drv-1",
+                            "inspection_time": "2026-05-01T08:07:00",
+                            "inspection_lat": -26.2047,
+                            "inspection_lon": 28.0482,
+                            "prdp_scan_succeeded": True,
+                            "driver_identified": True,
+                            "driver_name": "Sipho Nkosi",
+                        }
+                    },
+                }
+            ],
+        }
+
+        with self.assertRaises(ValueError) as raised:
+            ShiftCreate.model_validate(payload)
+
+        self.assertIn("duty_number", str(raised.exception))
+
+    def test_shift_create_allows_driver_without_photos(self):
+        payload = {
+            "user_id": "firebase_uid_abc123",
+            "start_time": "2026-05-01T07:00:00",
+            "end_time": "2026-05-01T15:30:00",
+            "start_lat": -26.2041,
+            "start_lon": 28.0473,
+            "end_lat": -26.2089,
+            "end_lon": 28.0512,
+            "device_id": "device_001",
+            "selfies": [],
+            "busses": [
+                {
+                    "bus_id": "VIN0001ZA",
+                    "duty_number": "DUTY-104",
+                    "inspections": {
+                        "driver": {
+                            "internal_inspection_id": "drv-1",
+                            "inspection_time": "2026-05-01T08:07:00",
+                            "inspection_lat": -26.2047,
+                            "inspection_lon": 28.0482,
+                            "prdp_scan_succeeded": True,
+                            "driver_identified": True,
+                            "driver_name": "Sipho Nkosi",
+                        }
+                    },
+                }
+            ],
+        }
+
+        shift = ShiftCreate.model_validate(payload)
+
+        self.assertEqual(shift.busses[0].inspections.driver.driver_name, "Sipho Nkosi")
+
+    def test_shift_create_requires_photos_for_external_and_internal(self):
+        payload = {
+            "user_id": "firebase_uid_abc123",
+            "start_time": "2026-05-01T07:00:00",
+            "end_time": "2026-05-01T15:30:00",
+            "start_lat": -26.2041,
+            "start_lon": 28.0473,
+            "end_lat": -26.2089,
+            "end_lon": 28.0512,
+            "device_id": "device_001",
+            "selfies": [],
+            "busses": [
+                {
+                    "bus_id": "VIN0001ZA",
+                    "duty_number": "DUTY-104A",
+                    "inspections": {
+                        "external": {
+                            "internal_inspection_id": "ext-1",
+                            "inspection_time": "2026-05-01T08:00:00",
+                            "inspection_lat": -26.2045,
+                            "inspection_lon": 28.0480,
+                            "tyres": {"pass_": False, "reason": None, "photos": []},
+                            "windows": {"pass_": False, "reason": None, "photos": []},
+                            "other": {"pass_": False, "reason": "Damage", "photos": []},
+                        }
+                    },
+                }
+            ],
+        }
+
+        with self.assertRaises(ValueError) as raised:
+            ShiftCreate.model_validate(payload)
+
+        self.assertIn("external inspections must include at least one photo", str(raised.exception))
 
     def test_resolve_bus_reference_from_vin(self):
         vehicle = SimpleNamespace(vin="AAMHB41482PX33125", fleet_number="5507")
@@ -248,6 +401,7 @@ class ShiftContractTests(unittest.TestCase):
             "selfies": [],
             "busses": [
                 {
+                    "duty_number": "DUTY-105",
                     "inspections": {
                         "driver": {
                             "internal_inspection_id": "drv-1",
@@ -256,7 +410,15 @@ class ShiftContractTests(unittest.TestCase):
                             "inspection_lon": 28.0482,
                             "prdp_scan_succeeded": True,
                             "driver_identified": True,
-                            "driver_name": "Sipho Nkosi"
+                            "driver_name": "Sipho Nkosi",
+                            "photos": [
+                                {
+                                    "timestamp": "2026-05-01T08:07:30",
+                                    "lat": -26.2047,
+                                    "lon": 28.0482,
+                                    "photo": "driver-photo",
+                                }
+                            ],
                         }
                     },
                 }
@@ -293,6 +455,8 @@ class ShiftContractTests(unittest.TestCase):
                 "user_id": "firebase_uid_abc123",
                 "bus_id": "VIN0001ZA",
                 "fleet_number": "GA 01 001 GP",
+                "duty_number": "DUTY-106",
+                "replacement_bus": True,
                 "internal_inspection_id": "insp-1",
                 "inspection_type": "external",
                 "inspection_time": timestamp,
@@ -380,6 +544,8 @@ class ShiftContractTests(unittest.TestCase):
 
         self.assertEqual(len(grouped), 1)
         self.assertEqual(grouped[0]["bus_id"], "VIN0001ZA")
+        self.assertEqual(grouped[0]["duty_number"], "DUTY-106")
+        self.assertTrue(grouped[0]["replacement_bus"])
         self.assertTrue(grouped[0]["license_disk_scan_succeeded"])
         self.assertTrue(grouped[0]["destination_displayed"])
         self.assertTrue(grouped[0]["inspections"]["external_inspected"])
@@ -388,6 +554,7 @@ class ShiftContractTests(unittest.TestCase):
         self.assertTrue(grouped[0]["inspections"]["passenger_counts_done"])
         self.assertTrue(grouped[0]["inspections"]["behind_schedule_reports_done"])
         self.assertEqual(grouped[0]["inspections"]["driver"]["driver_name"], "Sipho Nkosi")
+        self.assertEqual(grouped[0]["inspections"]["driver"]["photos"], [])
         self.assertEqual(
             grouped[0]["inspections"]["external"]["other"]["photos"][0]["photo"],
             "damage-photo",

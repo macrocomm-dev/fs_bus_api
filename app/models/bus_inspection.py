@@ -52,6 +52,10 @@ class BusInspection(Base):
         String,
         nullable=False,
     )
+    duty_number: Mapped[str | None] = mapped_column(String, nullable=True)
+    replacement_bus: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
     internal_inspection_id: Mapped[str] = mapped_column(String, nullable=False)
     inspection_type: Mapped[str] = mapped_column(String, nullable=False)
     inspection_time: Mapped[datetime] = mapped_column(nullable=False)

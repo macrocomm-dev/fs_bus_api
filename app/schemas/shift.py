@@ -4,6 +4,11 @@ from typing import List, Optional
 from fastapi import Query
 from pydantic import BaseModel, Field, model_validator
 
+
+def _has_any_item_photos(*items) -> bool:
+    """Return true when at least one checklist item carries one photo."""
+    return any(item.photos for item in items)
+
 class ErrorResponse(BaseModel):
     """Minimal error response used by shift-related endpoints."""
 
@@ -101,6 +106,7 @@ class DriverInspectionIn(InspectionBaseIn):
     driver_identified: Optional[bool] = None
     driver_fail_reason: Optional[str] = None
     driver_name: Optional[str] = None
+    photos: list[InspectionItemPhotoIn] = []
 
 
 class PassengerCountIn(InspectionBaseIn):
@@ -167,6 +173,18 @@ class BusInspectionsIn(BaseModel):
             raise ValueError(
                 "behind_schedule_reports must be provided when behind_schedule_reports_done is true"
             )
+        if self.external is not None and not _has_any_item_photos(
+            self.external.tyres,
+            self.external.windows,
+            self.external.other,
+        ):
+            raise ValueError("external inspections must include at least one photo")
+        if self.internal is not None and not _has_any_item_photos(
+            self.internal.seats,
+            self.internal.aisle,
+            self.internal.other,
+        ):
+            raise ValueError("internal inspections must include at least one photo")
         return self
 
 
@@ -216,6 +234,8 @@ class BusIn(BaseModel):
 
     bus_id: Optional[str] = None  # maps to bus_id / vin
     bus_number: Optional[str] = None  # maps to fleet_number
+    duty_number: str
+    replacement_bus: bool = False
     license_disk_scan_succeeded: Optional[bool] = True
     destination_displayed: Optional[bool] = True
     inspections: BusInspectionsIn
@@ -370,6 +390,7 @@ class DriverInspectionMetaIn(InspectionBaseMetaIn):
     driver_identified: Optional[bool] = None
     driver_fail_reason: Optional[str] = None
     driver_name: Optional[str] = None
+    photos: list[InspectionItemPhotoMetaIn] = []
 
 
 class PassengerCountMetaIn(InspectionBaseMetaIn):
@@ -431,6 +452,18 @@ class BusInspectionsMetaIn(BaseModel):
             raise ValueError(
                 "behind_schedule_reports must be provided when behind_schedule_reports_done is true"
             )
+        if self.external is not None and not _has_any_item_photos(
+            self.external.tyres,
+            self.external.windows,
+            self.external.other,
+        ):
+            raise ValueError("external inspections must include at least one photo")
+        if self.internal is not None and not _has_any_item_photos(
+            self.internal.seats,
+            self.internal.aisle,
+            self.internal.other,
+        ):
+            raise ValueError("internal inspections must include at least one photo")
         return self
 
 
@@ -474,6 +507,8 @@ class BusMetaIn(BaseModel):
 
     bus_id: Optional[str] = None
     bus_number: Optional[str] = None  # maps to fleet_number
+    duty_number: str
+    replacement_bus: bool = False
     license_disk_scan_succeeded: Optional[bool] = True
     destination_displayed: Optional[bool] = True
     inspections: BusInspectionsMetaIn
@@ -617,6 +652,7 @@ class DriverInspectionResponse(InspectionEventResponse):
     driver_identified: Optional[bool] = None
     driver_fail_reason: Optional[str] = None
     driver_name: Optional[str] = None
+    photos: list[InspectionItemPhotoResponse] = []
 
 
 class PassengerCountInspectionResponse(InspectionEventResponse):
@@ -655,6 +691,8 @@ class GroupedBusInspectionResponse(BaseModel):
     user_id: str
     bus_id: str
     fleet_number: Optional[str] = None
+    duty_number: Optional[str] = None
+    replacement_bus: bool = False
     license_disk_scan_succeeded: Optional[bool] = None
     destination_displayed: Optional[bool] = None
     inspections: BusInspectionGroupItemsResponse
@@ -668,6 +706,8 @@ class BusInspectionResponse(BaseModel):
     user_id: str
     bus_id: str
     fleet_number: str
+    duty_number: Optional[str] = None
+    replacement_bus: bool = False
     internal_inspection_id: str
     inspection_type: str
     inspection_time: datetime

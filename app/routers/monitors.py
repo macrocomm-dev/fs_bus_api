@@ -181,6 +181,8 @@ def _base_inspection_payload(
         "shift_id": shift_id,
         "bus_id": bus_id,
         "fleet_number": fleet_number,
+        "duty_number": bus.duty_number,
+        "replacement_bus": bus.replacement_bus,
         "internal_inspection_id": inspection.internal_inspection_id,
         "inspection_type": inspection_type,
         "inspection_time": inspection.inspection_time,
@@ -284,7 +286,7 @@ def _driver_inspection_record(db: Session, shift_id: int, user_id: str, bus, ins
             "driver_name": inspection.driver_name,
         }
     )
-    return payload, {}
+    return payload, {"driver": inspection.photos}
 
 
 def _passenger_count_record(db: Session, shift_id: int, user_id: str, bus, inspection):
@@ -427,10 +429,14 @@ async def add_inspections(shift_id: int, user_id: str, buses: List[BusIn], db: S
                 )
 
             if bus.inspections.driver is not None:
-                inspection_payload, _ = _driver_inspection_record(
+                inspection_payload, photo_groups = _driver_inspection_record(
                     db, shift_id, user_id, bus, bus.inspections.driver
                 )
-                _persist_inspection(db, inspection_payload)
+                _persist_inspection(
+                    db,
+                    inspection_payload,
+                    _photo_payloads_from_inline(photo_groups),
+                )
 
             for passenger_count in bus.inspections.passenger_counts:
                 inspection_payload, _ = _passenger_count_record(
@@ -465,6 +471,7 @@ async def add_inspections(shift_id: int, user_id: str, buses: List[BusIn], db: S
 #   selfie_{i}    — image file for selfies[i]
 #   bus_{i}_external_{item}_photo_{k} — image file for an exterior item photo
 #   bus_{i}_internal_{item}_photo_{k} — image file for an interior item photo
+#   bus_{i}_driver_photo_{k} — image file for a driver inspection photo
 # ---------------------------------------------------------------------------
 
 
@@ -546,10 +553,13 @@ async def create_shift_multipart(
                 _persist_inspection(db, inspection_payload, photo_payloads)
 
             if bus.inspections.driver is not None:
-                inspection_payload, _ = _driver_inspection_record(
+                inspection_payload, photo_groups = _driver_inspection_record(
                     db, new_shift.id, shift_data.user_id, bus, bus.inspections.driver
                 )
-                _persist_inspection(db, inspection_payload)
+                photo_payloads = await _photo_payloads_from_multipart(
+                    form, f"bus_{i}", photo_groups
+                )
+                _persist_inspection(db, inspection_payload, photo_payloads)
 
             for passenger_count in bus.inspections.passenger_counts:
                 inspection_payload, _ = _passenger_count_record(
