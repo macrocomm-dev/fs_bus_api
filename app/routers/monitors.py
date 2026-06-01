@@ -11,6 +11,7 @@ from typing import Annotated, List, Optional
 import base64
 from fastapi import Depends, HTTPException, APIRouter, Query, Request, Form, status
 from firebase_admin import db
+from sqlalchemy.exc import IntegrityError, DataError, OperationalError
 from sqlalchemy.orm import Session
 
 from app.auth import TokenData, get_current_user
@@ -361,11 +362,11 @@ async def create_shift(
 
     except HTTPException:
         raise
-    except Exception as e:
+    except Exception:
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An error occurred while creating the shift: {str(e)}",
+            detail="An unexpected error occurred while creating the shift. Please try again.",
         )
     return ShiftCreatedResponse(status=201, message="success", shift_id=create_shif.id)
 
@@ -388,11 +389,11 @@ async def add_shift_selfies(shift_id: int, selfies: List[SelfieIn], db: Session)
             db.add(new_selfie)
         db.commit()
         return True
-    except Exception as e:
+    except Exception:
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An error occurred while adding selfies: {str(e)}",
+            detail="Failed to save selfie photos. Please check the photo data and try again.",
         )
 
 
@@ -406,6 +407,7 @@ async def add_inspections(shift_id: int, user_id: str, buses: List[BusIn], db: S
     if not buses:
         return True  # No inspections to add, but not an error
 
+    current_bus_id = None
     try:
         for bus in buses:
             if bus.inspections.external is not None:
@@ -455,11 +457,67 @@ async def add_inspections(shift_id: int, user_id: str, buses: List[BusIn], db: S
     except HTTPException:
         db.rollback()
         raise
-    except Exception as e:
+    except IntegrityError as e:
+        db.rollback()
+        orig = getattr(e, "orig", None)
+        pgcode = getattr(orig, "pgcode", "") if orig else ""
+        pg_diag = getattr(orig, "diag", None) if orig else None
+        column = getattr(pg_diag, "column_name", None) if pg_diag else None
+        constraint = getattr(pg_diag, "constraint_name", None) if pg_diag else None
+
+        if pgcode == "23503":  # foreign_key_violation
+            fk_messages = {
+                "inspections_bus_id_fkey": f"Bus ID '{current_bus_id}' does not exist in the vehicle registry. Please verify the bus ID and try again.",
+                "inspections_shift_id_fkey": "The referenced shift does not exist. Please verify the shift and try again.",
+                "inspections_user_id_fkey": "The user account was not found. Please ensure the user is registered and try again.",
+            }
+            detail = fk_messages.get(
+                constraint,
+                f"A referenced record does not exist{f' (constraint: {constraint})' if constraint else ''}. Please verify all IDs and try again.",
+            )
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=detail,
+            )
+        if pgcode == "23505":  # unique_violation
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"A duplicate inspection record was detected{f' (constraint: {constraint})' if constraint else ''}. This inspection may have already been submitted.",
+            )
+        if pgcode == "23502":  # not_null_violation
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"A required field is missing{f': {column}' if column else ''}. Please check all required inspection fields are provided.",
+            )
+        if pgcode == "23514":  # check_violation
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"A field value is invalid{f' (constraint: {constraint})' if constraint else ''}. Please check the inspection values and try again.",
+            )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="A database integrity error occurred while saving the inspection.",
+        )
+    except DataError as e:
+        db.rollback()
+        orig = getattr(e, "orig", None)
+        pg_diag = getattr(orig, "diag", None) if orig else None
+        column = getattr(pg_diag, "column_name", None) if pg_diag else None
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Invalid data type or value{f' in field: {column}' if column else ''}. Please check the inspection data and try again.",
+        )
+    except OperationalError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="The database is temporarily unavailable. Please try again shortly.",
+        )
+    except Exception:
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An error occurred while adding inspections: {str(e)}",
+            detail="An unexpected error occurred while saving the inspection data.",
         )
 
 
