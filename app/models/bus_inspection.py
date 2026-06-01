@@ -19,7 +19,6 @@ from app.database import Base
 if TYPE_CHECKING:
     from app.models.shift import Shift
     from app.models.app_auth import AppUser
-    from app.models.master_data import Vehicle
     from app.models.photo import Photo
 
 
@@ -98,9 +97,6 @@ class BusInspection(Base):
 
     # Relationships
     shift: Mapped[Shift] = relationship("Shift", back_populates="inspections")
-    # vehicle: Mapped[Vehicle] = relationship(
-    #     "Vehicle", back_populates="inspections", foreign_keys=[bus_id]
-    # )
     photos: Mapped[list[Photo]] = relationship("Photo", back_populates="inspection")
     user: Mapped[AppUser] = relationship(
         "AppUser", back_populates="inspections", foreign_keys="[BusInspection.user_id]"

@@ -106,11 +106,6 @@ class Vehicle(Base):
         nullable=False, server_default=func.now()
     )
 
-    # Relationships
-    inspections: Mapped[list[BusInspection]] = relationship(
-        "BusInspection", back_populates="vehicle", foreign_keys="BusInspection.bus_id"
-    )
-
 
 class Operator(Base):
     """Master-data bus operator record."""
