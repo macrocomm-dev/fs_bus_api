@@ -1,4 +1,5 @@
 import datetime
+
 """Routes and helpers for creating and listing monitor shifts.
 
 This module turns the nested shift contract used by the mobile/web clients into
@@ -194,7 +195,9 @@ def _base_inspection_payload(
     }
 
 
-def _external_inspection_record(db: Session, shift_id: int, user_id: str, bus, inspection):
+def _external_inspection_record(
+    db: Session, shift_id: int, user_id: str, bus, inspection
+):
     """Convert one nested external inspection into a flat DB row payload."""
     payload = _base_inspection_payload(
         db, shift_id, user_id, bus, inspection, "external"
@@ -229,7 +232,9 @@ def _external_inspection_record(db: Session, shift_id: int, user_id: str, bus, i
     return payload, photo_groups
 
 
-def _interior_inspection_record(db: Session, shift_id: int, user_id: str, bus, inspection):
+def _interior_inspection_record(
+    db: Session, shift_id: int, user_id: str, bus, inspection
+):
     """Convert one nested internal inspection into a flat DB row payload."""
     payload = _base_inspection_payload(
         db, shift_id, user_id, bus, inspection, "internal"
@@ -245,9 +250,11 @@ def _interior_inspection_record(db: Session, shift_id: int, user_id: str, bus, i
                 ]
             ),
             "notes": _combine_reasons(
-                None
-                if inspection.fire_extinguisher_present
-                else "Fire extinguisher missing",
+                (
+                    None
+                    if inspection.fire_extinguisher_present
+                    else "Fire extinguisher missing"
+                ),
                 inspection.seats.reason,
                 inspection.aisle.reason,
                 inspection.other.reason,
@@ -269,7 +276,9 @@ def _interior_inspection_record(db: Session, shift_id: int, user_id: str, bus, i
     return payload, photo_groups
 
 
-def _driver_inspection_record(db: Session, shift_id: int, user_id: str, bus, inspection):
+def _driver_inspection_record(
+    db: Session, shift_id: int, user_id: str, bus, inspection
+):
     """Convert one nested driver inspection into a flat DB row payload."""
     boolean_checks = [
         inspection.prdp_scan_succeeded,
@@ -632,7 +641,9 @@ async def create_shift_multipart(
                 _persist_inspection(db, inspection_payload)
 
         db.commit()
-        return ShiftCreatedResponse(status=201, message="success", shift_id=new_shift.id)
+        return ShiftCreatedResponse(
+            status=201, message="success", shift_id=new_shift.id
+        )
 
     except HTTPException:
         raise
