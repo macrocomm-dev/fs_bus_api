@@ -476,7 +476,6 @@ async def add_inspections(shift_id: int, user_id: str, buses: List[BusIn], db: S
 
         if pgcode == "23503":  # foreign_key_violation
             fk_messages = {
-                "inspections_bus_id_fkey": f"Bus ID '{current_bus_id}' does not exist in the vehicle registry. Please verify the bus ID and try again.",
                 "inspections_shift_id_fkey": "The referenced shift does not exist. Please verify the shift and try again.",
                 "inspections_user_id_fkey": "The user account was not found. Please ensure the user is registered and try again.",
             }
