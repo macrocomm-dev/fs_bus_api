@@ -43,10 +43,9 @@ class BusInspection(Base):
     user_id: Mapped[str] = mapped_column(
         String, ForeignKey("app_auth.app_user.firebase_uid"), nullable=False
     )
-    bus_id: Mapped[str] = mapped_column(
+    bus_id: Mapped[str | None] = mapped_column(
         String,
-        ForeignKey("master_data.vehicle.vin"),
-        nullable=False,
+        nullable=True,
     )
     fleet_number: Mapped[str] = mapped_column(
         String,
@@ -99,9 +98,9 @@ class BusInspection(Base):
 
     # Relationships
     shift: Mapped[Shift] = relationship("Shift", back_populates="inspections")
-    vehicle: Mapped[Vehicle] = relationship(
-        "Vehicle", back_populates="inspections", foreign_keys=[bus_id]
-    )
+    # vehicle: Mapped[Vehicle] = relationship(
+    #     "Vehicle", back_populates="inspections", foreign_keys=[bus_id]
+    # )
     photos: Mapped[list[Photo]] = relationship("Photo", back_populates="inspection")
     user: Mapped[AppUser] = relationship(
         "AppUser", back_populates="inspections", foreign_keys="[BusInspection.user_id]"
