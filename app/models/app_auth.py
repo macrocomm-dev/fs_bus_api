@@ -4,13 +4,12 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import BigInteger, Boolean, ForeignKey, String, func
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
 
 if TYPE_CHECKING:
-    from app.models.shift import Shift
-    from app.models.bus_inspection import BusInspection
+    pass
 
 
 class AppUser(Base):
@@ -39,7 +38,3 @@ class AppUser(Base):
     )
 
     # Relationships
-    shifts: Mapped[list[Shift]] = relationship("Shift", back_populates="user")
-    inspections: Mapped[list[BusInspection]] = relationship(
-        "BusInspection", back_populates="user", foreign_keys="[BusInspection.user_id]"
-    )

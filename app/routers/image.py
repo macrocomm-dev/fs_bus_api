@@ -1,5 +1,6 @@
 """Endpoints for uploading and reading photo-like resources."""
 
+import base64
 from datetime import date, datetime, time
 from typing import Annotated, List, Optional
 
@@ -35,7 +36,12 @@ from app.schemas.operations import (
     MessageResponse,
     PhotoUploadResponse,
 )
-from app.schemas.shift import DateRangeLimitQueryParams, PhotoResponse, SelfieResponse, date_range_params
+from app.schemas.shift import (
+    DateRangeLimitQueryParams,
+    PhotoResponse,
+    SelfieResponse,
+    date_range_params,
+)
 
 image_router = APIRouter()
 
@@ -507,4 +513,113 @@ async def get_photos_by_inspection(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error retrieving photos: {exc}",
+        )
+
+
+def _decode_base64_photo(raw: str) -> tuple[bytes, str]:
+    """Decode a base64 photo string into raw bytes and a content-type.
+
+    Handles both plain base64 strings and data-URI prefixed strings such as
+    ``data:image/jpeg;base64,<data>``.  Defaults to ``image/jpeg`` when no
+    MIME type prefix is present.
+    """
+    content_type = "image/jpeg"
+    if raw.startswith("data:"):
+        header, _, encoded = raw.partition(",")
+        mime_part = header.split(";")[0]
+        content_type = mime_part[len("data:") :]
+        raw = encoded
+    return base64.b64decode(raw), content_type
+
+
+# ---------------------------------------------------------------------------
+# Base64 image viewer endpoints
+# ---------------------------------------------------------------------------
+
+
+@image_router.get(
+    "/photos/{photo_id}/view",
+    responses={
+        **_401,
+        **_404,
+        **_500,
+        200: {
+            "content": {
+                "image/jpeg": {},
+                "image/png": {},
+                "image/webp": {},
+            },
+            "description": "Raw image bytes decoded from the stored base64 string",
+        },
+    },
+    summary="View a single inspection photo as an image",
+)
+async def view_photo(
+    photo_id: int = Path(description="ID of the inspection photo to view"),
+    current_user: TokenData = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Decode and serve the base64 image stored for one inspection photo."""
+    try:
+        photo = db.query(Photo).filter(Photo.id == photo_id).first()
+        if photo is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Photo not found",
+            )
+        image_bytes, content_type = _decode_base64_photo(photo.photo)
+        return Response(content=image_bytes, media_type=content_type)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                "message": MessageResponse.fail,
+                "detail": f"Error viewing photo: {exc}",
+            },
+        )
+
+
+@image_router.get(
+    "/selfies/{selfie_id}/view",
+    responses={
+        **_401,
+        **_404,
+        **_500,
+        200: {
+            "content": {
+                "image/jpeg": {},
+                "image/png": {},
+                "image/webp": {},
+            },
+            "description": "Raw image bytes decoded from the stored base64 string",
+        },
+    },
+    summary="View a single shift selfie as an image",
+)
+async def view_selfie(
+    selfie_id: int = Path(description="ID of the selfie to view"),
+    current_user: TokenData = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Decode and serve the base64 image stored for one shift selfie."""
+    try:
+        selfie = db.query(Selfie).filter(Selfie.id == selfie_id).first()
+        if selfie is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Selfie not found",
+            )
+        image_bytes, content_type = _decode_base64_photo(selfie.photo)
+        return Response(content=image_bytes, media_type=content_type)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                "message": MessageResponse.fail,
+                "detail": f"Error viewing selfie: {exc}",
+            },
         )
