@@ -345,6 +345,7 @@ async def create_shift(
     """
 
     try:
+
         create_shif = Shift(
             user_id=shift_data.user_id,
             start_time=shift_data.start_time,
@@ -359,23 +360,28 @@ async def create_shift(
         db.add(create_shif)
         db.commit()
         db.refresh(create_shif)
+
         selfies = await add_shift_selfies(create_shif.id, shift_data.selfies, db)
+
         inspections = await add_inspections(
             create_shif.id, shift_data.user_id, shift_data.busses, db
         )
+
         if not selfies or not inspections:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="An error occurred while processing selfies or inspections",
             )
 
-    except HTTPException:
-        raise
-    except Exception:
+    except HTTPException as e:
+
+        raise e
+    except Exception as e:
         db.rollback()
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred while creating the shift. Please try again.",
+            detail=f"An unexpected error occurred while creating the shift. Please try again. Error: {e}",
         )
     return ShiftCreatedResponse(status=201, message="success", shift_id=create_shif.id)
 

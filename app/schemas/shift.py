@@ -9,6 +9,7 @@ def _has_any_item_photos(*items) -> bool:
     """Return true when at least one checklist item carries one photo."""
     return any(item.photos for item in items)
 
+
 class ErrorResponse(BaseModel):
     """Minimal error response used by shift-related endpoints."""
 
@@ -173,18 +174,6 @@ class BusInspectionsIn(BaseModel):
             raise ValueError(
                 "behind_schedule_reports must be provided when behind_schedule_reports_done is true"
             )
-        if self.external is not None and not _has_any_item_photos(
-            self.external.tyres,
-            self.external.windows,
-            self.external.other,
-        ):
-            raise ValueError("external inspections must include at least one photo")
-        if self.internal is not None and not _has_any_item_photos(
-            self.internal.seats,
-            self.internal.aisle,
-            self.internal.other,
-        ):
-            raise ValueError("internal inspections must include at least one photo")
         return self
 
 
@@ -452,18 +441,6 @@ class BusInspectionsMetaIn(BaseModel):
             raise ValueError(
                 "behind_schedule_reports must be provided when behind_schedule_reports_done is true"
             )
-        if self.external is not None and not _has_any_item_photos(
-            self.external.tyres,
-            self.external.windows,
-            self.external.other,
-        ):
-            raise ValueError("external inspections must include at least one photo")
-        if self.internal is not None and not _has_any_item_photos(
-            self.internal.seats,
-            self.internal.aisle,
-            self.internal.other,
-        ):
-            raise ValueError("internal inspections must include at least one photo")
         return self
 
 

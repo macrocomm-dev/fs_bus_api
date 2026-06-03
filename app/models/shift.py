@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 from sqlalchemy import (
     BigInteger,
     Float,
-    ForeignKey,
     String,
     func,
 )
@@ -15,7 +14,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
 if TYPE_CHECKING:
-    from app.models.app_auth import AppUser
     from app.models.bus_inspection import BusInspection
     from app.models.photo import Selfie
 
@@ -27,11 +25,7 @@ class Shift(Base):
     __table_args__ = {"schema": "shifts"}
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    user_id: Mapped[str] = mapped_column(
-        String,
-        ForeignKey("app_auth.app_user.firebase_uid"),
-        nullable=False,
-    )
+    user_id: Mapped[str] = mapped_column(String, nullable=False)
     start_time: Mapped[datetime] = mapped_column(nullable=False)
     end_time: Mapped[datetime] = mapped_column(nullable=False)
     start_lat: Mapped[float] = mapped_column(Float, nullable=False)
@@ -44,7 +38,6 @@ class Shift(Base):
     )
 
     # Relationships
-    user: Mapped[AppUser] = relationship("AppUser", back_populates="shifts")
     inspections: Mapped[list[BusInspection]] = relationship(
         "BusInspection", back_populates="shift"
     )
