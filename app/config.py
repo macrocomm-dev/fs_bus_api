@@ -121,9 +121,13 @@ class Settings(BaseSettings):
         "db_name": "db-name",
         "db_user": "db-user",
         "gcs_bucket_name": "gcs_bucket",
-        "smtp_password": "smtp-password",
-        "smtp_username": "smtp-username",
-        "smtp_from_email": "smtp-from-email",
+        "smtp_password": "SMTP_PASSWORD",
+        "smtp_username": "SMTP_USERNAME",
+        "smtp_from_email": "SMTP_FROM_EMAIL",
+        "smtp_from_name": "SMTP_FROM_NAME",
+        "smtp_host": "SMTP_HOST",
+        "smtp_port": "SMTP_PORT",
+        "smtp_use_ssl": "SMTP_USE_SSL",
     }
 
     def load_from_secret_manager(self) -> None:
@@ -151,7 +155,21 @@ class Settings(BaseSettings):
                         secret_id,
                     )
                 else:
-                    object.__setattr__(self, field, value)
+                    field_type = (
+                        self.model_fields[field].annotation
+                        if hasattr(self, "model_fields")
+                        else None
+                    )
+                    try:
+                        if field_type is int or field == "smtp_port":
+                            typed_value = int(value)
+                        elif field_type is bool or field == "smtp_use_ssl":
+                            typed_value = value.strip().lower() in ("true", "1", "yes")
+                        else:
+                            typed_value = value
+                    except (ValueError, AttributeError):
+                        typed_value = value
+                    object.__setattr__(self, field, typed_value)
 
 
 @lru_cache
