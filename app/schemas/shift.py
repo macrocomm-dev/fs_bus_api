@@ -2,7 +2,7 @@ from datetime import date, datetime, time
 from enum import Enum
 from typing import List, Optional
 from fastapi import Query
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 def _has_any_item_photos(*items) -> bool:
@@ -108,6 +108,13 @@ class DriverInspectionIn(InspectionBaseIn):
     driver_fail_reason: Optional[str] = None
     driver_name: Optional[str] = None
     photos: list[InspectionItemPhotoIn] = []
+
+    @field_validator("prdp_expiry_date", mode="before")
+    @classmethod
+    def empty_string_to_none(cls, v):
+        if v == "":
+            return None
+        return v
 
 
 class PassengerCountIn(InspectionBaseIn):
@@ -380,6 +387,13 @@ class DriverInspectionMetaIn(InspectionBaseMetaIn):
     driver_fail_reason: Optional[str] = None
     driver_name: Optional[str] = None
     photos: list[InspectionItemPhotoMetaIn] = []
+
+    @field_validator("prdp_expiry_date", mode="before")
+    @classmethod
+    def empty_string_to_none(cls, v):
+        if v == "":
+            return None
+        return v
 
 
 class PassengerCountMetaIn(InspectionBaseMetaIn):
