@@ -13,7 +13,7 @@ os.environ.setdefault("SECRET_KEY", "test")
 os.environ.setdefault("GCS_BUCKET_NAME", "test")
 
 from app.auth import TokenData, get_current_user
-from app.routers.monitors import _resolve_bus_reference
+from app.routers.monitors import _validate_bus_identifier
 from app.routers.inspection import _group_bus_inspection_rows
 from app.schemas.shift import ShiftCreate
 from fastapi.testclient import TestClient
@@ -365,26 +365,28 @@ class ShiftContractTests(unittest.TestCase):
 
         self.assertIsNotNone(shift.busses[0].inspections.external)
 
-    def test_resolve_bus_reference_from_vin(self):
-        vehicle = SimpleNamespace(vin="AAMHB41482PX33125", fleet_number="5507")
-
-        class FakeQuery:
-            def filter(self, *args, **kwargs):
-                return self
-
-            def first(self):
-                return vehicle
-
-        class FakeDb:
-            def query(self, model):
-                return FakeQuery()
-
+    def test_validate_bus_identifier_accepts_bus_id_only(self):
         bus = SimpleNamespace(bus_id="AAMHB41482PX33125", bus_number=None)
+        # Should not raise
+        _validate_bus_identifier(bus)
 
-        bus_id, bus_number = _resolve_bus_reference(FakeDb(), bus)
+    def test_validate_bus_identifier_accepts_bus_number_only(self):
+        bus = SimpleNamespace(bus_id=None, bus_number="5507")
+        # Should not raise
+        _validate_bus_identifier(bus)
 
-        self.assertEqual(bus_id, "AAMHB41482PX33125")
-        self.assertEqual(bus_number, "5507")
+    def test_validate_bus_identifier_accepts_both(self):
+        bus = SimpleNamespace(bus_id="AAMHB41482PX33125", bus_number="5507")
+        # Should not raise
+        _validate_bus_identifier(bus)
+
+    def test_validate_bus_identifier_rejects_neither(self):
+        from fastapi import HTTPException
+
+        bus = SimpleNamespace(bus_id=None, bus_number=None)
+        with self.assertRaises(HTTPException) as ctx:
+            _validate_bus_identifier(bus)
+        self.assertEqual(ctx.exception.status_code, 422)
 
     def test_shift_create_requires_bus_id_or_bus_number(self):
         payload = {
