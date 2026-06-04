@@ -18,7 +18,8 @@ from sqlalchemy.orm import Session
 from app.auth import TokenData, get_current_user
 from app.database import get_db
 from app.models.app_auth import AppUser
-from app.models.master_data import Vehicle
+
+# from app.models.master_data import Vehicle  # re-enable if _resolve_bus_reference is un-commented
 from app.models.photo import Selfie, Photo
 from app.models.shift import Shift
 from app.models import BusInspection
@@ -136,31 +137,48 @@ def _persist_inspection(
         db.add(Photo(inspection_id=new_inspection.id, **photo_payload))
 
 
-def _resolve_bus_reference(db: Session, bus) -> tuple[str, str]:
-    """Resolve a bus request into the VIN and fleet number required by storage.
+# def _resolve_bus_reference(db: Session, bus) -> tuple[str, str]:
+#     """Resolve a bus request into the VIN and fleet number required by storage.
+#
+#     Clients may send either ``bus_id`` (VIN) or ``bus_number`` (fleet number).
+#     This helper looks up the missing identifier from ``master_data.vehicle`` so
+#     the write path always inserts a complete, valid pair.  When the vehicle is
+#     not found in master data the supplied identifiers are used as-is so that
+#     inspections can still be recorded for buses not yet registered.
+#     """
+#     if bus.bus_id and bus.bus_number:
+#         return bus.bus_id, bus.bus_number
+#
+#     vehicle = None
+#     if bus.bus_id:
+#         vehicle = db.query(Vehicle).filter(Vehicle.vin == bus.bus_id).first()
+#     elif bus.bus_number:
+#         vehicle = (
+#             db.query(Vehicle).filter(Vehicle.fleet_number == bus.bus_number).first()
+#         )
+#
+#     if vehicle is not None:
+#         return vehicle.vin, vehicle.fleet_number or vehicle.vin
+#
+#     # Vehicle not in master data — use the supplied values directly
+#     if bus.bus_id:
+#         return bus.bus_id, bus.bus_number or bus.bus_id
+#     if bus.bus_number:
+#         return bus.bus_number, bus.bus_number
+#
+#     raise HTTPException(
+#         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+#         detail="Bus could not be resolved: neither bus_id nor bus_number was provided.",
+#     )
 
-    Clients may send either ``bus_id`` (VIN) or ``bus_number`` (fleet number).
-    This helper looks up the missing identifier from ``master_data.vehicle`` so
-    the write path always inserts a complete, valid pair.
-    """
-    if bus.bus_id and bus.bus_number:
-        return bus.bus_id, bus.bus_number
 
-    vehicle = None
-    if bus.bus_id:
-        vehicle = db.query(Vehicle).filter(Vehicle.vin == bus.bus_id).first()
-    elif bus.bus_number:
-        vehicle = (
-            db.query(Vehicle).filter(Vehicle.fleet_number == bus.bus_number).first()
-        )
-
-    if vehicle is None:
+def _validate_bus_identifier(bus) -> None:
+    """Raise 422 if neither bus_id nor bus_number is provided."""
+    if not bus.bus_id and not bus.bus_number:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Bus could not be resolved from bus_id or bus_number.",
+            detail="At least one of bus_id or bus_number must be provided.",
         )
-
-    return vehicle.vin, vehicle.fleet_number or vehicle.vin
 
 
 def _base_inspection_payload(
@@ -177,12 +195,13 @@ def _base_inspection_payload(
     time, and location. Type-specific helpers call this first and then add only
     the fields that are unique to their inspection category.
     """
-    bus_id, fleet_number = _resolve_bus_reference(db, bus)
+    # bus_id, fleet_number = _resolve_bus_reference(db, bus)  # un-comment to enable DB-based resolution
+    _validate_bus_identifier(bus)
     return {
         "user_id": user_id,
         "shift_id": shift_id,
-        "bus_id": bus_id,
-        "fleet_number": fleet_number,
+        "bus_id": bus.bus_id or bus.bus_number,
+        "fleet_number": bus.bus_number or bus.bus_id,
         "duty_number": bus.duty_number,
         "replacement_bus": bus.replacement_bus,
         "internal_inspection_id": inspection.internal_inspection_id,
