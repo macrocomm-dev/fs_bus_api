@@ -21,7 +21,6 @@ from fastapi.testclient import TestClient
 from app.database import get_db
 from app.main import app
 
-
 client = TestClient(app)
 
 
@@ -332,7 +331,7 @@ class ShiftContractTests(unittest.TestCase):
 
         self.assertEqual(shift.busses[0].inspections.driver.driver_name, "Sipho Nkosi")
 
-    def test_shift_create_requires_photos_for_external_and_internal(self):
+    def test_shift_create_allows_external_and_internal_without_photos(self):
         payload = {
             "user_id": "firebase_uid_abc123",
             "start_time": "2026-05-01T07:00:00",
@@ -362,10 +361,9 @@ class ShiftContractTests(unittest.TestCase):
             ],
         }
 
-        with self.assertRaises(ValueError) as raised:
-            ShiftCreate.model_validate(payload)
+        shift = ShiftCreate.model_validate(payload)
 
-        self.assertIn("external inspections must include at least one photo", str(raised.exception))
+        self.assertIsNotNone(shift.busses[0].inspections.external)
 
     def test_resolve_bus_reference_from_vin(self):
         vehicle = SimpleNamespace(vin="AAMHB41482PX33125", fleet_number="5507")
@@ -553,7 +551,9 @@ class ShiftContractTests(unittest.TestCase):
         self.assertTrue(grouped[0]["inspections"]["driver_inspected"])
         self.assertTrue(grouped[0]["inspections"]["passenger_counts_done"])
         self.assertTrue(grouped[0]["inspections"]["behind_schedule_reports_done"])
-        self.assertEqual(grouped[0]["inspections"]["driver"]["driver_name"], "Sipho Nkosi")
+        self.assertEqual(
+            grouped[0]["inspections"]["driver"]["driver_name"], "Sipho Nkosi"
+        )
         self.assertEqual(grouped[0]["inspections"]["driver"]["photos"], [])
         self.assertEqual(
             grouped[0]["inspections"]["external"]["other"]["photos"][0]["photo"],
@@ -564,7 +564,9 @@ class ShiftContractTests(unittest.TestCase):
             8,
         )
         self.assertEqual(
-            grouped[0]["inspections"]["behind_schedule_reports"][0]["behind_schedule_interval"],
+            grouped[0]["inspections"]["behind_schedule_reports"][0][
+                "behind_schedule_interval"
+            ],
             "5-10 mins",
         )
 
