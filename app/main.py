@@ -48,6 +48,7 @@ from app.schemas.authentication import (
     UserRefreshResponse,
 )
 from app.services.audit_service import log_api_error
+from app.services.email_service import send_error_alert, extract_user_id_from_request
 from sqlalchemy.orm import Session
 
 # ---------------------------------------------------------------------------
@@ -87,6 +88,10 @@ async def http_exception_handler(request: Request, exc: HTTPException):
         error_code=str(exc.status_code),
         exc=exc,
     )
+    context = f"{request.method} {request.url.path}"
+    await send_error_alert(
+        exc, context=context, user_id=extract_user_id_from_request(request)
+    )
     return await _default_http_handler(request, exc)
 
 
@@ -102,12 +107,16 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         validation_errors={"errors": exc.errors()},
         exc=exc,
     )
+    context = f"{request.method} {request.url.path}"
+    await send_error_alert(
+        exc, context=context, user_id=extract_user_id_from_request(request)
+    )
     return await _default_validation_handler(request, exc)
 
 
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception):
-    """Catch unexpected exceptions, log them, and return a safe 500 response."""
+    """Catch unexpected exceptions, log them, send an alert email, and return a safe 500 response."""
     await log_api_error(
         request=request,
         status_code=500,
@@ -115,6 +124,10 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
         error_message=str(exc),
         error_code=type(exc).__name__,
         exc=exc,
+    )
+    context = f"{request.method} {request.url.path}"
+    await send_error_alert(
+        exc, context=context, user_id=extract_user_id_from_request(request)
     )
     return JSONResponse(
         status_code=500,

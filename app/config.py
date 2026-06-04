@@ -91,6 +91,20 @@ class Settings(BaseSettings):
     gcs_bucket_name: str = ""
     load_gcp_secrets: bool = True
 
+    # Error alert email
+    alert_email_enabled: bool = True
+    alert_email_to: list[str] = [
+        "shedo.seabela@macrocomm.co.za",
+        "erlo.conradie@macrocomm.co.za",
+    ]
+    smtp_host: str = "smtp.office365.com"
+    smtp_port: int = 587
+    smtp_use_ssl: bool = False
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_from_email: str = ""
+    smtp_from_name: str = "FS Bus API"
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
@@ -107,6 +121,9 @@ class Settings(BaseSettings):
         "db_name": "db-name",
         "db_user": "db-user",
         "gcs_bucket_name": "gcs_bucket",
+        "smtp_password": "smtp-password",
+        "smtp_username": "smtp-username",
+        "smtp_from_email": "smtp-from-email",
     }
 
     def load_from_secret_manager(self) -> None:
