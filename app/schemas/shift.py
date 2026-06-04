@@ -724,22 +724,22 @@ class DateRangeLimitQueryParams(BaseModel):
 
     start_date: Optional[date] = Field(
         None,
-        description="Start date filter",
+        description="Start date filter (format: YYYY-MM-DD, e.g. 2026-05-01)",
         examples=["2026-05-01"],
     )
     end_date: Optional[date] = Field(
         None,
-        description="End date filter",
+        description="End date filter (format: YYYY-MM-DD, e.g. 2026-05-15)",
         examples=["2026-05-15"],
     )
     start_time: Optional[time] = Field(
         None,
-        description="Start time filter (defaults to 00:00:00 when start_date is set)",
+        description="Start time filter (format: HH:MM:SS, e.g. 08:00:00 — defaults to 00:00:00 when start_date is set)",
         examples=["08:00:00"],
     )
     end_time: Optional[time] = Field(
         None,
-        description="End time filter (defaults to 23:59:59 when end_date is set)",
+        description="End time filter (format: HH:MM:SS, e.g. 16:00:00 — defaults to 23:59:59 when end_date is set)",
         examples=["16:00:00"],
     )
     limit: Optional[int] = Field(
@@ -753,19 +753,23 @@ class DateRangeLimitQueryParams(BaseModel):
 
 def date_range_params(
     start_date: Optional[date] = Query(
-        None, description="Start date filter", examples=["2026-05-01"]
+        None,
+        description="Start date filter (format: YYYY-MM-DD, e.g. 2026-05-01)",
+        examples=["2026-05-01"],
     ),
     end_date: Optional[date] = Query(
-        None, description="End date filter", examples=["2026-05-15"]
+        None,
+        description="End date filter (format: YYYY-MM-DD, e.g. 2026-05-15)",
+        examples=["2026-05-15"],
     ),
     start_time: Optional[time] = Query(
         None,
-        description="Start time filter (defaults to 00:00:00 when start_date is set)",
+        description="Start time filter (format: HH:MM:SS, e.g. 08:00:00 — defaults to 00:00:00 when start_date is set)",
         examples=["08:00:00"],
     ),
     end_time: Optional[time] = Query(
         None,
-        description="End time filter (defaults to 23:59:59 when end_date is set)",
+        description="End time filter (format: HH:MM:SS, e.g. 16:00:00 — defaults to 23:59:59 when end_date is set)",
         examples=["16:00:00"],
     ),
     limit: Optional[int] = Query(
