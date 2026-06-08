@@ -1,3 +1,4 @@
+import logging
 from collections import defaultdict
 from datetime import date, datetime, time
 from typing import Annotated, List, Optional
@@ -21,12 +22,14 @@ from sqlalchemy.orm import Session, selectinload
 from app.database import get_db
 from app.schemas.smartfleet import AddGeofence
 
+logger = logging.getLogger(__name__)
+
 smartfleet_router = APIRouter()
 
 
-@smartfleet_router.post("/create-geofence/{userapihash}")
+@smartfleet_router.post("/create-geofence")
 async def add_geofence(
-    userapihash: str,
+    userapihash: Annotated[str, Query(..., alias="user_api_hash")],
     geofence: AddGeofence,
     db: Annotated[Session, Depends(get_db)],
 ) -> JSONResponse:
@@ -47,6 +50,7 @@ async def add_geofence(
         print(response.json())
         return JSONResponse(content=response.json(), status_code=response.status_code)
     except Exception as e:
+        logger.exception("Unexpected error in add_geofence: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
         )
