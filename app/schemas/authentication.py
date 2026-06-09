@@ -39,3 +39,31 @@ class UserRefreshResponse(UserLoginResponse):
     """
 
     pass
+
+
+class UserCreateRequest(BaseModel):
+    """Payload for creating a new application user record."""
+
+    full_name: str
+    email: str
+    password: str
+    role: str
+    operator_id: int | None = None
+    is_active: bool = True
+
+
+class UserCreateResponse(BaseModel):
+    """Response returned after successfully creating a user."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    user_id: int
+    firebase_uid: str
+    full_name: str
+    name: str | None = None
+    surname: str | None = None
+    email: str
+    role: str
+    operator_id: int | None = None
+    is_active: bool
+    created_at: datetime
