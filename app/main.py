@@ -26,6 +26,7 @@ from app.auth import (
     expand_role_permissions,
     get_current_user,
     normalize_role,
+    require_role,
     split_user_name,
     TokenData,
 )
@@ -39,6 +40,8 @@ from app.firebase_identity import (
     refresh_id_token,
     sign_in_with_email_password,
 )
+from firebase_admin import auth as firebase_auth
+
 from app.database import get_db
 from app.models.app_auth import AppUser
 from app.routers.router_config import register_routers
@@ -46,6 +49,8 @@ from app.schemas.authentication import (
     UserLoginRequest,
     UserLoginResponse,
     UserRefreshResponse,
+    UserCreateRequest,
+    UserCreateResponse,
 )
 from app.services.audit_service import log_api_error
 from app.services.email_service import send_error_alert, extract_user_id_from_request
@@ -440,6 +445,72 @@ def auth_test_token(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=str(exc),
         ) from exc
+
+
+@auth_router.post(
+    "/users",
+    response_model=UserCreateResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a new application user",
+    responses={
+        409: {"description": "User with this email or Firebase UID already exists"},
+    },
+)
+def create_user(
+    payload: UserCreateRequest,
+    db: Session = Depends(get_db),
+    _: Annotated[TokenData, Depends(require_role("admin"))] = None,
+) -> UserCreateResponse:
+    """Create a Firebase user, set their role claim, then insert the DB record."""
+    # 1. Check for an existing DB record by email before touching Firebase.
+    if db.query(AppUser).filter(AppUser.email == payload.email).first() is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A user with this email already exists.",
+        )
+
+    # 2. Create the user in Firebase.
+    try:
+        fb_user = firebase_auth.create_user(
+            email=payload.email,
+            password=payload.password,
+            display_name=payload.full_name,
+            email_verified=False,
+            disabled=not payload.is_active,
+        )
+    except firebase_auth.EmailAlreadyExistsError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A Firebase account with this email already exists.",
+        )
+
+    # 3. Set the role custom claim on the Firebase user.
+    firebase_auth.set_custom_user_claims(fb_user.uid, {"role": payload.role})
+
+    # 4. Insert the DB record.  Roll back the Firebase user on failure.
+    try:
+        name, surname = split_user_name(payload.full_name)
+        new_user = AppUser(
+            firebase_uid=fb_user.uid,
+            full_name=payload.full_name,
+            name=name,
+            surname=surname,
+            email=payload.email,
+            role=payload.role,
+            operator_id=payload.operator_id,
+            is_active=payload.is_active,
+        )
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+    except Exception as exc:
+        firebase_auth.delete_user(fb_user.uid)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="User created in Firebase but database insert failed; Firebase account has been rolled back.",
+        ) from exc
+
+    return UserCreateResponse.model_validate(new_user)
 
 
 app.include_router(auth_router)
