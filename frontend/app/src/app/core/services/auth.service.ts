@@ -1,37 +1,29 @@
 import { inject, Injectable, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { tap } from 'rxjs/operators';
 import { Observable } from 'rxjs';
-import {
-  AuthSession,
-  UserLoginRequest,
-  UserLoginResponse,
-  UserRefreshResponse,
-} from '../models/auth.models';
-import { environment } from '../../../environments/environment';
+import { AuthSession } from '../models/auth.models';
+import { AuthService as ApiAuthService } from '../api/api/auth.service';
+import { UserLoginResponse, UserRefreshResponse } from '../api/model/models';
 
 const SESSION_KEY = 'fs_bus_session';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
+  private readonly apiAuth = inject(ApiAuthService);
 
   readonly session = signal<AuthSession | null>(this.loadSession());
 
   login(email: string, password: string): Observable<UserLoginResponse> {
-    const payload: UserLoginRequest = { email, password };
-    return this.http
-      .post<UserLoginResponse>(`${environment.apiUrl}/auth/get_token`, payload)
+    return this.apiAuth
+      .getTokenAuthGetTokenPost({ userLoginRequest: { email, password } })
       .pipe(tap((res) => this.persistSession(res)));
   }
 
   refresh(refreshToken: string): Observable<UserRefreshResponse> {
-    return this.http
-      .post<UserRefreshResponse>(`${environment.apiUrl}/auth/refresh`, {
-        refresh_token: refreshToken,
-      })
+    return this.apiAuth
+      .refreshTokenAuthRefreshPost({ firebaseRefreshRequest: { refresh_token: refreshToken } })
       .pipe(tap((res) => this.persistSession(res)));
   }
 
@@ -56,11 +48,11 @@ export class AuthService {
     const session: AuthSession = {
       accessToken: res.access_token,
       refreshToken: res.refresh_token,
-      expiresAt: res.expires_at,
+      expiresAt: res.expires_at ?? null,
       role: res.role,
       userId: res.user_id,
-      name: res.name,
-      surname: res.surname,
+      name: res.name ?? null,
+      surname: res.surname ?? null,
     };
     localStorage.setItem(SESSION_KEY, JSON.stringify(session));
     this.session.set(session);
