@@ -38,3 +38,6 @@ application_default_credentials.json
 # Cloud SQL proxy binary
 cloud-sql-proxy
 cloud_sql_proxy
+
+# Yarn
+.yarn/

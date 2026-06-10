@@ -1,0 +1,46 @@
+<div class="home-wrapper">
+  <header class="top-bar">
+    <span class="app-name">FS Bus</span>
+    <div class="user-info">
+      @if (session()) {
+        <span class="user-name">{{ session()!.name }} {{ session()!.surname }}</span>
+        <span class="user-role badge">{{ session()!.role }}</span>
+      }
+      <button class="btn-logout" (click)="logout()">Sign out</button>
+    </div>
+  </header>
+
+  <main class="home-content">
+    <h2>
+      Welcome back
+      @if (session()?.name) {
+        , {{ session()!.name }}
+      }
+      !
+    </h2>
+    <p class="subtitle">Select a module to get started.</p>
+
+    <div class="card-grid">
+      <div class="module-card">
+        <div class="card-icon">🚌</div>
+        <h3>Vehicles</h3>
+        <p>View and manage fleet vehicles.</p>
+      </div>
+      <div class="module-card">
+        <div class="card-icon">🔍</div>
+        <h3>Inspections</h3>
+        <p>Record and review bus inspections.</p>
+      </div>
+      <div class="module-card">
+        <div class="card-icon">📋</div>
+        <h3>Shifts</h3>
+        <p>Manage driver shifts and duty numbers.</p>
+      </div>
+      <div class="module-card">
+        <div class="card-icon">📊</div>
+        <h3>Reports</h3>
+        <p>Operational reports and analytics.</p>
+      </div>
+    </div>
+  </main>
+</div>

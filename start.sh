@@ -93,9 +93,14 @@ start_proxy() {
 
 start_proxy
 
+FRONTEND_PORT="${FRONTEND_PORT:-4200}"
+export FRONTEND_PORT
+
 # ---------------------------------------------------------------------------
 # 5. Cleanup on exit
 # ---------------------------------------------------------------------------
+FRONTEND_PID=""
+
 cleanup() {
     echo ""
     echo "[start] Shutting down..."
@@ -103,11 +108,30 @@ cleanup() {
         echo "[start] Stopping Cloud SQL Auth Proxy (PID=${PROXY_PID})"
         kill "${PROXY_PID}" 2>/dev/null || true
     fi
+    if [[ -n "${FRONTEND_PID}" ]]; then
+        echo "[start] Stopping Angular dev server (PID=${FRONTEND_PID})"
+        kill "${FRONTEND_PID}" 2>/dev/null || true
+    fi
 }
 trap cleanup EXIT INT TERM
 
 # ---------------------------------------------------------------------------
-# 6. Launch the API
+# 6. Start Angular frontend in the background
+# ---------------------------------------------------------------------------
+FRONTEND_DIR="$(dirname "$0")/frontend/app"
+
+if [[ -d "${FRONTEND_DIR}" ]]; then
+    echo "[start] Starting Angular dev server on port ${FRONTEND_PORT}"
+    (cd "${FRONTEND_DIR}" && yarn start --port "${FRONTEND_PORT}" 2>&1 | sed 's/^/[angular] /') &
+    FRONTEND_PID=$!
+    echo "[start] Angular dev server started (PID=${FRONTEND_PID})"
+    echo "[start] Angular app available at http://localhost:${FRONTEND_PORT}"
+else
+    echo "[start] WARNING: Angular frontend not found at ${FRONTEND_DIR}. Skipping."
+fi
+
+# ---------------------------------------------------------------------------
+# 7. Launch the API
 # ---------------------------------------------------------------------------
 echo "[start] Starting FS Bus API on port ${API_PORT}"
 echo "[start] Docs available at http://127.0.0.1:${API_PORT}/docs"

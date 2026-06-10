@@ -1,0 +1,107 @@
+# ---------------------------------------------------------------------------
+# CI/CD — FS Bus Frontend
+#
+# Triggers on every push to main (when frontend files change):
+#   1. Installs dependencies
+#   2. Builds Angular app (production)
+#   3. Deploys to Firebase Hosting (bus-track-480813)
+#
+# Required GitHub Actions variables (shared with backend workflow):
+#   GCP_PROJECT_ID       — GCloud project ID (e.g. bus-track-480813)
+#   WIF_PROVIDER         — Workload Identity Provider resource name
+#   WIF_SERVICE_ACCOUNT  — Service account email used by GitHub Actions
+# ---------------------------------------------------------------------------
+
+name: Deploy Frontend to Firebase Hosting
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/deploy-frontend.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/deploy-frontend.yml'
+
+jobs:
+  # --------------------------------------------------------------------------
+  # Build & Deploy
+  # --------------------------------------------------------------------------
+  deploy-frontend:
+    name: Build & deploy to Firebase Hosting
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    permissions:
+      contents: read
+      id-token: write
+
+    defaults:
+      run:
+        working-directory: frontend/app
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Enable Corepack (Yarn Berry)
+        run: corepack enable
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build Angular app (production)
+        run: yarn build --configuration production
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.WIF_SERVICE_ACCOUNT }}
+
+      - name: Deploy to Firebase Hosting
+        run: |
+          npx firebase-tools deploy --only hosting \
+            --project "${{ vars.GCP_PROJECT_ID }}" \
+            --non-interactive
+
+      - name: Print Hosting URL
+        run: echo "Deployed to https://${{ vars.GCP_PROJECT_ID }}.web.app"
+
+  # --------------------------------------------------------------------------
+  # PR preview check (runs on pull requests — build only, no deploy)
+  # --------------------------------------------------------------------------
+  build-check:
+    name: Build check (PR)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    defaults:
+      run:
+        working-directory: frontend/app
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Enable Corepack (Yarn Berry)
+        run: corepack enable
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build Angular app (production)
+        run: yarn build --configuration production
