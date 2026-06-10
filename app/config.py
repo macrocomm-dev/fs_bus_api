@@ -114,7 +114,8 @@ class Settings(BaseSettings):
     # Set to "*" to allow all origins (development only).
     cors_origins: str = (
         "http://localhost:3000,http://localhost:8000,"
-        "https://bus-track-api-379989015900.africa-south1.run.app"
+        "https://bus-track-480813.web.app,"
+        "https://bus-track-480813.firebaseapp.com"
     )
 
     # Map of field name -> Secret Manager secret ID
