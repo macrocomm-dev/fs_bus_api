@@ -24,7 +24,7 @@ class AppUser(Base):
     name: Mapped[str | None] = mapped_column(String, nullable=True)
     surname: Mapped[str | None] = mapped_column(String, nullable=True)
     email: Mapped[str] = mapped_column(String, nullable=False, unique=True)
-    role: Mapped[str] = mapped_column(String, nullable=False)
+    role: Mapped[str] = mapped_column(String(50), nullable=False)
     operator_id: Mapped[int | None] = mapped_column(
         BigInteger,
         ForeignKey("master_data.operator.operator_id"),
