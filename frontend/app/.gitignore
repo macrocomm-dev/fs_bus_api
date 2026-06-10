@@ -8,6 +8,10 @@
 
 # Node
 /node_modules
+
+# API generator
+.env.local
+/src/app/api/generated/
 npm-debug.log
 yarn-error.log
 

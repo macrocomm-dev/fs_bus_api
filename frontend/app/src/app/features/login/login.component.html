@@ -1,0 +1,57 @@
+<div class="login-wrapper">
+  <div class="login-card">
+    <div class="login-header">
+      <h1>FS Bus</h1>
+      <p>Sign in to your account</p>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+      @if (error()) {
+        <div class="alert alert-error" role="alert">{{ error() }}</div>
+      }
+
+      <div class="form-field">
+        <label for="email">Email address</label>
+        <input
+          id="email"
+          type="email"
+          formControlName="email"
+          autocomplete="email"
+          placeholder="you@example.com"
+          [class.invalid]="emailCtrl.invalid && emailCtrl.touched"
+        />
+        @if (emailCtrl.touched && emailCtrl.hasError('required')) {
+          <span class="field-error">Email is required.</span>
+        } @else if (emailCtrl.touched && emailCtrl.hasError('email')) {
+          <span class="field-error">Enter a valid email address.</span>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="password">Password</label>
+        <input
+          id="password"
+          type="password"
+          formControlName="password"
+          autocomplete="current-password"
+          placeholder="••••••••"
+          [class.invalid]="passwordCtrl.invalid && passwordCtrl.touched"
+        />
+        @if (passwordCtrl.touched && passwordCtrl.hasError('required')) {
+          <span class="field-error">Password is required.</span>
+        } @else if (passwordCtrl.touched && passwordCtrl.hasError('minlength')) {
+          <span class="field-error">Password must be at least 6 characters.</span>
+        }
+      </div>
+
+      <button type="submit" class="btn-primary" [disabled]="loading()">
+        @if (loading()) {
+          <span class="spinner" aria-hidden="true"></span>
+          Signing in…
+        } @else {
+          Sign in
+        }
+      </button>
+    </form>
+  </div>
+</div>
