@@ -48,6 +48,7 @@ def hash_password(plain: str) -> str:
 # Token models
 # ---------------------------------------------------------------------------
 
+
 class Token(BaseModel):
     """Simple bearer-token response model used by auth-style endpoints."""
 
@@ -126,6 +127,11 @@ def normalize_role(role: str | None) -> str | None:
         "monitor": "Monitor",
         "supervisor": "Supervisor",
         "admin": "Admin",
+        "technical manager": "Technical Manager",
+        "office administrator": "Office Administrator",
+        "procurement and secretariat": "Procurement and Secretariat",
+        "project administrator": "Project Administrator",
+        "project manager": "Project Manager",
     }.get(role.strip().lower())
 
 
@@ -213,13 +219,16 @@ def decode_access_token(token: str, settings: Settings) -> TokenData:
             email=payload.get("email"),
             role=payload.get("role"),
         )
-    except Exception as exc:  # noqa: BLE001 - provider libraries raise varied auth errors
+    except (
+        Exception
+    ) as exc:  # noqa: BLE001 - provider libraries raise varied auth errors
         raise credentials_exception from exc
 
 
 # ---------------------------------------------------------------------------
 # FastAPI dependency
 # ---------------------------------------------------------------------------
+
 
 def get_current_user(
     credentials: Annotated[
