@@ -1,46 +1,117 @@
 <div class="home-wrapper">
-  <header class="top-bar">
-    <span class="app-name">FS Bus</span>
-    <div class="user-info">
+  <p-toolbar styleClass="top-bar">
+    <ng-template pTemplate="start">
+      <span class="app-name"> <i class="pi pi-car mr-2"></i>FS Bus </span>
+    </ng-template>
+    <ng-template pTemplate="end">
       @if (session()) {
-        <span class="user-name">{{ session()!.name }} {{ session()!.surname }}</span>
-        <span class="user-role badge">{{ session()!.role }}</span>
+        <p-avatar
+          [label]="(session()!.name?.[0] ?? '') + (session()!.surname?.[0] ?? '')"
+          shape="circle"
+          styleClass="mr-2"
+        />
+        <span class="user-name mr-2">{{ session()!.name }} {{ session()!.surname }}</span>
+        <p-tag [value]="session()!.role" severity="info" styleClass="mr-3" />
       }
-      <button class="btn-logout" (click)="logout()">Sign out</button>
-    </div>
-  </header>
+      <p-button
+        label="Sign out"
+        icon="pi pi-sign-out"
+        severity="secondary"
+        [outlined]="true"
+        size="small"
+        (onClick)="logout()"
+      />
+    </ng-template>
+  </p-toolbar>
 
   <main class="home-content">
-    <h2>
-      Welcome back
-      @if (session()?.name) {
-        , {{ session()!.name }}
-      }
-      !
-    </h2>
-    <p class="subtitle">Select a module to get started.</p>
+    <div class="welcome-section">
+      <h2>
+        Welcome back
+        @if (session()?.name) {
+          , {{ session()!.name }}
+        }
+        !
+      </h2>
+      <p class="subtitle">Select a module to get started.</p>
+    </div>
 
     <div class="card-grid">
-      <div class="module-card">
-        <div class="card-icon">🚌</div>
+      <p-card styleClass="module-card">
+        <ng-template pTemplate="header">
+          <div class="card-header-img bg-blue">
+            <i class="pi pi-car"></i>
+          </div>
+        </ng-template>
         <h3>Vehicles</h3>
         <p>View and manage fleet vehicles.</p>
-      </div>
-      <div class="module-card">
-        <div class="card-icon">🔍</div>
+        <ng-template pTemplate="footer">
+          <p-button
+            label="Open"
+            icon="pi pi-arrow-right"
+            iconPos="right"
+            [text]="true"
+            size="small"
+          />
+        </ng-template>
+      </p-card>
+
+      <p-card styleClass="module-card">
+        <ng-template pTemplate="header">
+          <div class="card-header-img bg-green">
+            <i class="pi pi-search"></i>
+          </div>
+        </ng-template>
         <h3>Inspections</h3>
         <p>Record and review bus inspections.</p>
-      </div>
-      <div class="module-card">
-        <div class="card-icon">📋</div>
+        <ng-template pTemplate="footer">
+          <p-button
+            label="Open"
+            icon="pi pi-arrow-right"
+            iconPos="right"
+            [text]="true"
+            size="small"
+          />
+        </ng-template>
+      </p-card>
+
+      <p-card styleClass="module-card">
+        <ng-template pTemplate="header">
+          <div class="card-header-img bg-orange">
+            <i class="pi pi-calendar"></i>
+          </div>
+        </ng-template>
         <h3>Shifts</h3>
         <p>Manage driver shifts and duty numbers.</p>
-      </div>
-      <div class="module-card">
-        <div class="card-icon">📊</div>
+        <ng-template pTemplate="footer">
+          <p-button
+            label="Open"
+            icon="pi pi-arrow-right"
+            iconPos="right"
+            [text]="true"
+            size="small"
+          />
+        </ng-template>
+      </p-card>
+
+      <p-card styleClass="module-card">
+        <ng-template pTemplate="header">
+          <div class="card-header-img bg-purple">
+            <i class="pi pi-chart-bar"></i>
+          </div>
+        </ng-template>
         <h3>Reports</h3>
         <p>Operational reports and analytics.</p>
-      </div>
+        <ng-template pTemplate="footer">
+          <p-button
+            label="Open"
+            icon="pi pi-arrow-right"
+            iconPos="right"
+            [text]="true"
+            size="small"
+          />
+        </ng-template>
+      </p-card>
     </div>
   </main>
 </div>

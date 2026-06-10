@@ -1,57 +1,67 @@
 <div class="login-wrapper">
-  <div class="login-card">
-    <div class="login-header">
-      <h1>FS Bus</h1>
-      <p>Sign in to your account</p>
-    </div>
+  <p-card class="login-card">
+    <ng-template pTemplate="header">
+      <div class="login-header">
+        <i class="pi pi-bus login-logo"></i>
+        <h1>FS Bus</h1>
+        <p>Sign in to your account</p>
+      </div>
+    </ng-template>
 
     <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
       @if (error()) {
-        <div class="alert alert-error" role="alert">{{ error() }}</div>
+        <p-message severity="error" [text]="error()!" styleClass="w-full mb-3" />
       }
 
       <div class="form-field">
         <label for="email">Email address</label>
         <input
+          pInputText
           id="email"
           type="email"
           formControlName="email"
           autocomplete="email"
           placeholder="you@example.com"
-          [class.invalid]="emailCtrl.invalid && emailCtrl.touched"
+          class="w-full"
+          [class.ng-invalid]="emailCtrl.invalid && emailCtrl.touched"
+          [class.ng-dirty]="emailCtrl.touched"
         />
         @if (emailCtrl.touched && emailCtrl.hasError('required')) {
-          <span class="field-error">Email is required.</span>
+          <small class="field-error">Email is required.</small>
         } @else if (emailCtrl.touched && emailCtrl.hasError('email')) {
-          <span class="field-error">Enter a valid email address.</span>
+          <small class="field-error">Enter a valid email address.</small>
         }
       </div>
 
       <div class="form-field">
         <label for="password">Password</label>
-        <input
-          id="password"
-          type="password"
+        <p-password
+          inputId="password"
           formControlName="password"
-          autocomplete="current-password"
           placeholder="••••••••"
-          [class.invalid]="passwordCtrl.invalid && passwordCtrl.touched"
+          [feedback]="false"
+          [toggleMask]="true"
+          styleClass="w-full"
+          [inputStyleClass]="
+            'w-full' + (passwordCtrl.invalid && passwordCtrl.touched ? ' ng-invalid ng-dirty' : '')
+          "
+          autocomplete="current-password"
         />
         @if (passwordCtrl.touched && passwordCtrl.hasError('required')) {
-          <span class="field-error">Password is required.</span>
+          <small class="field-error">Password is required.</small>
         } @else if (passwordCtrl.touched && passwordCtrl.hasError('minlength')) {
-          <span class="field-error">Password must be at least 6 characters.</span>
+          <small class="field-error">Password must be at least 6 characters.</small>
         }
       </div>
 
-      <button type="submit" class="btn-primary" [disabled]="loading()">
-        @if (loading()) {
-          <span class="spinner" aria-hidden="true"></span>
-          Signing in…
-        } @else {
-          Sign in
-        }
-      </button>
+      <p-button
+        type="submit"
+        label="Sign in"
+        icon="pi pi-sign-in"
+        styleClass="w-full mt-2"
+        [loading]="loading()"
+        [disabled]="loading()"
+      />
     </form>
-  </div>
+  </p-card>
 </div>
