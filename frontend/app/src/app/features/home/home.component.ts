@@ -30,4 +30,8 @@ export class HomeComponent implements OnInit {
   logout(): void {
     this.auth.logout();
   }
+
+  openReporting(): void {
+    this.router.navigate(['/reporting']);
+  }
 }
