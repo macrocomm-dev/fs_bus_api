@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Orange Africa silhouette (simplified) -->
+  <path d="
+    M30 6
+    C26 6 22 8 20 11
+    C17 14 16 17 15 20
+    C13 24 13 27 14 30
+    C15 33 14 35 13 37
+    C12 40 13 43 15 45
+    C17 48 19 50 21 52
+    C23 55 25 57 28 58
+    C30 59 32 59 34 58
+    C36 57 37 55 38 53
+    C39 51 40 49 42 48
+    C44 46 45 44 45 42
+    C45 40 44 38 43 37
+    C42 35 42 33 43 31
+    C44 29 44 27 43 25
+    C42 22 40 20 38 18
+    C36 15 34 12 33 9
+    C32 7 31 6 30 6Z
+  " fill="#f97316" />
+
+  <!-- Signal arc 1 -->
+  <path d="M47 14 Q52 18 52 25" fill="none" stroke="#f97316" stroke-width="3" stroke-linecap="round"/>
+  <!-- Signal arc 2 -->
+  <path d="M50 10 Q58 16 58 27" fill="none" stroke="#f97316" stroke-width="3" stroke-linecap="round"/>
+  <!-- Signal dot -->
+  <circle cx="44" cy="12" r="2.5" fill="#f97316"/>
+</svg>

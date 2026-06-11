@@ -1,1 +1,22 @@
-/* You can add global styles to this file, and also import other style files */
+/* PrimeIcons */
+@import 'primeicons/primeicons.css';
+
+/* Note: PrimeNG v17+ theme is configured via providePrimeNG() in app.config.ts */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-family, 'Inter', sans-serif);
+  background-color: #f3f4f6;
+  color: #111827;
+}
+
+:root {
+  --brand-primary: #1e3a5f;
+  --brand-accent: #2563eb;
+}
