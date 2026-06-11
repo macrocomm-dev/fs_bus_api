@@ -6,7 +6,10 @@
   background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
   padding: 1rem;
 }
-.login-card { width: 100%; max-width: 420px; }
+.login-card {
+  width: 100%;
+  max-width: 420px;
+}
 .login-header {
   display: flex;
   flex-direction: column;
@@ -16,12 +19,60 @@
   border-radius: var(--border-radius, 6px) var(--border-radius, 6px) 0 0;
   color: #fff;
 }
-.login-logo { font-size: 3rem; margin-bottom: 0.5rem; }
-.login-header h1 { margin: 0 0 0.25rem; font-size: 1.75rem; font-weight: 700; }
-.login-header p { margin: 0; opacity: 0.85; font-size: 0.9rem; }
-.form-field { display: flex; flex-direction: column; margin-bottom: 1.25rem; }
-.form-field label { font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.4rem; }
-.field-error { color: #dc2626; font-size: 0.8rem; margin-top: 0.25rem; }
-.w-full { width: 100%; }
-.mb-3 { margin-bottom: 0.75rem; }
-.mt-2 { margin-top: 0.5rem; }
+.login-logo {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+}
+.login-header h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+.login-header p {
+  margin: 0;
+  opacity: 0.85;
+  font-size: 0.9rem;
+}
+.form-field {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1.25rem;
+}
+.form-field label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.4rem;
+}
+.field-error {
+  color: #dc2626;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+.w-full {
+  width: 100%;
+}
+
+/* Force p-password wrapper and its inner input to full width */
+:host ::ng-deep .form-field p-password,
+:host ::ng-deep .form-field .p-password,
+:host ::ng-deep .form-field .p-password input {
+  width: 100%;
+  display: block;
+}
+.w-full {
+  width: 100%;
+}
+.mt-2 {
+  margin-top: 0.5rem;
+}
+
+/* Make the p-button host element block so w-full stretches properly */
+:host ::ng-deep form p-button {
+  display: block;
+  width: 100%;
+}
+:host ::ng-deep form p-button .p-button {
+  width: 100%;
+  justify-content: center;
+}
