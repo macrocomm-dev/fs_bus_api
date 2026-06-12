@@ -10,7 +10,7 @@
 /* ─── Toolbar ────────────────────────────────────────────────────────────── */
 
 :host ::ng-deep .top-bar {
-  background: var(--brand-primary, #1e3a5f);
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 55%, #c2410c 100%);
   border: none;
   border-radius: 0;
   padding: 0 1.5rem;
@@ -22,8 +22,25 @@
 }
 
 .back-btn {
-  color: #ffffff !important;
+  color: #000000 !important;
   margin-right: 0.25rem;
+}
+
+:host ::ng-deep .back-btn.p-button {
+  color: #000000 !important;
+}
+
+:host ::ng-deep .signout-btn.p-button {
+  color: #000000 !important;
+  border-color: #000000 !important;
+}
+
+.toolbar-logo {
+  height: 36px;
+  width: auto;
+  display: block;
+  filter: brightness(0) invert(1);
+  margin-right: 0.75rem;
 }
 
 .app-name {
@@ -511,4 +528,261 @@
     display: block !important;
     width: 100% !important;
   }
+}
+
+/* ── Active tile highlight ────────────────────────────────────────────────── */
+
+.kpi-tile--active {
+  box-shadow:
+    0 0 0 2px #1d4ed8,
+    0 8px 24px rgba(29, 78, 216, 0.18) !important;
+}
+
+.kpi-tile--active .kpi-tile__arrow {
+  color: #1d4ed8;
+}
+
+/* ── Inline tile detail panel ─────────────────────────────────────────────── */
+
+.tile-detail-panel {
+  margin-top: 1rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  animation: panel-slide-down 0.2s ease;
+}
+
+@keyframes panel-slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.panel-header__left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.panel-icon {
+  font-size: 1.4rem;
+  color: #1d4ed8;
+}
+
+.panel-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 0.1rem;
+}
+
+.panel-subtitle {
+  font-size: 0.78rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+:host ::ng-deep .panel-close-btn {
+  color: #9ca3af !important;
+}
+
+/* ── Panel body layout ───────────────────────────────────────────────────── */
+
+.panel-body {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 0;
+  min-height: 340px;
+}
+
+@media (max-width: 1024px) {
+  .panel-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Charts section ──────────────────────────────────────────────────────── */
+
+.panel-charts {
+  padding: 1.25rem;
+  border-right: 1px solid #e5e7eb;
+}
+
+@media (max-width: 1024px) {
+  .panel-charts {
+    border-right: none;
+    border-bottom: 1px solid #e5e7eb;
+  }
+}
+
+.chart-section-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6b7280;
+  margin: 0 0 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.summary-hint-small {
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: #9ca3af;
+  text-transform: none;
+  letter-spacing: 0;
+  margin-left: auto;
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chart-card {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.75rem 0.75rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.chart-card__label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.chart-container {
+  height: 240px;
+  width: 100%;
+}
+
+/* ── Panel summary list ──────────────────────────────────────────────────── */
+
+.panel-summary {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+/* ── GPS Panel ───────────────────────────────────────────────────────────── */
+
+.gps-panel {
+  border-top: 1px solid #e5e7eb;
+  margin: 0;
+  background: #f9fafb;
+}
+
+.gps-panel__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.25rem;
+  font-size: 0.85rem;
+  background: #f0f4ff;
+  border-bottom: 1px solid #e0e7ff;
+}
+
+.gps-panel__title {
+  font-weight: 700;
+  color: #1d4ed8;
+  font-size: 0.85rem;
+}
+
+.gps-panel__coords {
+  font-size: 0.78rem;
+  color: #374151;
+  background: #e0e7ff;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+.gps-panel__hint {
+  font-size: 0.78rem;
+  color: #9ca3af;
+  font-style: italic;
+}
+
+:host ::ng-deep .gps-clear-btn {
+  margin-left: auto;
+}
+
+.gps-map-iframe {
+  display: block;
+  width: 100%;
+  height: 340px;
+  border: none;
+}
+
+.gps-map-placeholder {
+  height: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: #9ca3af;
+  font-size: 0.9rem;
+}
+
+.gps-map-placeholder .pi {
+  font-size: 2rem;
+  color: #d1d5db;
+}
+
+.gps-map-link {
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+  text-align: right;
+  border-top: 1px solid #e5e7eb;
+}
+
+.gps-map-link a {
+  color: #1d4ed8;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.gps-map-link a:hover {
+  text-decoration: underline;
+}
+
+/* ── GPS selected row highlight ──────────────────────────────────────────── */
+
+:host ::ng-deep .row--gps-selected td {
+  background: #eff6ff !important;
 }

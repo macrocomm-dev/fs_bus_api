@@ -2,6 +2,7 @@
   <!-- ── Toolbar ─────────────────────────────────────────────────────────── -->
   <p-toolbar styleClass="top-bar">
     <ng-template pTemplate="start">
+      <img src="fleet-analytics.png" alt="Fleet Analytics" class="toolbar-logo" />
       <p-button
         icon="pi pi-arrow-left"
         [text]="true"
@@ -12,7 +13,7 @@
         tooltipPosition="bottom"
       />
       <span class="app-name">
-        <i class="pi pi-chart-bar mr-2"></i>FS Bus – Reporting Dashboard
+        <i class="pi pi-chart-bar mr-2"></i>FS Bus &#8211; Reporting Dashboard
       </span>
     </ng-template>
     <ng-template pTemplate="end">
@@ -31,6 +32,7 @@
         severity="secondary"
         [outlined]="true"
         size="small"
+        styleClass="signout-btn"
         (onClick)="logout()"
       />
     </ng-template>
@@ -127,7 +129,7 @@
       </div>
     </div>
 
-    <!-- ── Row 1 – Operational Monitoring ─────────────────────────────────── -->
+    <!-- ── Row 1 ── Operational Monitoring ─────────────────────────────────── -->
     <div class="tile-section">
       <h3 class="section-label">
         <i class="pi pi-cog section-icon"></i>
@@ -138,6 +140,7 @@
           <div
             class="kpi-tile"
             [class]="'kpi-tile--' + tile.status"
+            [class.kpi-tile--active]="activeTileId() === tile.id"
             (click)="openTile(tile)"
             role="button"
             tabindex="0"
@@ -155,14 +158,23 @@
             <div class="kpi-tile__metric">{{ tile.metric }}</div>
             <div class="kpi-tile__footer">
               <span class="kpi-tile__title">{{ tile.title }}</span>
-              <i class="pi pi-chevron-right kpi-tile__arrow"></i>
+              <i
+                class="pi kpi-tile__arrow"
+                [class.pi-chevron-down]="activeTileId() === tile.id"
+                [class.pi-chevron-right]="activeTileId() !== tile.id"
+              ></i>
             </div>
           </div>
         }
       </div>
+      @if (activeTileRow() === 1 && activeTile()) {
+        <div class="tile-detail-panel">
+          <ng-container *ngTemplateOutlet="tilePanelContent" />
+        </div>
+      }
     </div>
 
-    <!-- ── Row 2 – Vehicle Monitoring ─────────────────────────────────────── -->
+    <!-- ── Row 2 ── Vehicle Monitoring ──────────────────────────────────────── -->
     <div class="tile-section">
       <h3 class="section-label">
         <i class="pi pi-car section-icon"></i>
@@ -173,6 +185,7 @@
           <div
             class="kpi-tile"
             [class]="'kpi-tile--' + tile.status"
+            [class.kpi-tile--active]="activeTileId() === tile.id"
             (click)="openTile(tile)"
             role="button"
             tabindex="0"
@@ -190,14 +203,23 @@
             <div class="kpi-tile__metric">{{ tile.metric }}</div>
             <div class="kpi-tile__footer">
               <span class="kpi-tile__title">{{ tile.title }}</span>
-              <i class="pi pi-chevron-right kpi-tile__arrow"></i>
+              <i
+                class="pi kpi-tile__arrow"
+                [class.pi-chevron-down]="activeTileId() === tile.id"
+                [class.pi-chevron-right]="activeTileId() !== tile.id"
+              ></i>
             </div>
           </div>
         }
       </div>
+      @if (activeTileRow() === 2 && activeTile()) {
+        <div class="tile-detail-panel">
+          <ng-container *ngTemplateOutlet="tilePanelContent" />
+        </div>
+      }
     </div>
 
-    <!-- ── Row 3 – Performance Monitoring ─────────────────────────────────── -->
+    <!-- ── Row 3 ── Performance Monitoring ─────────────────────────────────── -->
     <div class="tile-section">
       <h3 class="section-label">
         <i class="pi pi-chart-line section-icon"></i>
@@ -208,6 +230,7 @@
           <div
             class="kpi-tile"
             [class]="'kpi-tile--' + tile.status"
+            [class.kpi-tile--active]="activeTileId() === tile.id"
             (click)="openTile(tile)"
             role="button"
             tabindex="0"
@@ -225,172 +248,281 @@
             <div class="kpi-tile__metric">{{ tile.metric }}</div>
             <div class="kpi-tile__footer">
               <span class="kpi-tile__title">{{ tile.title }}</span>
-              <i class="pi pi-chevron-right kpi-tile__arrow"></i>
+              <i
+                class="pi kpi-tile__arrow"
+                [class.pi-chevron-down]="activeTileId() === tile.id"
+                [class.pi-chevron-right]="activeTileId() !== tile.id"
+              ></i>
+            </div>
+          </div>
+        }
+      </div>
+      @if (activeTileRow() === 3 && activeTile()) {
+        <div class="tile-detail-panel">
+          <ng-container *ngTemplateOutlet="tilePanelContent" />
+        </div>
+      }
+    </div>
+  </main>
+</div>
+
+<!-- ── Inline tile panel template ────────────────────────────────────────────── -->
+<ng-template #tilePanelContent>
+  <div class="panel-header">
+    <div class="panel-header__left">
+      <i [class]="activeTile()!.icon + ' panel-icon'"></i>
+      <div>
+        <h3 class="panel-title">{{ activeTile()!.title }}</h3>
+        <p class="panel-subtitle">{{ activeTile()!.metric }}</p>
+      </div>
+    </div>
+    <p-button
+      icon="pi pi-times"
+      [text]="true"
+      severity="secondary"
+      styleClass="panel-close-btn"
+      (onClick)="closeTilePanel()"
+      pTooltip="Close panel"
+      tooltipPosition="left"
+    />
+  </div>
+
+  <div class="panel-body">
+    <!-- Left: charts -->
+    <div class="panel-charts">
+      <h4 class="chart-section-title">Comparison Overview</h4>
+      <div class="charts-grid">
+        @if (tileBarChartOptions(); as barOpts) {
+          <div class="chart-card">
+            <span class="chart-card__label">By Category</span>
+            <div echarts [options]="barOpts" class="chart-container"></div>
+          </div>
+        }
+        @if (tilePieChartOptions(); as pieOpts) {
+          <div class="chart-card">
+            <span class="chart-card__label">Distribution</span>
+            <div echarts [options]="pieOpts" class="chart-container"></div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Right: summary items -->
+    <div class="panel-summary">
+      <h4 class="chart-section-title">
+        <i class="pi pi-list"></i> Breakdown
+        <span class="summary-hint-small">Click a metric to drill down</span>
+      </h4>
+      <div class="summary-list">
+        @for (item of activeTile()!.summaryItems; track item.label) {
+          <div
+            class="summary-item"
+            [class.summary-item--clickable]="item.drillKey"
+            [class.summary-item--total]="!item.drillKey"
+            (click)="openDrill(item)"
+            [attr.role]="item.drillKey ? 'button' : null"
+            [attr.tabindex]="item.drillKey ? 0 : null"
+            (keyup.enter)="openDrill(item)"
+          >
+            <span class="summary-item__label">{{ item.label }}</span>
+            <div class="summary-item__right">
+              <span class="summary-item__value">{{ item.value }}</span>
+              @if (item.drillKey) {
+                <i class="pi pi-angle-right summary-item__arrow"></i>
+              }
             </div>
           </div>
         }
       </div>
     </div>
-  </main>
-</div>
+  </div>
+</ng-template>
 
-<!-- ── Drill-down Modal ──────────────────────────────────────────────────────── -->
+<!-- ── Drill-down Modal (second level) ───────────────────────────────────────── -->
 <p-dialog
-  [visible]="showModal()"
-  (visibleChange)="onDialogVisible($event)"
+  [visible]="showDrillModal()"
+  (visibleChange)="onDrillModalVisible($event)"
   [modal]="true"
   [closable]="true"
   [draggable]="false"
   [resizable]="false"
-  [style]="{ width: '92vw', 'max-width': '1200px' }"
+  [style]="{ width: '94vw', 'max-width': '1300px' }"
   [contentStyle]="{ padding: '0' }"
 >
-  <!-- Dialog header -------------------------------------------------------- -->
   <ng-template pTemplate="header">
     <div class="modal-header">
-      @if (activeDetailKey()) {
-        <p-button
-          icon="pi pi-arrow-left"
-          [text]="true"
-          size="small"
-          styleClass="modal-back-btn"
-          (onClick)="backToSummary()"
-          pTooltip="Back to summary"
-          tooltipPosition="right"
-        />
-        <span class="modal-breadcrumb">
-          <span class="breadcrumb-tile">{{ activeTile()?.title }}</span>
-          <i class="pi pi-angle-right breadcrumb-sep"></i>
-          <span class="breadcrumb-detail">{{ activeDetail()?.title }}</span>
-        </span>
-      } @else {
-        <i [class]="activeTile()?.icon + ' modal-tile-icon'"></i>
-        <span class="modal-title">{{ activeTile()?.title }}</span>
-      }
+      <i [class]="activeTile()?.icon + ' modal-tile-icon'"></i>
+      <span class="modal-breadcrumb">
+        <span class="breadcrumb-tile">{{ activeTile()?.title }}</span>
+        <i class="pi pi-angle-right breadcrumb-sep"></i>
+        <span class="breadcrumb-detail">{{ activeDetail()?.title }}</span>
+      </span>
     </div>
   </ng-template>
 
-  <!-- Dialog body ---------------------------------------------------------- -->
-  <div class="modal-body">
-    <!-- Level 1: Summary view -->
-    @if (!activeDetailKey()) {
-      <div class="summary-view">
-        <p class="summary-hint">
-          <i class="pi pi-info-circle"></i>
-          Click a metric to view the underlying records.
-        </p>
-        <div class="summary-list">
-          @for (item of activeTile()?.summaryItems; track item.label) {
-            <div
-              class="summary-item"
-              [class.summary-item--clickable]="item.drillKey"
-              [class.summary-item--total]="!item.drillKey"
-              (click)="openDrill(item)"
-              [attr.role]="item.drillKey ? 'button' : null"
-              [attr.tabindex]="item.drillKey ? 0 : null"
-              (keyup.enter)="openDrill(item)"
+  @if (activeDetail()) {
+    <div class="detail-view">
+      <!-- Toolbar: search + export -->
+      <div class="detail-toolbar">
+        <p-iconfield>
+          <p-inputicon styleClass="pi pi-search" />
+          <input
+            pInputText
+            type="text"
+            placeholder="Search records..."
+            [value]="searchQuery()"
+            (input)="searchQuery.set($any($event.target).value)"
+          />
+        </p-iconfield>
+        <div class="export-buttons">
+          <p-button
+            label="CSV"
+            icon="pi pi-download"
+            size="small"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="exportCsv()"
+            pTooltip="Export as CSV"
+            tooltipPosition="top"
+          />
+          <p-button
+            label="Excel"
+            icon="pi pi-file-excel"
+            size="small"
+            severity="success"
+            [outlined]="true"
+            (onClick)="exportExcel()"
+            pTooltip="Export as Excel"
+            tooltipPosition="top"
+          />
+          <p-button
+            label="PDF"
+            icon="pi pi-file-pdf"
+            size="small"
+            severity="danger"
+            [outlined]="true"
+            (onClick)="exportPdf()"
+            pTooltip="Print / Save as PDF"
+            tooltipPosition="top"
+          />
+        </div>
+      </div>
+
+      <!-- Data table -->
+      <p-table
+        [value]="filteredData()"
+        [paginator]="true"
+        [rows]="10"
+        [rowsPerPageOptions]="[5, 10, 25, 50]"
+        [sortMode]="'multiple'"
+        styleClass="p-datatable-sm p-datatable-gridlines print-table"
+        [showCurrentPageReport]="true"
+        currentPageReportTemplate="Showing {first} to {last} of {totalRecords} records"
+      >
+        <ng-template pTemplate="header">
+          <tr>
+            @for (col of activeDetail()!.columns; track col.field) {
+              <th [pSortableColumn]="col.field" class="table-header">
+                {{ col.header }}
+                <p-sortIcon [field]="col.field" />
+              </th>
+            }
+            @if (drillHasGps()) {
+              <th class="table-header" style="width: 4rem; text-align: center">Map</th>
+            }
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-row>
+          <tr [class.row--gps-selected]="drillHasGps() && selectedGpsCoords() === row['gps']">
+            @for (col of activeDetail()!.columns; track col.field) {
+              <td class="table-cell">{{ row[col.field] }}</td>
+            }
+            @if (drillHasGps()) {
+              <td class="table-cell" style="text-align: center">
+                <p-button
+                  icon="pi pi-map-marker"
+                  [text]="true"
+                  size="small"
+                  [severity]="selectedGpsCoords() === row['gps'] ? 'danger' : 'secondary'"
+                  (onClick)="selectGpsRow(row)"
+                  pTooltip="View on map"
+                  tooltipPosition="left"
+                />
+              </td>
+            }
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td
+              [attr.colspan]="activeDetail()!.columns.length + (drillHasGps() ? 1 : 0)"
+              class="empty-message"
             >
-              <span class="summary-item__label">{{ item.label }}</span>
-              <div class="summary-item__right">
-                <span class="summary-item__value">{{ item.value }}</span>
-                @if (item.drillKey) {
-                  <i class="pi pi-angle-right summary-item__arrow"></i>
-                }
-              </div>
+              <i class="pi pi-inbox mr-2"></i>No records found.
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+
+      <!-- GPS Map panel -->
+      @if (drillHasGps()) {
+        <div class="gps-panel">
+          <div class="gps-panel__header">
+            <i class="pi pi-map-marker"></i>
+            <span class="gps-panel__title">GPS Location</span>
+            @if (selectedGpsCoords()) {
+              <span class="gps-panel__coords">{{ selectedGpsCoords() }}</span>
+              <p-button
+                icon="pi pi-times"
+                [text]="true"
+                size="small"
+                severity="secondary"
+                styleClass="gps-clear-btn"
+                (onClick)="selectedGpsCoords.set(null)"
+                pTooltip="Clear map"
+              />
+            } @else {
+              <span class="gps-panel__hint">Click a pin button in a row to view location</span>
+            }
+          </div>
+          @if (gpsMapUrl(); as mapUrl) {
+            <iframe
+              [src]="mapUrl"
+              class="gps-map-iframe"
+              frameborder="0"
+              scrolling="no"
+              marginheight="0"
+              marginwidth="0"
+              title="GPS Location Map"
+            ></iframe>
+            <div class="gps-map-link">
+              <a
+                [href]="
+                  'https://www.openstreetmap.org/?mlat=' +
+                  selectedGpsCoords()!.split(',')[0].trim() +
+                  '&mlon=' +
+                  selectedGpsCoords()!.split(',')[1].trim() +
+                  '#map=15/' +
+                  selectedGpsCoords()!.split(',')[0].trim() +
+                  '/' +
+                  selectedGpsCoords()!.split(',')[1].trim()
+                "
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <i class="pi pi-external-link"></i> Open in OpenStreetMap
+              </a>
+            </div>
+          } @else {
+            <div class="gps-map-placeholder">
+              <i class="pi pi-map"></i>
+              <span>Select a row above to view its GPS location</span>
             </div>
           }
         </div>
-      </div>
-    }
-
-    <!-- Level 2: Detail grid view -->
-    @if (activeDetailKey() && activeDetail()) {
-      <div class="detail-view">
-        <!-- Toolbar: search + export -->
-        <div class="detail-toolbar">
-          <p-iconfield>
-            <p-inputicon styleClass="pi pi-search" />
-            <input
-              pInputText
-              type="text"
-              placeholder="Search records…"
-              [value]="searchQuery()"
-              (input)="searchQuery.set($any($event.target).value)"
-            />
-          </p-iconfield>
-          <div class="export-buttons">
-            <p-button
-              label="CSV"
-              icon="pi pi-download"
-              size="small"
-              severity="secondary"
-              [outlined]="true"
-              (onClick)="exportCsv()"
-              pTooltip="Export as CSV"
-              tooltipPosition="top"
-            />
-            <p-button
-              label="Excel"
-              icon="pi pi-file-excel"
-              size="small"
-              severity="success"
-              [outlined]="true"
-              (onClick)="exportExcel()"
-              pTooltip="Export as Excel"
-              tooltipPosition="top"
-            />
-            <p-button
-              label="PDF"
-              icon="pi pi-file-pdf"
-              size="small"
-              severity="danger"
-              [outlined]="true"
-              (onClick)="exportPdf()"
-              pTooltip="Print / Save as PDF"
-              tooltipPosition="top"
-            />
-          </div>
-        </div>
-
-        <!-- Data table -->
-        <p-table
-          [value]="filteredData()"
-          [paginator]="true"
-          [rows]="10"
-          [rowsPerPageOptions]="[5, 10, 25, 50]"
-          [sortMode]="'multiple'"
-          styleClass="p-datatable-sm p-datatable-gridlines print-table"
-          [showCurrentPageReport]="true"
-          currentPageReportTemplate="Showing {first} to {last} of {totalRecords} records"
-        >
-          <ng-template pTemplate="header">
-            <tr>
-              @for (col of activeDetail()!.columns; track col.field) {
-                <th [pSortableColumn]="col.field" class="table-header">
-                  {{ col.header }}
-                  <p-sortIcon [field]="col.field" />
-                </th>
-              }
-            </tr>
-          </ng-template>
-
-          <ng-template pTemplate="body" let-row>
-            <tr>
-              @for (col of activeDetail()!.columns; track col.field) {
-                <td class="table-cell">{{ row[col.field] }}</td>
-              }
-            </tr>
-          </ng-template>
-
-          <ng-template pTemplate="emptymessage">
-            <tr>
-              <td [attr.colspan]="activeDetail()!.columns.length" class="empty-message">
-                <i class="pi pi-inbox mr-2"></i>No records found.
-              </td>
-            </tr>
-          </ng-template>
-        </p-table>
-      </div>
-    }
-  </div>
+      }
+    </div>
+  }
 </p-dialog>

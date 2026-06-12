@@ -2,6 +2,9 @@ import { Component, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import type { EChartsOption } from 'echarts';
+import { NgxEchartsDirective } from 'ngx-echarts';
 
 import { AuthService } from '../../core/services/auth.service';
 import { AvatarModule } from 'primeng/avatar';
@@ -1406,6 +1409,7 @@ const TILES: KpiTile[] = [
     InputIconModule,
     InputTextModule,
     MultiSelectModule,
+    NgxEchartsDirective,
     SelectModule,
     TableModule,
     TagModule,
@@ -1418,6 +1422,7 @@ const TILES: KpiTile[] = [
 export class ReportingComponent {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly sanitizer = inject(DomSanitizer);
 
   readonly session = this.auth.session;
 
@@ -1531,16 +1536,111 @@ export class ReportingComponent {
     { label: 'R30', value: 'r30' },
   ];
 
-  // ── Modal / drill-down state ───────────────────────────────────────────────
-  readonly showModal = signal(false);
-  readonly activeTile = signal<KpiTile | null>(null);
+  // ── Inline tile panel state ──────────────────────────────────────────────
+  readonly activeTileId = signal<string | null>(null);
+
+  readonly activeTile = computed<KpiTile | null>(() => {
+    const id = this.activeTileId();
+    if (!id) return null;
+    return this.filteredTiles().find((t) => t.id === id) ?? null;
+  });
+
+  /** 1, 2, or 3 – which dashboard row contains the active tile */
+  readonly activeTileRow = computed<number | null>(() => {
+    const id = this.activeTileId();
+    if (!id) return null;
+    const idx = TILES.findIndex((t) => t.id === id);
+    if (idx < 0) return null;
+    return Math.floor(idx / 3) + 1;
+  });
+
+  readonly tileBarChartOptions = computed<EChartsOption | null>(() => {
+    const tile = this.activeTile();
+    if (!tile) return null;
+    const drillable = tile.summaryItems.filter((i) => i.drillKey !== null);
+    const colors = ['#1d4ed8', '#d97706', '#dc2626', '#16a34a', '#7c3aed', '#0891b2'];
+    return {
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+      grid: { left: '3%', right: '4%', bottom: '10%', top: '8%', containLabel: true },
+      xAxis: {
+        type: 'category',
+        data: drillable.map((i) => i.label),
+        axisLabel: { rotate: 30, fontSize: 11, interval: 0 },
+      },
+      yAxis: { type: 'value', minInterval: 1 },
+      series: [
+        {
+          type: 'bar',
+          data: drillable.map((i, idx) => ({
+            value: typeof i.value === 'number' ? i.value : parseFloat(String(i.value)) || 0,
+            itemStyle: { color: colors[idx % colors.length], borderRadius: [4, 4, 0, 0] },
+          })),
+          label: { show: true, position: 'top', fontSize: 12, fontWeight: 'bold' },
+        },
+      ],
+    };
+  });
+
+  readonly tilePieChartOptions = computed<EChartsOption | null>(() => {
+    const tile = this.activeTile();
+    if (!tile) return null;
+    const drillable = tile.summaryItems.filter(
+      (i) =>
+        i.drillKey !== null &&
+        (typeof i.value === 'number' ? i.value : parseFloat(String(i.value)) || 0) > 0,
+    );
+    if (drillable.length === 0) return null;
+    return {
+      tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+      legend: { orient: 'vertical', right: '5%', top: 'center', textStyle: { fontSize: 11 } },
+      series: [
+        {
+          type: 'pie',
+          radius: ['40%', '68%'],
+          center: ['38%', '50%'],
+          data: drillable.map((i) => ({
+            name: i.label,
+            value: typeof i.value === 'number' ? i.value : parseFloat(String(i.value)) || 0,
+          })),
+          label: { show: false },
+          emphasis: { label: { show: true, fontSize: 13, fontWeight: 'bold' } },
+        },
+      ],
+    };
+  });
+
+  // ── Drill-down modal state ────────────────────────────────────────────────
+  readonly showDrillModal = signal(false);
   readonly activeDetailKey = signal<string | null>(null);
   readonly searchQuery = signal('');
+  readonly selectedGpsCoords = signal<string | null>(null);
 
   readonly activeDetail = computed<DrillConfig | null>(() => {
     const key = this.activeDetailKey();
     if (!key) return null;
     return DRILL_CONFIGS[key] ?? null;
+  });
+
+  readonly drillHasGps = computed(() => {
+    const detail = this.activeDetail();
+    if (!detail) return false;
+    return detail.columns.some((c) => c.field === 'gps');
+  });
+
+  readonly gpsMapUrl = computed<SafeResourceUrl | null>(() => {
+    const coords = this.selectedGpsCoords();
+    if (!coords) return null;
+    const parts = coords.split(',').map((s) => s.trim());
+    if (parts.length < 2) return null;
+    const lat = parseFloat(parts[0]);
+    const lon = parseFloat(parts[1]);
+    if (isNaN(lat) || isNaN(lon)) return null;
+    const d = 0.008;
+    const url =
+      `https://www.openstreetmap.org/export/embed.html` +
+      `?bbox=${lon - d},${lat - d},${lon + d},${lat + d}` +
+      `&layer=mapnik&marker=${lat},${lon}`;
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
   });
 
   readonly filteredData = computed(() => {
@@ -1578,29 +1678,38 @@ export class ReportingComponent {
 
   // ── Navigation ─────────────────────────────────────────────────────────────
   openTile(tile: KpiTile): void {
-    this.activeTile.set(tile);
-    this.activeDetailKey.set(null);
-    this.searchQuery.set('');
-    this.showModal.set(true);
+    // Toggle: clicking the same tile closes the panel
+    if (this.activeTileId() === tile.id) {
+      this.activeTileId.set(null);
+    } else {
+      this.activeTileId.set(tile.id);
+    }
+  }
+
+  closeTilePanel(): void {
+    this.activeTileId.set(null);
   }
 
   openDrill(item: SummaryItem): void {
     if (!item.drillKey) return;
     this.activeDetailKey.set(item.drillKey);
     this.searchQuery.set('');
+    this.selectedGpsCoords.set(null);
+    this.showDrillModal.set(true);
   }
 
-  backToSummary(): void {
-    this.activeDetailKey.set(null);
-    this.searchQuery.set('');
-  }
-
-  onDialogVisible(visible: boolean): void {
+  onDrillModalVisible(visible: boolean): void {
     if (!visible) {
-      this.showModal.set(false);
-      this.activeTile.set(null);
+      this.showDrillModal.set(false);
       this.activeDetailKey.set(null);
+      this.selectedGpsCoords.set(null);
     }
+  }
+
+  selectGpsRow(row: Record<string, string | number>): void {
+    const gps = String(row['gps'] ?? '');
+    if (!gps) return;
+    this.selectedGpsCoords.set(this.selectedGpsCoords() === gps ? null : gps);
   }
 
   // ── Status helpers ─────────────────────────────────────────────────────────
