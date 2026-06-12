@@ -1,78 +1,193 @@
+/* ─── Wrapper ─────────────────────────────────────────────────────────────── */
+
 .login-wrapper {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
-  padding: 1rem;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+  padding: 1rem 1rem 2rem;
 }
+
+/* ─── Card ────────────────────────────────────────────────────────────────── */
+
 .login-card {
   width: 100%;
-  max-width: 420px;
+  max-width: 440px;
 }
+
+:host ::ng-deep .login-card.p-card {
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(16px);
+  border-radius: 1rem;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+}
+
+:host ::ng-deep .login-card.p-card .p-card-body {
+  padding: 1.5rem;
+}
+
+:host ::ng-deep .login-card.p-card .p-card-header {
+  padding: 0;
+}
+
+/* ─── Header ──────────────────────────────────────────────────────────────── */
+
 .login-header {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 2rem 1.5rem 1rem;
-  background: linear-gradient(135deg, #1e3a5f, #2563eb);
-  border-radius: var(--border-radius, 6px) var(--border-radius, 6px) 0 0;
+  padding: 1.75rem 1.5rem 1.25rem;
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 55%, #c2410c 100%);
   color: #fff;
 }
-.login-logo {
-  font-size: 3rem;
-  margin-bottom: 0.5rem;
+
+.login-logo-wrap {
+  margin-bottom: 1rem;
 }
+
+.login-logo-img {
+  display: block;
+  width: 220px;
+  height: auto;
+  margin: 0 auto;
+  filter: brightness(0) invert(1);
+  drop-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
 .login-header h1 {
-  margin: 0 0 0.25rem;
+  margin: 0 0 0.5rem;
   font-size: 1.75rem;
-  font-weight: 700;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
+
 .login-header p {
   margin: 0;
-  opacity: 0.85;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
+  color: #ffedd5;
+  font-weight: 400;
 }
+
+/* ─── Form fields ─────────────────────────────────────────────────────────── */
+
 .form-field {
   display: flex;
   flex-direction: column;
   margin-bottom: 1.25rem;
 }
+
 .form-field label {
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: 600;
   color: #374151;
   margin-bottom: 0.4rem;
 }
+
+:host ::ng-deep .form-field .p-inputtext {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  transition:
+    border-color 0.2s,
+    background 0.2s,
+    box-shadow 0.2s;
+}
+
+:host ::ng-deep .form-field .p-inputtext:hover {
+  background: #ffffff;
+  border-color: #d1d5db;
+}
+
+:host ::ng-deep .form-field .p-inputtext:focus {
+  background: #ffffff;
+  border-color: #f97316;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
+  outline: none;
+}
+
+:host ::ng-deep .form-field .p-inputtext.ng-invalid.ng-dirty {
+  border-color: #f87171;
+  background: #fff1f2;
+}
+
 .field-error {
   color: #dc2626;
   font-size: 0.8rem;
-  margin-top: 0.25rem;
+  margin-top: 0.3rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
 }
-.w-full {
+
+/* ─── Submit button ───────────────────────────────────────────────────────── */
+
+:host ::ng-deep form p-button {
+  display: block;
   width: 100%;
 }
 
-/* Force p-password wrapper and its inner input to full width */
+:host ::ng-deep form p-button .p-button {
+  width: 100%;
+  justify-content: center;
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  border: none;
+  border-radius: 0.75rem;
+  padding: 0.875rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.35);
+  transition:
+    background 0.2s,
+    box-shadow 0.2s,
+    transform 0.15s;
+}
+
+:host ::ng-deep form p-button .p-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ea580c, #c2410c);
+  box-shadow: 0 6px 18px rgba(194, 65, 12, 0.4);
+  transform: scale(1.015);
+}
+
+:host ::ng-deep form p-button .p-button:focus {
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.25);
+}
+
+:host ::ng-deep form p-button .p-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ─── p-password full-width fix ───────────────────────────────────────────── */
+
 :host ::ng-deep .form-field p-password,
 :host ::ng-deep .form-field .p-password,
 :host ::ng-deep .form-field .p-password input {
   width: 100%;
   display: block;
 }
+
+/* ─── Utilities ───────────────────────────────────────────────────────────── */
+
 .w-full {
   width: 100%;
 }
+
 .mt-2 {
   margin-top: 0.5rem;
 }
 
-/* Make the p-button host element block so w-full stretches properly */
-:host ::ng-deep form p-button {
-  display: block;
-  width: 100%;
-}
-:host ::ng-deep form p-button .p-button {
-  width: 100%;
-  justify-content: center;
+/* ─── Footer text below the card ─────────────────────────────────────────── */
+
+.login-footer {
+  margin-top: 1.25rem;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.75rem;
 }
