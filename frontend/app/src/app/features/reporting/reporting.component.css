@@ -13,7 +13,7 @@
   background: linear-gradient(135deg, #f97316 0%, #ea580c 55%, #c2410c 100%);
   border: none;
   border-radius: 0;
-  padding: 0 1.5rem;
+  padding: 0 0.9rem;
 }
 
 :host ::ng-deep .top-bar .p-toolbar-group-start,
@@ -23,7 +23,7 @@
 
 .back-btn {
   color: #000000 !important;
-  margin-right: 0.25rem;
+  margin-right: 0.1rem;
 }
 
 :host ::ng-deep .back-btn.p-button {
@@ -36,11 +36,10 @@
 }
 
 .toolbar-logo {
-  height: 36px;
+  height: 66px;
   width: auto;
   display: block;
-  filter: brightness(0) invert(1);
-  margin-right: 0.75rem;
+  margin-right: 0.35rem;
 }
 
 .app-name {
