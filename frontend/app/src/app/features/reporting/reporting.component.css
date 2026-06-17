@@ -1,6 +1,9 @@
 /* ─── Layout ─────────────────────────────────────────────────────────────── */
 
 .reporting-wrapper {
+  --toolbar-height: 66px;
+  --drawer-width: min(18rem, 86vw);
+
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -14,6 +17,25 @@
   border: none;
   border-radius: 0;
   padding: 0 0.9rem;
+  position: sticky;
+  top: 0;
+  z-index: 1102;
+}
+
+:host ::ng-deep .nav-drawer {
+  width: var(--drawer-width);
+  top: var(--toolbar-height);
+  height: calc(100vh - var(--toolbar-height));
+  max-height: calc(100vh - var(--toolbar-height));
+}
+
+:host ::ng-deep .nav-drawer__menu {
+  border: none;
+  width: 100%;
+}
+
+:host ::ng-deep .nav-drawer .p-drawer-content {
+  padding-top: 0.25rem;
 }
 
 :host ::ng-deep .top-bar .p-toolbar-group-start,
@@ -21,12 +43,12 @@
   color: #ffffff;
 }
 
-.back-btn {
+.menu-toggle {
   color: #000000 !important;
-  margin-right: 0.1rem;
+  margin-right: 0.15rem;
 }
 
-:host ::ng-deep .back-btn.p-button {
+:host ::ng-deep .menu-toggle.p-button {
   color: #000000 !important;
 }
 
@@ -65,12 +87,28 @@
 
 /* ─── Main content ───────────────────────────────────────────────────────── */
 
+.reporting-body {
+  flex: 1;
+  min-width: 0;
+  transition: padding-left 0.2s ease;
+}
+
+.reporting-body--drawer-open {
+  padding-left: var(--drawer-width);
+}
+
 .reporting-content {
   flex: 1;
   padding: 1.75rem 1.5rem 3rem;
   max-width: 1280px;
   width: 100%;
   margin: 0 auto;
+}
+
+@media (max-width: 960px) {
+  .reporting-body--drawer-open {
+    padding-left: 0;
+  }
 }
 
 /* ─── Page header ────────────────────────────────────────────────────────── */

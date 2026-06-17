@@ -1,17 +1,27 @@
 <div class="reporting-wrapper">
+  <p-drawer
+    [(visible)]="menuVisible"
+    position="left"
+    styleClass="nav-drawer"
+    [modal]="false"
+    [showCloseIcon]="false"
+  >
+    <p-menu [model]="navigationItems" styleClass="nav-drawer__menu" />
+  </p-drawer>
+
   <!-- ── Toolbar ─────────────────────────────────────────────────────────── -->
   <p-toolbar styleClass="top-bar">
     <ng-template pTemplate="start">
-      <img src="macrocomm-orange-background.png" alt="Macrocomm" class="toolbar-logo" />
       <p-button
-        icon="pi pi-arrow-left"
+        icon="pi pi-bars"
         [text]="true"
         severity="secondary"
-        styleClass="back-btn"
-        (onClick)="goHome()"
-        pTooltip="Back to Home"
+        styleClass="menu-toggle"
+        (onClick)="toggleMenu()"
+        pTooltip="Toggle navigation"
         tooltipPosition="bottom"
       />
+      <img src="macrocomm-orange-background.png" alt="Macrocomm" class="toolbar-logo" />
       <span class="app-name">
         <i class="pi pi-chart-bar mr-2"></i>FS Bus &#8211; Reporting Dashboard
       </span>
@@ -38,7 +48,8 @@
     </ng-template>
   </p-toolbar>
 
-  <main class="reporting-content">
+  <div class="reporting-body" [class.reporting-body--drawer-open]="menuVisible">
+    <main class="reporting-content">
     <!-- ── Page header ────────────────────────────────────────────────────── -->
     <div class="page-header">
       <div>
@@ -263,7 +274,8 @@
         </div>
       }
     </div>
-  </main>
+    </main>
+  </div>
 </div>
 
 <!-- ── Inline tile panel template ────────────────────────────────────────────── -->

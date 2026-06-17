@@ -17,11 +17,14 @@ import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { MultiSelectModule } from 'primeng/multiselect';
+import { DrawerModule } from 'primeng/drawer';
+import { MenuModule } from 'primeng/menu';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
+import type { MenuItem } from 'primeng/api';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -1405,9 +1408,11 @@ const TILES: KpiTile[] = [
     DatePickerModule,
     DialogModule,
     DividerModule,
+    DrawerModule,
     IconFieldModule,
     InputIconModule,
     InputTextModule,
+    MenuModule,
     MultiSelectModule,
     NgxEchartsDirective,
     SelectModule,
@@ -1425,6 +1430,29 @@ export class ReportingComponent {
   private readonly sanitizer = inject(DomSanitizer);
 
   readonly session = this.auth.session;
+  menuVisible = true;
+  readonly navigationItems: MenuItem[] = [
+    {
+      label: 'Vehicles',
+      icon: 'pi pi-car',
+      command: () => this.closeMenu(),
+    },
+    {
+      label: 'Inspections',
+      icon: 'pi pi-search',
+      command: () => this.closeMenu(),
+    },
+    {
+      label: 'Shifts',
+      icon: 'pi pi-calendar',
+      command: () => this.closeMenu(),
+    },
+    {
+      label: 'Reports',
+      icon: 'pi pi-chart-bar',
+      command: () => this.openReporting(),
+    },
+  ];
 
   // ── Tiles grouped by dashboard row (reactive to applied filters) ──────────
   readonly filteredTiles = computed(() => {
@@ -1791,8 +1819,17 @@ export class ReportingComponent {
   }
 
   // ── Auth ───────────────────────────────────────────────────────────────────
-  goHome(): void {
-    this.router.navigate(['/home']);
+  toggleMenu(): void {
+    this.menuVisible = !this.menuVisible;
+  }
+
+  closeMenu(): void {
+    this.menuVisible = false;
+  }
+
+  openReporting(): void {
+    this.menuVisible = false;
+    this.router.navigate(['/reporting']);
   }
 
   logout(): void {
