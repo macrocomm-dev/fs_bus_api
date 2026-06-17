@@ -2,35 +2,109 @@
 
 .login-wrapper {
   min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  background: #fff7ed;
+}
+
+.brand-panel {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
-  padding: 1rem 1rem 2rem;
+  padding: 3rem;
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.5), transparent 38%),
+    linear-gradient(160deg, #fffbf5 0%, #fff1df 52%, #fdba74 100%);
+  overflow: hidden;
+}
+
+.brand-panel::after {
+  content: '';
+  position: absolute;
+  inset: 8% auto auto 8%;
+  width: 14rem;
+  height: 14rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  filter: blur(18px);
+}
+
+.brand-panel-content {
+  position: relative;
+  z-index: 1;
+  max-width: 34rem;
+  text-align: center;
+}
+
+.government-logo {
+  display: block;
+  width: min(100%, 22.5rem);
+  max-height: 65vh;
+  object-fit: contain;
+  margin: 0 auto 1.75rem;
+  filter: drop-shadow(0 18px 34px rgba(154, 52, 18, 0.18));
+}
+
+.brand-copy {
+  color: #7c2d12;
+}
+
+.eyebrow {
+  margin: 0 0 0.65rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(124, 45, 18, 0.8);
+}
+
+.brand-copy h1 {
+  margin: 0 0 0.85rem;
+  font-size: clamp(2rem, 3vw, 3rem);
+  font-weight: 800;
+  line-height: 1.05;
+}
+
+.brand-copy p {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: rgba(124, 45, 18, 0.88);
+}
+
+.login-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0)),
+    linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+}
+
+.login-panel-inner {
+  width: 100%;
+  max-width: 30rem;
 }
 
 /* ─── Card ────────────────────────────────────────────────────────────────── */
 
 .login-card {
   width: 100%;
-  max-width: 440px;
 }
 
 :host ::ng-deep .login-card.p-card {
-  background: rgba(255, 255, 255, 0.97);
+  background: rgba(15, 23, 42, 0.16);
   backdrop-filter: blur(16px);
-  border-radius: 1rem;
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1.25rem;
+  box-shadow: 0 28px 55px rgba(15, 23, 42, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   overflow: hidden;
 }
 
 :host ::ng-deep .login-card.p-card .p-card-body {
   padding: 1.5rem;
-}
-
-:host ::ng-deep .login-card.p-card .p-card-header {
-  padding: 0;
 }
 
 /* ─── Header ──────────────────────────────────────────────────────────────── */
@@ -39,37 +113,30 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 1.75rem 1.5rem 1.25rem;
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 55%, #c2410c 100%);
-  color: #fff;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: #ffffff;
 }
 
 .login-logo-wrap {
-  margin-bottom: 1rem;
+  width: 100%;
+  margin-bottom: 0.45rem;
 }
 
 .login-logo-img {
   display: block;
-  width: 220px;
+  width: min(100%, 20rem);
   height: auto;
   margin: 0 auto;
-  filter: brightness(0) invert(1);
-  drop-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
-.login-header h1 {
-  margin: 0 0 0.5rem;
-  font-size: 1.75rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-}
-
-.login-header p {
+.login-kicker {
   margin: 0;
-  font-size: 0.875rem;
-  color: #ffedd5;
-  font-weight: 400;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(219, 234, 254, 0.82);
 }
 
 /* ─── Form fields ─────────────────────────────────────────────────────────── */
@@ -83,16 +150,17 @@
 .form-field label {
   font-size: 0.875rem;
   font-weight: 600;
-  color: #374151;
+  color: #dbeafe;
   margin-bottom: 0.4rem;
 }
 
 :host ::ng-deep .form-field .p-inputtext {
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
+  background: rgba(15, 23, 42, 0.12);
+  border: 1px solid rgba(191, 219, 254, 0.28);
   border-radius: 0.75rem;
   padding: 0.75rem 1rem;
   font-size: 0.9rem;
+  color: #eff6ff;
   transition:
     border-color 0.2s,
     background 0.2s,
@@ -100,12 +168,12 @@
 }
 
 :host ::ng-deep .form-field .p-inputtext:hover {
-  background: #ffffff;
-  border-color: #d1d5db;
+  background: rgba(15, 23, 42, 0.2);
+  border-color: rgba(191, 219, 254, 0.48);
 }
 
 :host ::ng-deep .form-field .p-inputtext:focus {
-  background: #ffffff;
+  background: rgba(15, 23, 42, 0.28);
   border-color: #f97316;
   box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
   outline: none;
@@ -113,11 +181,23 @@
 
 :host ::ng-deep .form-field .p-inputtext.ng-invalid.ng-dirty {
   border-color: #f87171;
-  background: #fff1f2;
+  background: rgba(127, 29, 29, 0.28);
+}
+
+:host ::ng-deep .form-field .p-inputtext::placeholder {
+  color: rgba(219, 234, 254, 0.6);
+}
+
+:host ::ng-deep .form-field .p-password .p-password-input {
+  color: #eff6ff;
+}
+
+:host ::ng-deep .form-field .p-password .p-password-toggle-mask-icon {
+  color: rgba(219, 234, 254, 0.82);
 }
 
 .field-error {
-  color: #dc2626;
+  color: #fecaca;
   font-size: 0.8rem;
   margin-top: 0.3rem;
   display: flex;
@@ -164,6 +244,13 @@
   transform: none;
 }
 
+.login-note {
+  margin: 1rem 0 0;
+  text-align: center;
+  font-size: 0.82rem;
+  color: rgba(219, 234, 254, 0.82);
+}
+
 /* ─── p-password full-width fix ───────────────────────────────────────────── */
 
 :host ::ng-deep .form-field p-password,
@@ -183,11 +270,41 @@
   margin-top: 0.5rem;
 }
 
-/* ─── Footer text below the card ─────────────────────────────────────────── */
+@media (max-width: 980px) {
+  .login-wrapper {
+    grid-template-columns: 1fr;
+  }
 
-.login-footer {
-  margin-top: 1.25rem;
-  text-align: center;
-  color: rgba(255, 255, 255, 0.55);
-  font-size: 0.75rem;
+  .brand-panel {
+    min-height: 42vh;
+    padding: 2.5rem 1.5rem 1rem;
+  }
+
+  .government-logo {
+    width: min(100%, 15rem);
+    max-height: 22rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .login-panel {
+    padding: 1.5rem 1rem 2rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .brand-copy h1 {
+    font-size: 2rem;
+  }
+
+  .brand-copy p {
+    font-size: 0.95rem;
+  }
+
+  .login-panel-inner {
+    max-width: 100%;
+  }
+
+  .login-logo-img {
+    width: min(100%, 16rem);
+  }
 }
