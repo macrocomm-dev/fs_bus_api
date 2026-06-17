@@ -7,8 +7,8 @@ import Aura from '@primeuix/themes/aura';
 import { provideEchartsCore } from 'ngx-echarts';
 
 import { routes } from './app.routes';
-import { BASE_PATH } from './core/api/variables';
-import { environment } from '../environments/environment';
+import { Configuration } from './core/api/configuration';
+import { createApiConfiguration } from './core/api/api-config';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -24,6 +24,6 @@ export const appConfig: ApplicationConfig = {
       ripple: true,
     }),
     provideEchartsCore({ echarts: () => import('echarts') }),
-    { provide: BASE_PATH, useValue: environment.apiUrl },
+    { provide: Configuration, useFactory: createApiConfiguration },
   ],
 };

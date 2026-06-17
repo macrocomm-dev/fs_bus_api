@@ -1,0 +1,158 @@
+.vehicles-wrapper {
+  --toolbar-height: 66px;
+  --drawer-width: min(18rem, 86vw);
+
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f3f4f6;
+}
+
+:host ::ng-deep .top-bar {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 55%, #c2410c 100%);
+  border: none;
+  border-radius: 0;
+  padding: 0 0.9rem;
+  position: sticky;
+  top: 0;
+  z-index: 1102;
+}
+
+:host ::ng-deep .nav-drawer {
+  width: var(--drawer-width);
+  top: var(--toolbar-height);
+  height: calc(100vh - var(--toolbar-height));
+  max-height: calc(100vh - var(--toolbar-height));
+}
+
+:host ::ng-deep .nav-drawer__menu {
+  border: none;
+  width: 100%;
+}
+
+:host ::ng-deep .nav-drawer .p-drawer-content {
+  padding-top: 0.25rem;
+}
+
+:host ::ng-deep .top-bar .p-toolbar-group-start,
+:host ::ng-deep .top-bar .p-toolbar-group-end {
+  color: #ffffff;
+}
+
+.menu-toggle {
+  color: #000000 !important;
+  margin-right: 0.15rem;
+}
+
+:host ::ng-deep .menu-toggle.p-button,
+:host ::ng-deep .signout-btn.p-button {
+  color: #000000 !important;
+}
+
+:host ::ng-deep .signout-btn.p-button {
+  border-color: #000000 !important;
+}
+
+.toolbar-logo {
+  height: 66px;
+  width: auto;
+  display: block;
+  margin-right: 0.35rem;
+}
+
+.app-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.03em;
+  display: flex;
+  align-items: center;
+}
+
+.user-name {
+  font-size: 0.875rem;
+  color: #ffffff;
+}
+
+.mr-2 {
+  margin-right: 0.5rem;
+}
+
+.mr-3 {
+  margin-right: 0.75rem;
+}
+
+.vehicles-body {
+  flex: 1;
+  min-width: 0;
+  transition: padding-left 0.2s ease;
+}
+
+.vehicles-body--drawer-open {
+  padding-left: var(--drawer-width);
+}
+
+.vehicles-content {
+  padding: 1.75rem 1.5rem 3rem;
+}
+
+.page-header {
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.page-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 0.2rem;
+}
+
+.subtitle {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+:host ::ng-deep .vehicle-search .p-inputtext {
+  min-width: min(26rem, 80vw);
+}
+
+.error-banner {
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+:host ::ng-deep .vehicle-table {
+  background: #ffffff;
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+:host ::ng-deep .vehicle-table .p-datatable-thead > tr > th {
+  white-space: nowrap;
+}
+
+.vehicle-vin {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
+    'Courier New', monospace;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 960px) {
+  .vehicles-body--drawer-open {
+    padding-left: 0;
+  }
+
+  .vehicles-content {
+    padding: 1.25rem 1rem 2rem;
+  }
+}

@@ -1435,7 +1435,7 @@ export class ReportingComponent {
     {
       label: 'Vehicles',
       icon: 'pi pi-car',
-      command: () => this.closeMenu(),
+      command: () => this.openVehicles(),
     },
     {
       label: 'Inspections',
@@ -1825,6 +1825,11 @@ export class ReportingComponent {
 
   closeMenu(): void {
     this.menuVisible = false;
+  }
+
+  openVehicles(): void {
+    this.menuVisible = false;
+    this.router.navigate(['/vehicles']);
   }
 
   openReporting(): void {
