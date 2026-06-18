@@ -20,12 +20,34 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 # 1. Load environment variables from .env if present
 # ---------------------------------------------------------------------------
+load_dotenv_file() {
+    local env_file="$1"
+    local line
+    local key
+    local value
+
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        [[ "$line" =~ ^[[:space:]]*# ]] && continue
+        [[ -z "${line//[[:space:]]/}" ]] && continue
+
+        key="${line%%=*}"
+        value="${line#*=}"
+
+        key="${key#"${key%%[![:space:]]*}"}"
+        key="${key%"${key##*[![:space:]]}"}"
+
+        if [[ "$value" =~ ^\".*\"$ ]] || [[ "$value" =~ ^\'.*\'$ ]]; then
+            value="${value:1:-1}"
+        fi
+
+        printf -v "$key" '%s' "$value"
+        export "$key"
+    done < "$env_file"
+}
+
 if [[ -f ".env" ]]; then
     echo "[start] Loading environment from .env"
-    set -o allexport
-    # shellcheck disable=SC1091
-    source .env
-    set +o allexport
+    load_dotenv_file ".env"
 fi
 
 GOOGLE_CLOUD_PROJECT="${GOOGLE_CLOUD_PROJECT:-bus-track-480813}"

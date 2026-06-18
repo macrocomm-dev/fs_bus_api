@@ -1,66 +1,61 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 
 import type { MenuItem } from 'primeng/api';
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
 import { DrawerModule } from 'primeng/drawer';
-import { IconFieldModule } from 'primeng/iconfield';
-import { InputIconModule } from 'primeng/inputicon';
-import { InputTextModule } from 'primeng/inputtext';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { MenuModule } from 'primeng/menu';
-import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { VehicleService } from '../../core/api/api/vehicle.service';
-import type { VehicleResponse } from '../../core/api/model/vehicleResponse';
 import { AuthService } from '../../core/services/auth.service';
+import { SmartFleetService } from '../../core/services/smart-fleet.service';
 
 @Component({
-  selector: 'app-vehicles',
+  selector: 'app-smart-fleet',
   standalone: true,
   imports: [
     CommonModule,
     AvatarModule,
     ButtonModule,
     DrawerModule,
-    IconFieldModule,
-    InputIconModule,
-    InputTextModule,
     MenuModule,
-    TableModule,
+    ProgressSpinnerModule,
     TagModule,
     ToolbarModule,
     TooltipModule,
   ],
-  templateUrl: './vehicles.component.html',
-  styleUrl: './vehicles.component.css',
+  templateUrl: './smart-fleet.component.html',
+  styleUrl: './smart-fleet.component.css',
 })
-export class VehiclesComponent implements OnInit {
+export class SmartFleetComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
-  private readonly vehicleApi = inject(VehicleService);
+  private readonly sanitizer = inject(DomSanitizer);
+  private readonly smartFleet = inject(SmartFleetService);
 
   readonly session = this.auth.session;
-  readonly vehicles = signal<VehicleResponse[]>([]);
+  readonly iframeUrl = signal<string | null>(null);
+  readonly iframeSrc = signal<SafeResourceUrl | null>(null);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
-  readonly total = signal(0);
 
   menuVisible = true;
   readonly navigationItems: MenuItem[] = [
     {
       label: 'Vehicles',
       icon: 'pi pi-car',
-      command: () => this.closeMenu(),
+      command: () => this.openVehicles(),
     },
     {
       label: 'Live Map',
       icon: 'pi pi-map',
-      command: () => this.openSmartFleet(),
+      command: () => this.closeMenu(),
     },
     {
       label: 'Inspections',
@@ -85,7 +80,7 @@ export class VehiclesComponent implements OnInit {
       return;
     }
 
-    this.loadVehicles();
+    this.loadIframeUrl();
   }
 
   toggleMenu(): void {
@@ -96,52 +91,52 @@ export class VehiclesComponent implements OnInit {
     this.menuVisible = false;
   }
 
+  openVehicles(): void {
+    this.menuVisible = false;
+    this.router.navigate(['/vehicles']);
+  }
+
   openReporting(): void {
     this.menuVisible = false;
     this.router.navigate(['/reporting']);
   }
 
-  openSmartFleet(): void {
-    this.menuVisible = false;
-    this.router.navigate(['/smart-fleet']);
+  openInNewWindow(): void {
+    const url = this.iframeUrl();
+    if (!url) return;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+
+  retry(): void {
+    this.loadIframeUrl();
   }
 
   logout(): void {
     this.auth.logout();
   }
 
-  statusSeverity(isActive: boolean): 'success' | 'danger' {
-    return isActive ? 'success' : 'danger';
-  }
-
-  private loadVehicles(): void {
+  private loadIframeUrl(): void {
     this.loading.set(true);
     this.error.set(null);
 
-    this.vehicleApi
-      .getVehiclesVehicleVehiclesGet(
-        { page: 1, pageSize: 500 },
-        'body',
-        false,
-        { transferCache: false },
-      )
-      .subscribe({
-        next: (response) => {
-          if (!response) {
-            this.error.set('Vehicle service returned an empty response.');
-            this.loading.set(false);
-            return;
-          }
+    this.smartFleet.getIframeUrl().subscribe({
+      next: (response) => {
+        const url = response?.iframe_url;
+        if (!url) {
+          this.error.set('Smart Fleet did not return a login URL.');
+          this.loading.set(false);
+          return;
+        }
 
-          this.vehicles.set(response.vehicles ?? []);
-          this.total.set(response.total ?? response.vehicles?.length ?? 0);
-          this.loading.set(false);
-        },
-        error: (err) => {
-          this.loading.set(false);
-          const detail = err?.error?.detail;
-          this.error.set(detail ?? 'Could not load vehicles.');
-        },
-      });
+        this.iframeUrl.set(url);
+        this.iframeSrc.set(this.sanitizer.bypassSecurityTrustResourceUrl(url));
+        this.loading.set(false);
+      },
+      error: (err) => {
+        this.loading.set(false);
+        const detail = err?.error?.detail;
+        this.error.set(detail ?? 'Could not load Smart Fleet.');
+      },
+    });
   }
 }

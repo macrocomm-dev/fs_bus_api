@@ -1438,6 +1438,11 @@ export class ReportingComponent {
       command: () => this.openVehicles(),
     },
     {
+      label: 'Live Map',
+      icon: 'pi pi-map',
+      command: () => this.openSmartFleet(),
+    },
+    {
       label: 'Inspections',
       icon: 'pi pi-search',
       command: () => this.closeMenu(),
@@ -1830,6 +1835,11 @@ export class ReportingComponent {
   openVehicles(): void {
     this.menuVisible = false;
     this.router.navigate(['/vehicles']);
+  }
+
+  openSmartFleet(): void {
+    this.menuVisible = false;
+    this.router.navigate(['/smart-fleet']);
   }
 
   openReporting(): void {

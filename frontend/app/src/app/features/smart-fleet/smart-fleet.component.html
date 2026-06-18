@@ -1,0 +1,103 @@
+<div class="smart-fleet-wrapper">
+  <p-drawer
+    [(visible)]="menuVisible"
+    position="left"
+    styleClass="nav-drawer"
+    [modal]="false"
+    [showCloseIcon]="false"
+  >
+    <p-menu [model]="navigationItems" styleClass="nav-drawer__menu" />
+  </p-drawer>
+
+  <p-toolbar styleClass="top-bar">
+    <ng-template pTemplate="start">
+      <p-button
+        icon="pi pi-bars"
+        [text]="true"
+        severity="secondary"
+        styleClass="menu-toggle"
+        (onClick)="toggleMenu()"
+        pTooltip="Toggle navigation"
+        tooltipPosition="bottom"
+      />
+      <img src="macrocomm-orange-background.png" alt="Macrocomm" class="toolbar-logo" />
+      <span class="app-name">
+        <i class="pi pi-map mr-2"></i>FS Bus &#8211; Smart Fleet Live Map
+      </span>
+    </ng-template>
+    <ng-template pTemplate="end">
+      @if (session()) {
+        <p-avatar
+          [label]="(session()!.name?.[0] ?? '') + (session()!.surname?.[0] ?? '')"
+          shape="circle"
+          styleClass="mr-2"
+        />
+        <span class="user-name mr-2">{{ session()!.name }} {{ session()!.surname }}</span>
+        <p-tag [value]="session()!.role" severity="info" styleClass="mr-3" />
+      }
+      <p-button
+        label="Sign out"
+        icon="pi pi-sign-out"
+        severity="secondary"
+        [outlined]="true"
+        size="small"
+        styleClass="signout-btn"
+        (onClick)="logout()"
+      />
+    </ng-template>
+  </p-toolbar>
+
+  <div class="smart-fleet-body" [class.smart-fleet-body--drawer-open]="menuVisible">
+    <main class="smart-fleet-content">
+      <div class="page-header">
+        <div>
+          <h2>Smart Fleet Live Map</h2>
+          <!-- <p class="subtitle">Embedded Smart Fleet session using server-generated OTT login.</p> -->
+        </div>
+
+        <p-button
+          label="Open in new window"
+          icon="pi pi-external-link"
+          severity="contrast"
+          [disabled]="!iframeUrl()"
+          (onClick)="openInNewWindow()"
+        />
+      </div>
+
+      @if (error()) {
+        <div class="error-banner">
+          <span>{{ error() }}</span>
+          <p-button
+            label="Retry"
+            icon="pi pi-refresh"
+            size="small"
+            severity="danger"
+            [outlined]="true"
+            (onClick)="retry()"
+          />
+        </div>
+      }
+
+      <div class="map-shell">
+        @if (loading()) {
+          <div class="map-state map-state--loading">
+            <p-progress-spinner strokeWidth="4" ariaLabel="Loading Smart Fleet" />
+            <p>Signing into Smart Fleet...</p>
+          </div>
+        } @else if (iframeSrc(); as safeUrl) {
+          <iframe
+            [src]="safeUrl"
+            class="smart-fleet-iframe"
+            title="Smart Fleet Live Map"
+            referrerpolicy="strict-origin-when-cross-origin"
+          ></iframe>
+        } @else {
+          <div class="map-state">
+            <i class="pi pi-map"></i>
+            <p>Smart Fleet is ready once a login URL is available.</p>
+          </div>
+        }
+      </div>
+    </main>
+  </div>
+</div>

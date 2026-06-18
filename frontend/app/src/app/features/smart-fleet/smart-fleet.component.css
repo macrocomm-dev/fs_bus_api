@@ -1,0 +1,185 @@
+.smart-fleet-wrapper {
+  --toolbar-height: 66px;
+  --drawer-width: min(18rem, 86vw);
+
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #fff7ed 0%, #f3f4f6 28%, #e5e7eb 100%);
+}
+
+:host ::ng-deep .top-bar {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 55%, #c2410c 100%);
+  border: none;
+  border-radius: 0;
+  padding: 0 0.9rem;
+  position: sticky;
+  top: 0;
+  z-index: 1102;
+}
+
+:host ::ng-deep .nav-drawer {
+  width: var(--drawer-width);
+  top: var(--toolbar-height);
+  height: calc(100vh - var(--toolbar-height));
+  max-height: calc(100vh - var(--toolbar-height));
+}
+
+:host ::ng-deep .nav-drawer__menu {
+  border: none;
+  width: 100%;
+}
+
+:host ::ng-deep .nav-drawer .p-drawer-content {
+  padding-top: 0.25rem;
+}
+
+:host ::ng-deep .top-bar .p-toolbar-group-start,
+:host ::ng-deep .top-bar .p-toolbar-group-end {
+  color: #ffffff;
+}
+
+.menu-toggle {
+  color: #000000 !important;
+  margin-right: 0.15rem;
+}
+
+:host ::ng-deep .menu-toggle.p-button,
+:host ::ng-deep .signout-btn.p-button {
+  color: #000000 !important;
+}
+
+:host ::ng-deep .signout-btn.p-button {
+  border-color: #000000 !important;
+}
+
+.toolbar-logo {
+  height: 66px;
+  width: auto;
+  display: block;
+  margin-right: 0.35rem;
+}
+
+.app-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.03em;
+  display: flex;
+  align-items: center;
+}
+
+.user-name {
+  font-size: 0.875rem;
+  color: #ffffff;
+}
+
+.mr-2 {
+  margin-right: 0.5rem;
+}
+
+.mr-3 {
+  margin-right: 0.75rem;
+}
+
+.smart-fleet-body {
+  flex: 1;
+  min-width: 0;
+  transition: padding-left 0.2s ease;
+}
+
+.smart-fleet-body--drawer-open {
+  padding-left: var(--drawer-width);
+}
+
+.smart-fleet-content {
+  padding: 1.75rem 1.5rem 3rem;
+}
+
+.page-header {
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.page-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 0.2rem;
+}
+
+.subtitle {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.error-banner {
+  margin-bottom: 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.75rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.map-shell {
+  min-height: 70vh;
+  border-radius: 1rem;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+}
+
+.smart-fleet-iframe {
+  display: block;
+  width: 100%;
+  min-height: 70vh;
+  border: none;
+  background: #ffffff;
+}
+
+.map-state {
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  color: #6b7280;
+  padding: 2rem;
+  text-align: center;
+}
+
+.map-state .pi {
+  font-size: 2rem;
+  color: #f97316;
+}
+
+.map-state--loading {
+  color: #374151;
+}
+
+@media (max-width: 960px) {
+  .smart-fleet-body--drawer-open {
+    padding-left: 0;
+  }
+
+  .smart-fleet-content {
+    padding: 1.25rem 1rem 2rem;
+  }
+
+  .error-banner {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
