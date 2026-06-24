@@ -158,17 +158,12 @@
               (keyup.enter)="openTile(tile)"
             >
               <div class="kpi-tile__header">
+                <span class="kpi-tile__title">{{ tile.title }}</span>
                 <i [class]="tile.icon + ' kpi-tile__icon'"></i>
-                <p-tag
-                  [value]="statusLabel(tile.status)"
-                  [severity]="statusSeverity(tile.status)"
-                  styleClass="kpi-tile__tag"
-                />
               </div>
               <div class="kpi-tile__value">{{ tile.value }}</div>
               <div class="kpi-tile__metric">{{ tile.metric }}</div>
               <div class="kpi-tile__footer">
-                <span class="kpi-tile__title">{{ tile.title }}</span>
                 <i
                   class="pi kpi-tile__arrow"
                   [class.pi-chevron-down]="activeTileId() === tile.id"
@@ -203,17 +198,12 @@
               (keyup.enter)="openTile(tile)"
             >
               <div class="kpi-tile__header">
+                <span class="kpi-tile__title">{{ tile.title }}</span>
                 <i [class]="tile.icon + ' kpi-tile__icon'"></i>
-                <p-tag
-                  [value]="statusLabel(tile.status)"
-                  [severity]="statusSeverity(tile.status)"
-                  styleClass="kpi-tile__tag"
-                />
               </div>
               <div class="kpi-tile__value">{{ tile.value }}</div>
               <div class="kpi-tile__metric">{{ tile.metric }}</div>
               <div class="kpi-tile__footer">
-                <span class="kpi-tile__title">{{ tile.title }}</span>
                 <i
                   class="pi kpi-tile__arrow"
                   [class.pi-chevron-down]="activeTileId() === tile.id"
