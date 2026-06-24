@@ -1,69 +1,62 @@
 <div class="login-wrapper">
-  <p-card class="login-card">
-    <ng-template pTemplate="header">
+  <section class="brand-panel">
+    <div class="brand-panel-content">
+      <img src="free_state_logo_transparent.png"
+        alt="Free State Province Department of Community Safety, Roads and Transport" class="government-logo" />
+      <div class="brand-copy">
+        <!-- <p class="eyebrow">Free State Province</p> -->
+        <h1>Bus Monitoring Program</h1>
+        <p>
+          Operational visibility and reporting for inspections, shifts, and fleet oversight.
+        </p>
+      </div>
+    </div>
+  </section>
+  
+  <section class="login-panel">
+    <div class="login-panel-inner">
       <div class="login-header">
         <div class="login-logo-wrap">
-          <img src="fleet-analytics.png" alt="Fleet Analytics" class="login-logo-img" />
+          <img src="macrocomm-black-background.png" alt="Macrocomm" class="login-logo-img" />
         </div>
-        <h1>FS Bus</h1>
-        <p>Sign in to your account</p>
-      </div>
-    </ng-template>
-
-    <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
-      @if (error()) {
-        <p-message severity="error" [text]="error()!" styleClass="w-full mb-3" />
-      }
-
-      <div class="form-field">
-        <label for="email">Email address</label>
-        <input
-          pInputText
-          id="email"
-          type="email"
-          formControlName="email"
-          autocomplete="email"
-          placeholder="you@example.com"
-          class="w-full"
-          [class.ng-invalid]="emailCtrl.invalid && emailCtrl.touched"
-          [class.ng-dirty]="emailCtrl.touched"
-        />
-        @if (emailCtrl.touched && emailCtrl.hasError('required')) {
-          <small class="field-error">Email is required.</small>
-        } @else if (emailCtrl.touched && emailCtrl.hasError('email')) {
-          <small class="field-error">Enter a valid email address.</small>
-        }
+        <p class="login-kicker">Smart mobility platform</p>
       </div>
 
-      <div class="form-field">
-        <label for="password">Password</label>
-        <p-password
-          inputId="password"
-          formControlName="password"
-          placeholder="••••••••"
-          [feedback]="false"
-          [toggleMask]="true"
-          styleClass="w-full"
-          [inputStyleClass]="
-            'w-full' + (passwordCtrl.invalid && passwordCtrl.touched ? ' ng-invalid ng-dirty' : '')
-          "
-          autocomplete="current-password"
-        />
-        @if (passwordCtrl.touched && passwordCtrl.hasError('required')) {
-          <small class="field-error">Password is required.</small>
-        } @else if (passwordCtrl.touched && passwordCtrl.hasError('minlength')) {
-          <small class="field-error">Password must be at least 6 characters.</small>
-        }
-      </div>
+      <p-card class="login-card">
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+          @if (error()) {
+          <p-message severity="error" [text]="error()!" styleClass="w-full mb-3" />
+          }
 
-      <p-button
-        type="submit"
-        label="Sign in"
-        icon="pi pi-sign-in"
-        styleClass="w-full mt-2"
-        [loading]="loading()"
-        [disabled]="loading()"
-      />
-    </form>
-  </p-card>
+          <div class="form-field">
+            <label for="email">Email address</label>
+            <input pInputText id="email" type="email" formControlName="email" autocomplete="email" placeholder="you@example.com"
+              class="w-full" [class.ng-invalid]="emailCtrl.invalid && emailCtrl.touched" [class.ng-dirty]="emailCtrl.touched" />
+            @if (emailCtrl.touched && emailCtrl.hasError('required')) {
+            <small class="field-error">Email is required.</small>
+            } @else if (emailCtrl.touched && emailCtrl.hasError('email')) {
+            <small class="field-error">Enter a valid email address.</small>
+            }
+            </div>
+
+          <div class="form-field">
+            <label for="password">Password</label>
+            <p-password inputId="password" formControlName="password" placeholder="••••••••" [feedback]="false" [toggleMask]="true"
+              styleClass="w-full" [inputStyleClass]="
+                                      'w-full' + (passwordCtrl.invalid && passwordCtrl.touched ? ' ng-invalid ng-dirty' : '')
+                        " autocomplete="current-password" />
+            @if (passwordCtrl.touched && passwordCtrl.hasError('required')) {
+            <small class="field-error">Password is required.</small>
+            } @else if (passwordCtrl.touched && passwordCtrl.hasError('minlength')) {
+            <small class="field-error">Password must be at least 6 characters.</small>
+            }
+          </div>
+
+          <p-button type="submit" label="Sign in" icon="pi pi-sign-in" styleClass="w-full mt-2" [loading]="loading()"
+            [disabled]="loading()" />
+          <p class="login-note">Sign in to continue</p>
+          </form>
+          </p-card>
+    </div>
+    </section>
 </div>

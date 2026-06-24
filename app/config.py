@@ -91,6 +91,11 @@ class Settings(BaseSettings):
     gcs_bucket_name: str = ""
     load_gcp_secrets: bool = True
 
+    # Smart Fleet / GPSWox
+    smart_fleet_base_url: str = "https://smart-fleet.co.za"
+    smart_fleet_email: str = "FreeStateBus@macrocomm.co.za"
+    smart_fleet_api_hash: str = "Macrocomm12#"
+
     # Error alert email
     alert_email_enabled: bool = True
     alert_email_to: list[str] = [

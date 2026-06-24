@@ -38,3 +38,13 @@ class AddGeofence(BaseModel):
             if not self.polygon:
                 raise ValueError("polygon is required when type is 'polygon'")
         return self
+
+
+class SmartFleetIframeUrlResponse(BaseModel):
+    iframe_url: str = Field(..., description="Smart Fleet OTT login URL for iframe use.")
+
+
+class SmartFleetOttTokenResponse(BaseModel):
+    token: str | None = None
+    status: int | None = None
+    message: str | None = None
