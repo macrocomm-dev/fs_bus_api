@@ -1,30 +1,35 @@
 import logging
-from collections import defaultdict
-from datetime import date, datetime, time
-from typing import Annotated, List, Optional
+from typing import Annotated
+from urllib.parse import urlencode
+
 import requests as re
 
 from fastapi import (
-    Depends,
-    File,
-    Form,
     HTTPException,
     APIRouter,
-    Path,
     Query,
-    UploadFile,
-    requests,
+    Depends,
     status,
 )
 from fastapi.responses import JSONResponse
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session
 
+from app.auth import TokenData, get_current_user
+from app.config import Settings, get_settings
 from app.database import get_db
-from app.schemas.smartfleet import AddGeofence
+from app.schemas.smartfleet import (
+    AddGeofence,
+    SmartFleetIframeUrlResponse,
+    SmartFleetOttTokenResponse,
+)
 
 logger = logging.getLogger(__name__)
 
 smartfleet_router = APIRouter()
+
+
+def _build_smart_fleet_url(base_url: str, path: str) -> str:
+    return f"{base_url.rstrip('/')}/{path.lstrip('/')}"
 
 
 @smartfleet_router.post("/create-geofence")
@@ -54,3 +59,49 @@ async def add_geofence(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
         )
+
+
+@smartfleet_router.get("/iframe-login-url", response_model=SmartFleetIframeUrlResponse)
+async def get_iframe_login_url(
+    current_user: Annotated[TokenData, Depends(get_current_user)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> SmartFleetIframeUrlResponse:
+    """Return a Smart Fleet iframe login URL built from a server-side OTT exchange."""
+
+    try:
+        token_url = _build_smart_fleet_url(settings.smart_fleet_base_url, "/api/one_time_token")
+        response = re.post(
+            token_url,
+            params={"lang": "en", "user_api_hash": settings.smart_fleet_api_hash},
+            json={"email": settings.smart_fleet_email},
+            headers={"Accept": "application/json", "Content-Type": "application/json"},
+            timeout=20,
+        )
+    except re.RequestException as exc:
+        logger.exception("Smart Fleet OTT request failed for %s", current_user.sub)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Could not reach Smart Fleet.",
+        ) from exc
+
+    try:
+        payload = SmartFleetOttTokenResponse.model_validate(response.json())
+    except ValueError as exc:
+        logger.exception("Smart Fleet OTT response was not valid JSON")
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Smart Fleet returned an invalid response.",
+        ) from exc
+
+    if response.status_code >= 400 or not payload.token:
+        detail = payload.message or "Could not create Smart Fleet login link."
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=detail,
+        )
+
+    iframe_url = _build_smart_fleet_url(
+        settings.smart_fleet_base_url,
+        f"/login?{urlencode({'ott': payload.token})}",
+    )
+    return SmartFleetIframeUrlResponse(iframe_url=iframe_url)
