@@ -18,7 +18,7 @@ on:
   push:
     branches:
       - main
-    paths:    npx firebase-tools login:ci    npx firebase-tools login:ci    npx firebase-tools login:ci
+    paths:
       - 'frontend/**'
       - '.github/workflows/deploy-frontend.yml'
   pull_request:
