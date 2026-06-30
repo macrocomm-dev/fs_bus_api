@@ -18,7 +18,7 @@ on:
   push:
     branches:
       - main
-    paths:
+    paths:    npx firebase-tools login:ci    npx firebase-tools login:ci    npx firebase-tools login:ci
       - 'frontend/**'
       - '.github/workflows/deploy-frontend.yml'
   pull_request:
@@ -39,7 +39,6 @@ jobs:
 
     permissions:
       contents: read
-      id-token: write
 
     defaults:
       run:
@@ -62,17 +61,9 @@ jobs:
       - name: Build Angular app (production)
         run: yarn build --configuration production
 
-      - name: Authenticate to Google Cloud
-        id: auth
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
-          service_account: ${{ vars.WIF_SERVICE_ACCOUNT }}
-          token_format: 'access_token'
-
       - name: Deploy to Firebase Hosting
         env:
-          GOOGLE_OAUTH_ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
         run: |
           yarn firebase deploy --only hosting \
             --project "${{ vars.GCP_PROJECT_ID }}" \
