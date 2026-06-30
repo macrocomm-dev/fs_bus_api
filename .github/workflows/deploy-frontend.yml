@@ -65,9 +65,17 @@ jobs:
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
         run: |
+          set +e
           yarn firebase deploy --only hosting \
             --project "${{ vars.GCP_PROJECT_ID }}" \
-            --non-interactive
+            --non-interactive > /tmp/firebase_out.txt 2>&1
+          EXIT_CODE=$?
+          cat /tmp/firebase_out.txt
+          if [ $EXIT_CODE -ne 0 ] && grep -q "is the current active version" /tmp/firebase_out.txt; then
+            echo "Already up to date — version is already live, nothing to release."
+            exit 0
+          fi
+          exit $EXIT_CODE
 
       - name: Print Hosting URL
         run: echo "Deployed to https://${{ vars.GCP_PROJECT_ID }}.web.app"
