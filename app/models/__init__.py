@@ -1,7 +1,7 @@
 from app.models.app_auth import AppUser
 from app.models.audit import ApiErrorLog
 from app.models.bus_inspection import BusInspection
-from app.models.master_data import Route, RouteStop, Vehicle
+from app.models.master_data import Operator, Route, RouteStop, Vehicle
 from app.models.operations import (
     Inspection,
     InspectionCheck,
@@ -15,6 +15,7 @@ __all__ = [
     "AppUser",
     "ApiErrorLog",
     "BusInspection",
+    "Operator",
     "Route",
     "RouteStop",
     "Vehicle",

@@ -67,21 +67,14 @@
           }
         </div>
         <div class="filters-grid">
-          <div class="filter-item">
-            <label class="filter-label">Date From</label>
+          <div class="filter-item filter-item--date-range">
+            <label class="filter-label">Date Range</label>
             <p-datepicker
-              [(ngModel)]="draftDateFrom"
+              [(ngModel)]="draftDateRange"
+              selectionMode="range"
               dateFormat="dd/mm/yy"
               [showIcon]="true"
-              styleClass="filter-input"
-            />
-          </div>
-          <div class="filter-item">
-            <label class="filter-label">Date To</label>
-            <p-datepicker
-              [(ngModel)]="draftDateTo"
-              dateFormat="dd/mm/yy"
-              [showIcon]="true"
+              [readonlyInput]="true"
               styleClass="filter-input"
             />
           </div>
@@ -267,7 +260,7 @@
     <!-- Right: summary items -->
     <div class="panel-summary">
       <h4 class="chart-section-title">
-        <i class="pi pi-list"></i> Breakdown
+        Breakdown
         <span class="summary-hint-small">Click a metric to drill down</span>
       </h4>
       <div class="summary-list">

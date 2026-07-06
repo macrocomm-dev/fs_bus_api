@@ -1789,15 +1789,14 @@ const TILES: KpiTile[] = [
     id: 'compliance-violations',
     title: 'Driver & Bus Compliance',
     metric: 'Compliance Violations',
-    value: 11,
+    value: 6,
     status: 'critical',
     icon: 'pi pi-exclamation-triangle',
     summaryItems: [
       { label: 'Expired PDP', value: 3, drillKey: 'expired-pdp' },
       { label: 'Expired Driver Licence', value: 2, drillKey: 'expired-driver-licence' },
       { label: 'Expired Route Licence', value: 1, drillKey: 'expired-route-licence' },
-      { label: 'Roadworthiness Failures', value: 5, drillKey: 'roadworthiness' },
-      { label: 'Total Violations', value: 11, drillKey: null },
+      { label: 'Total Violations', value: 6, drillKey: null },
     ],
   },
   {
@@ -1960,8 +1959,7 @@ export class ReportingComponent {
   readonly filteredRow3 = computed(() => this.filteredTiles().slice(6, 9));
 
   // ── Global filters – draft (bound to form controls) ──────────────────────
-  draftDateFrom: Date = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-  draftDateTo: Date = new Date();
+  draftDateRange: Date[] = [this.defaultDateFrom(), new Date()];
   draftOperators: string[] = [];
   draftTerminals: string[] = [];
   draftRoutes: string[] = [];
@@ -2248,9 +2246,10 @@ export class ReportingComponent {
 
   // ── Filters ────────────────────────────────────────────────────────────────
   applyFilters(): void {
+    const [dateFrom, dateTo] = this.normalizedDraftDateRange();
     this.appliedFilters.set({
-      dateFrom: new Date(this.draftDateFrom),
-      dateTo: new Date(this.draftDateTo),
+      dateFrom,
+      dateTo,
       operators: [...this.draftOperators],
       terminals: [...this.draftTerminals],
       routes: [...this.draftRoutes],
@@ -2258,10 +2257,9 @@ export class ReportingComponent {
   }
 
   resetFilters(): void {
-    const defaultFrom = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    const defaultFrom = this.defaultDateFrom();
     const defaultTo = new Date();
-    this.draftDateFrom = defaultFrom;
-    this.draftDateTo = defaultTo;
+    this.draftDateRange = [defaultFrom, defaultTo];
     this.draftOperators = [];
     this.draftTerminals = [];
     this.draftRoutes = [];
@@ -2272,6 +2270,18 @@ export class ReportingComponent {
       terminals: [],
       routes: [],
     });
+  }
+
+  private defaultDateFrom(): Date {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  }
+
+  private normalizedDraftDateRange(): [Date, Date] {
+    const [from, to] = this.draftDateRange ?? [];
+    const dateFrom = from ? new Date(from) : this.defaultDateFrom();
+    const dateTo = to ? new Date(to) : new Date(dateFrom);
+    return dateFrom <= dateTo ? [dateFrom, dateTo] : [dateTo, dateFrom];
   }
 
   // ── Auth ───────────────────────────────────────────────────────────────────

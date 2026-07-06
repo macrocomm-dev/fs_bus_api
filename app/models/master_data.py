@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
@@ -20,7 +20,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
 if TYPE_CHECKING:
-    from app.models.bus_inspection import BusInspection
+    from app.models.app_auth import AppUser
 
 
 class Route(Base):
@@ -49,6 +49,9 @@ class Route(Base):
         nullable=False, server_default=func.now()
     )
 
+    operator: Mapped[Operator | None] = relationship("Operator", back_populates="routes")
+    stops: Mapped[list[RouteStop]] = relationship("RouteStop", back_populates="route")
+
 
 class RouteStop(Base):
     """One stop that belongs to a master-data route."""
@@ -75,6 +78,8 @@ class RouteStop(Base):
         nullable=False, server_default=func.now()
     )
 
+    route: Mapped[Route] = relationship("Route", back_populates="stops")
+
 
 class Vehicle(Base):
     """Master-data vehicle record keyed by VIN."""
@@ -98,12 +103,16 @@ class Vehicle(Base):
     gvm: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     tare: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     chassis_no: Mapped[str | None] = mapped_column(String, nullable=True)
-    date_of_1st_reg: Mapped[datetime | None] = mapped_column(nullable=True)
+    date_of_1st_reg: Mapped[date | None] = mapped_column(nullable=True)
     is_active: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=True, server_default="true"
     )
     created_at: Mapped[datetime] = mapped_column(
         nullable=False, server_default=func.now()
+    )
+
+    operator: Mapped[Operator | None] = relationship(
+        "Operator", back_populates="vehicles"
     )
 
 
@@ -125,3 +134,7 @@ class Operator(Base):
     updated_at: Mapped[datetime] = mapped_column(
         nullable=False, server_default=func.now(), onupdate=func.now()
     )
+
+    routes: Mapped[list[Route]] = relationship("Route", back_populates="operator")
+    vehicles: Mapped[list[Vehicle]] = relationship("Vehicle", back_populates="operator")
+    app_users: Mapped[list[AppUser]] = relationship("AppUser", back_populates="operator")

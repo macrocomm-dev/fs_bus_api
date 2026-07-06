@@ -189,6 +189,11 @@
   flex: 1 1 160px;
 }
 
+.filter-item--date-range {
+  min-width: 240px;
+  flex-basis: 240px;
+}
+
 .filter-label {
   font-size: 0.75rem;
   font-weight: 600;

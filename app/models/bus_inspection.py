@@ -38,7 +38,7 @@ class BusInspection(Base):
         ForeignKey("shifts.shifts.id"),
         nullable=False,
     )
-    user_id: Mapped[str] = mapped_column(String, nullable=False)
+    user_id: Mapped[str | None] = mapped_column(String, nullable=True)
     bus_id: Mapped[str | None] = mapped_column(
         String,
         nullable=True,
@@ -91,6 +91,9 @@ class BusInspection(Base):
     driver_identified: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     driver_fail_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     driver_name: Mapped[str | None] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime | None] = mapped_column(
+        nullable=True, server_default=func.now()
+    )
 
     # Relationships
     shift: Mapped[Shift] = relationship("Shift", back_populates="inspections")

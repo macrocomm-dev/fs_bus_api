@@ -4,12 +4,12 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import BigInteger, Boolean, ForeignKey, String, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
 
 if TYPE_CHECKING:
-    pass
+    from app.models.master_data import Operator
 
 
 class AppUser(Base):
@@ -38,3 +38,6 @@ class AppUser(Base):
     )
 
     # Relationships
+    operator: Mapped[Operator | None] = relationship(
+        "Operator", back_populates="app_users"
+    )
