@@ -78,7 +78,17 @@
         [paginator]="true"
         [rows]="25"
         [rowsPerPageOptions]="[25, 50, 100]"
-        [globalFilterFields]="['id', 'device_id', 'startGps', 'endGps', 'start_time', 'end_time']"
+        [globalFilterFields]="[
+          'id',
+          'loggedBy',
+          'user_name',
+          'user_surname',
+          'device_id',
+          'startGps',
+          'endGps',
+          'start_time',
+          'end_time',
+        ]"
         sortMode="multiple"
         styleClass="records-table"
         stripedRows
@@ -86,6 +96,7 @@
         <ng-template pTemplate="header">
           <tr>
             <th pSortableColumn="id">Shift <p-sortIcon field="id" /></th>
+            <th pSortableColumn="loggedBy">Logged By <p-sortIcon field="loggedBy" /></th>
             <th pSortableColumn="start_time">Start <p-sortIcon field="start_time" /></th>
             <th pSortableColumn="end_time">End <p-sortIcon field="end_time" /></th>
             <th pSortableColumn="duration">Duration <p-sortIcon field="duration" /></th>
@@ -99,6 +110,7 @@
         <ng-template pTemplate="body" let-row>
           <tr>
             <td class="mono-cell">{{ row.id }}</td>
+            <td>{{ row.loggedBy }}</td>
             <td>{{ row.start_time | date: 'yyyy-MM-dd HH:mm' }}</td>
             <td>{{ row.end_time | date: 'yyyy-MM-dd HH:mm' }}</td>
             <td>{{ row.duration }}</td>
@@ -111,7 +123,7 @@
 
         <ng-template pTemplate="emptymessage">
           <tr>
-            <td colspan="8" class="empty-message">No shift records found.</td>
+            <td colspan="9" class="empty-message">No shift records found.</td>
           </tr>
         </ng-template>
       </p-table>

@@ -61,6 +61,16 @@ def _combine_reasons(*reasons: str | None) -> str | None:
     return "; ".join(combined) if combined else None
 
 
+def _shift_response(shift: Shift, user: AppUser | None = None) -> ShiftResponse:
+    """Serialize a shift with the monitor's display name when available."""
+    return ShiftResponse.model_validate(shift).model_copy(
+        update={
+            "user_name": user.name if user else None,
+            "user_surname": user.surname if user else None,
+        }
+    )
+
+
 def _photo_payloads_from_inline(photo_groups: dict[str, list]) -> list[dict]:
     """Flatten grouped inline photo models into rows ready for ``Photo`` inserts.
 
@@ -697,7 +707,11 @@ async def get_all_shifts(
     to avoid loading unnecessary rows into memory.
     """
     try:
-        query = db.query(Shift).order_by(Shift.created_at.desc())
+        query = (
+            db.query(Shift, AppUser)
+            .outerjoin(AppUser, AppUser.firebase_uid == Shift.user_id)
+            .order_by(Shift.created_at.desc())
+        )
 
         if params.start_date:
             start_dt = datetime.datetime.combine(
@@ -713,8 +727,8 @@ async def get_all_shifts(
         if params.limit:
             query = query.limit(params.limit)
 
-        shifts = query.all()
-        return [ShiftResponse.model_validate(s) for s in shifts]
+        rows = query.all()
+        return [_shift_response(shift, user) for shift, user in rows]
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -740,13 +754,18 @@ async def get_shifts_by_ids(
             detail="At least one shift ID must be provided",
         )
     try:
-        shifts = db.query(Shift).filter(Shift.id.in_(ids)).all()
-        if not shifts:
+        rows = (
+            db.query(Shift, AppUser)
+            .outerjoin(AppUser, AppUser.firebase_uid == Shift.user_id)
+            .filter(Shift.id.in_(ids))
+            .all()
+        )
+        if not rows:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="No shifts found for the provided IDs",
             )
-        return [ShiftResponse.model_validate(s) for s in shifts]
+        return [_shift_response(shift, user) for shift, user in rows]
     except HTTPException:
         raise
     except Exception as exc:

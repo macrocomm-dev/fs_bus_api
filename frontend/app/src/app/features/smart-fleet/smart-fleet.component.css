@@ -2,9 +2,11 @@
   --toolbar-height: 62px;
   --drawer-width: min(18rem, 86vw);
 
+  height: 100dvh;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   background: linear-gradient(180deg, #fff7ed 0%, #f3f4f6 28%, #e5e7eb 100%);
 }
 
@@ -92,9 +94,11 @@
 }
 
 .smart-fleet-body {
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
-  height: calc(100vh - var(--toolbar-height));
+  min-height: 0;
+  height: calc(100dvh - var(--toolbar-height));
+  overflow: hidden;
   transition: padding-left 0.2s ease;
 }
 
@@ -104,9 +108,12 @@
 
 .smart-fleet-content {
   position: relative;
+  display: flex;
+  flex-direction: column;
   height: 100%;
   min-height: 0;
   padding: 0;
+  overflow: hidden;
 }
 
 .page-header {
@@ -158,6 +165,7 @@
 
 .map-shell {
   position: relative;
+  flex: 1 1 auto;
   width: 100%;
   height: 100%;
   min-height: 0;
@@ -169,10 +177,12 @@
 }
 
 .smart-fleet-iframe {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
-  min-height: 0;
+  min-height: calc(100dvh - var(--toolbar-height));
   border: none;
   background: #ffffff;
 }

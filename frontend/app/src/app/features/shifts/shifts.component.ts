@@ -20,6 +20,7 @@ import type { ShiftResponse } from '../../core/api/model/shiftResponse';
 import { AuthService } from '../../core/services/auth.service';
 
 type ShiftRow = ShiftResponse & {
+  loggedBy: string;
   duration: string;
   startGps: string;
   endGps: string;
@@ -128,6 +129,7 @@ export class ShiftsComponent implements OnInit {
             (response ?? [])
               .map((shift) => ({
                 ...shift,
+                loggedBy: this.loggedBy(shift),
                 duration: this.duration(shift.start_time, shift.end_time),
                 startGps: this.gps(shift.start_lat, shift.start_lon),
                 endGps: this.gps(shift.end_lat, shift.end_lon),
@@ -145,6 +147,11 @@ export class ShiftsComponent implements OnInit {
 
   private gps(lat: number, lon: number): string {
     return `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+  }
+
+  private loggedBy(shift: ShiftResponse): string {
+    const nameParts = [shift.user_name, shift.user_surname].filter(Boolean);
+    return nameParts.length > 0 ? nameParts.join(' ') : 'Unknown';
   }
 
   private duration(start: string, end: string): string {

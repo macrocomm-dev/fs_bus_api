@@ -546,6 +546,8 @@ class ShiftResponse(BaseModel):
     """Read model for one stored shift row."""
 
     id: int
+    user_name: Optional[str] = None
+    user_surname: Optional[str] = None
     start_time: datetime
     end_time: datetime
     start_lat: float
