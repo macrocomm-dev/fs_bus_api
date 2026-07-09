@@ -140,6 +140,88 @@
   color: #991b1b;
 }
 
+.inspection-metric-strip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.inspection-metric-tile {
+  min-height: 8.75rem;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+  color: #111827;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+.inspection-metric-tile:hover,
+.inspection-metric-tile:focus-visible,
+.inspection-metric-tile--active {
+  border-color: color-mix(in srgb, var(--metric-color) 55%, #ffffff);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.11);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.inspection-metric-tile--active {
+  background: color-mix(in srgb, var(--metric-color) 8%, #ffffff);
+}
+
+.inspection-metric-tile__icon {
+  flex: 0 0 4.75rem;
+  width: 4.75rem;
+  height: 4.75rem;
+  color: var(--metric-color);
+  background: color-mix(in srgb, var(--metric-color) 12%, #ffffff);
+  border: 1px solid color-mix(in srgb, var(--metric-color) 24%, #ffffff);
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.inspection-metric-tile__icon .pi {
+  font-size: 2.35rem;
+  line-height: 1;
+}
+
+.inspection-metric-tile__content {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.inspection-metric-tile__label {
+  color: #374151;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.inspection-metric-tile__content strong {
+  color: #111827;
+  font-size: 1.45rem;
+  line-height: 1.1;
+}
+
+.inspection-metric-tile__content span:last-child {
+  color: #6b7280;
+  font-size: 0.78rem;
+  line-height: 1.3;
+}
+
 :host ::ng-deep .records-table {
   background: #ffffff;
   border-radius: 8px;
@@ -176,6 +258,12 @@
   color: #9ca3af;
 }
 
+@media (max-width: 1400px) {
+  .inspection-metric-strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 960px) {
   .inspections-body--drawer-open {
     padding-left: 0;
@@ -183,5 +271,9 @@
 
   .inspections-content {
     padding: 1.25rem 1rem 2rem;
+  }
+
+  .inspection-metric-strip {
+    grid-template-columns: 1fr;
   }
 }

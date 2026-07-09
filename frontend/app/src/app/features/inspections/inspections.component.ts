@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import type { MenuItem } from 'primeng/api';
@@ -32,6 +32,24 @@ type InspectionRow = {
   summary: string;
 };
 
+type InspectionMetricTile = {
+  type: string;
+  label: string;
+  icon: string;
+  color: string;
+  failed: number;
+  total: number;
+  vehicles: number;
+};
+
+const INSPECTION_METRIC_TYPES = [
+  { type: 'External', label: 'External', icon: 'pi pi-car', color: '#1d4ed8' },
+  { type: 'Internal', label: 'Internal', icon: 'pi pi-wrench', color: '#16a34a' },
+  { type: 'Driver', label: 'Driver', icon: 'pi pi-id-card', color: '#d97706' },
+  { type: 'Passenger Count', label: 'Passenger', icon: 'pi pi-users', color: '#7c3aed' },
+  { type: 'Behind Schedule', label: 'Behind Schedule', icon: 'pi pi-clock', color: '#dc2626' },
+];
+
 @Component({
   selector: 'app-inspections',
   standalone: true,
@@ -61,6 +79,27 @@ export class InspectionsComponent implements OnInit {
   readonly inspections = signal<InspectionRow[]>([]);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
+  readonly selectedFailedType = signal<string | null>(null);
+
+  readonly inspectionMetricTiles = computed<InspectionMetricTile[]>(() =>
+    INSPECTION_METRIC_TYPES.map((metric) => {
+      const rows = this.inspections().filter((row) => row.type === metric.type);
+      const failedRows = rows.filter((row) => row.pass === false);
+
+      return {
+        ...metric,
+        failed: failedRows.length,
+        total: rows.length,
+        vehicles: new Set(rows.map((row) => row.busId).filter(Boolean)).size,
+      };
+    }),
+  );
+
+  readonly visibleInspections = computed(() => {
+    const selectedType = this.selectedFailedType();
+    if (!selectedType) return this.inspections();
+    return this.inspections().filter((row) => row.type === selectedType && row.pass === false);
+  });
 
   menuVisible = true;
   readonly navigationItems: MenuItem[] = [
@@ -128,6 +167,10 @@ export class InspectionsComponent implements OnInit {
     if (pass === true) return 'Pass';
     if (pass === false) return 'Fail';
     return 'Not set';
+  }
+
+  filterFailedType(type: string): void {
+    this.selectedFailedType.set(this.selectedFailedType() === type ? null : type);
   }
 
   private loadInspections(): void {

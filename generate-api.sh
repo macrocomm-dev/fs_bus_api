@@ -1,4 +1,4 @@
-./generate-api.sh./generate-api.sh#!/usr/bin/env bash
+#!/usr/bin/env bash
 # ---------------------------------------------------------------------------
 # generate-api.sh — Generate Angular TypeScript services from the FS Bus API
 #
@@ -154,12 +154,25 @@ log "Writing API config …"
 
 cat > "${OUTPUT_DIR}/api-config.ts" << 'EOF'
 import { Configuration } from './configuration';
-import { environment } from '../../environments/environment';
+import { environment } from '../../../environments/environment';
 
-export function createApiConfiguration(token?: string): Configuration {
+function getStoredAccessToken(): string | undefined {
+  try {
+    const raw = globalThis.localStorage?.getItem('fs_bus_session');
+    if (!raw) return undefined;
+    const parsed = JSON.parse(raw) as { accessToken?: string | null };
+    return parsed.accessToken ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export function createApiConfiguration(): Configuration {
   return new Configuration({
     basePath: environment.apiUrl,
-    credentials: token ? { BearerAuth: () => token } : {},
+    credentials: {
+      HTTPBearer: () => getStoredAccessToken(),
+    },
   });
 }
 EOF

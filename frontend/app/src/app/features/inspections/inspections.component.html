@@ -52,7 +52,10 @@
       <div class="page-header">
         <div>
           <h2>Inspection Records</h2>
-          <p class="subtitle">{{ inspections().length }} collected inspection events.</p>
+          <p class="subtitle">
+            {{ visibleInspections().length }} of {{ inspections().length }} collected inspection
+            events.
+          </p>
         </div>
 
         <p-iconfield iconPosition="left" styleClass="record-search">
@@ -71,9 +74,31 @@
         <div class="error-banner">{{ error() }}</div>
       }
 
+      <section class="inspection-metric-strip" aria-label="Inspection failure summary">
+        @for (tile of inspectionMetricTiles(); track tile.type) {
+          <button
+            type="button"
+            class="inspection-metric-tile"
+            [class.inspection-metric-tile--active]="selectedFailedType() === tile.type"
+            [style.--metric-color]="tile.color"
+            (click)="filterFailedType(tile.type)"
+            [attr.aria-pressed]="selectedFailedType() === tile.type"
+          >
+            <span class="inspection-metric-tile__icon">
+              <i [class]="tile.icon"></i>
+            </span>
+            <span class="inspection-metric-tile__content">
+              <span class="inspection-metric-tile__label">{{ tile.label }}</span>
+              <strong>{{ tile.failed }} / {{ tile.total }}</strong>
+              <span>{{ tile.vehicles }} vehicles inspected</span>
+            </span>
+          </button>
+        }
+      </section>
+
       <p-table
         #inspectionsTable
-        [value]="inspections()"
+        [value]="visibleInspections()"
         [loading]="loading()"
         [paginator]="true"
         [rows]="25"
