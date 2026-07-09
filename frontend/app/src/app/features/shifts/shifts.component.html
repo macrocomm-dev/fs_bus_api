@@ -1,4 +1,4 @@
-<div class="vehicles-wrapper">
+<div class="shifts-wrapper">
   <p-drawer
     [(visible)]="menuVisible"
     position="left"
@@ -22,7 +22,7 @@
       />
       <img src="macrocomm-black-background.png" alt="Macrocomm" class="toolbar-logo" />
       <span class="app-name">
-        <i class="pi pi-car mr-2"></i>FS Bus &#8211; Vehicle Fleet
+        <i class="pi pi-calendar mr-2"></i>FS Bus &#8211; Shifts
       </span>
     </ng-template>
     <ng-template pTemplate="end">
@@ -47,22 +47,22 @@
     </ng-template>
   </p-toolbar>
 
-  <div class="vehicles-body" [class.vehicles-body--drawer-open]="menuVisible">
-    <main class="vehicles-content">
+  <div class="shifts-body" [class.shifts-body--drawer-open]="menuVisible">
+    <main class="shifts-content">
       <div class="page-header">
         <div>
-          <h2>Vehicle Fleet List</h2>
-          <p class="subtitle">{{ total() }} vehicles available in the fleet master list.</p>
+          <h2>Shift Records</h2>
+          <p class="subtitle">{{ shifts().length }} monitor shifts captured.</p>
         </div>
 
-        <p-iconfield iconPosition="left" styleClass="vehicle-search">
+        <p-iconfield iconPosition="left" styleClass="record-search">
           <p-inputicon styleClass="pi pi-search" />
           <input
             pInputText
             #searchInput
             type="text"
-            placeholder="Search VIN, fleet, registration, operator or make"
-            (input)="vehiclesTable.filterGlobal(searchInput.value, 'contains')"
+            placeholder="Search shift, device, GPS or date"
+            (input)="shiftsTable.filterGlobal(searchInput.value, 'contains')"
           />
         </p-iconfield>
       </div>
@@ -72,58 +72,46 @@
       }
 
       <p-table
-        #vehiclesTable
-        [value]="vehicles()"
+        #shiftsTable
+        [value]="shifts()"
         [loading]="loading()"
         [paginator]="true"
         [rows]="25"
         [rowsPerPageOptions]="[25, 50, 100]"
-        [globalFilterFields]="[
-          'fleet_number',
-          'registration_number',
-          'vin',
-          'operator_name',
-          'make',
-          'year'
-        ]"
+        [globalFilterFields]="['id', 'device_id', 'startGps', 'endGps', 'start_time', 'end_time']"
         sortMode="multiple"
-        styleClass="vehicle-table"
+        styleClass="records-table"
         stripedRows
       >
         <ng-template pTemplate="header">
           <tr>
-            <th pSortableColumn="fleet_number">Fleet <p-sortIcon field="fleet_number" /></th>
-            <th pSortableColumn="registration_number">
-              Registration <p-sortIcon field="registration_number" />
-            </th>
-            <th pSortableColumn="vin">VIN <p-sortIcon field="vin" /></th>
-            <th pSortableColumn="operator_name">Operator <p-sortIcon field="operator_name" /></th>
-            <th pSortableColumn="make">Make <p-sortIcon field="make" /></th>
-            <th pSortableColumn="year">Year <p-sortIcon field="year" /></th>
-            <th pSortableColumn="is_active">Status <p-sortIcon field="is_active" /></th>
+            <th pSortableColumn="id">Shift <p-sortIcon field="id" /></th>
+            <th pSortableColumn="start_time">Start <p-sortIcon field="start_time" /></th>
+            <th pSortableColumn="end_time">End <p-sortIcon field="end_time" /></th>
+            <th pSortableColumn="duration">Duration <p-sortIcon field="duration" /></th>
+            <th>Start GPS</th>
+            <th>End GPS</th>
+            <th pSortableColumn="device_id">Device <p-sortIcon field="device_id" /></th>
+            <th pSortableColumn="created_at">Created <p-sortIcon field="created_at" /></th>
           </tr>
         </ng-template>
 
-        <ng-template pTemplate="body" let-vehicle>
+        <ng-template pTemplate="body" let-row>
           <tr>
-            <td>{{ vehicle.fleet_number || '—' }}</td>
-            <td>{{ vehicle.registration_number || '—' }}</td>
-            <td class="vehicle-vin">{{ vehicle.vin }}</td>
-            <td>{{ vehicle.operator_name || '—' }}</td>
-            <td>{{ vehicle.make || '—' }}</td>
-            <td>{{ vehicle.year || '—' }}</td>
-            <td>
-              <p-tag
-                [value]="vehicle.is_active ? 'Active' : 'Inactive'"
-                [severity]="statusSeverity(vehicle.is_active)"
-              />
-            </td>
+            <td class="mono-cell">{{ row.id }}</td>
+            <td>{{ row.start_time | date: 'yyyy-MM-dd HH:mm' }}</td>
+            <td>{{ row.end_time | date: 'yyyy-MM-dd HH:mm' }}</td>
+            <td>{{ row.duration }}</td>
+            <td class="mono-cell">{{ row.startGps }}</td>
+            <td class="mono-cell">{{ row.endGps }}</td>
+            <td class="mono-cell">{{ row.device_id }}</td>
+            <td>{{ row.created_at | date: 'yyyy-MM-dd HH:mm' }}</td>
           </tr>
         </ng-template>
 
         <ng-template pTemplate="emptymessage">
           <tr>
-            <td colspan="7">No vehicles matched the current search.</td>
+            <td colspan="8" class="empty-message">No shift records found.</td>
           </tr>
         </ng-template>
       </p-table>

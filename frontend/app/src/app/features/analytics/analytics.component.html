@@ -1,0 +1,121 @@
+<div class="analytics-wrapper">
+  <p-drawer
+    [(visible)]="menuVisible"
+    position="left"
+    styleClass="nav-drawer"
+    [modal]="false"
+    [showCloseIcon]="false"
+  >
+    <p-menu [model]="navigationItems" styleClass="nav-drawer__menu" />
+  </p-drawer>
+
+  <p-toolbar styleClass="top-bar">
+    <ng-template pTemplate="start">
+      <p-button
+        icon="pi pi-bars"
+        [text]="true"
+        severity="secondary"
+        styleClass="menu-toggle"
+        (onClick)="toggleMenu()"
+        pTooltip="Toggle navigation"
+        tooltipPosition="bottom"
+      />
+      <img src="macrocomm-black-background.png" alt="Macrocomm" class="toolbar-logo" />
+      <span class="app-name">
+        <i class="pi pi-chart-line mr-2"></i>FS Bus &#8211; Analytics
+      </span>
+    </ng-template>
+    <ng-template pTemplate="end">
+      @if (session()) {
+        <p-avatar
+          [label]="(session()!.name?.[0] ?? '') + (session()!.surname?.[0] ?? '')"
+          shape="circle"
+          styleClass="mr-2"
+        />
+        <span class="user-name mr-2">{{ session()!.name }} {{ session()!.surname }}</span>
+        <p-tag [value]="session()!.role" severity="info" styleClass="mr-3" />
+      }
+      <p-button
+        label="Sign out"
+        icon="pi pi-sign-out"
+        severity="secondary"
+        [outlined]="true"
+        size="small"
+        styleClass="signout-btn"
+        (onClick)="logout()"
+      />
+    </ng-template>
+  </p-toolbar>
+
+  <div class="analytics-body" [class.analytics-body--drawer-open]="menuVisible">
+    <main class="analytics-content">
+      <section class="metric-strip" aria-label="Fleet analytics summary">
+        @for (tile of metricTiles; track tile.title) {
+          <article class="metric-tile" [class.metric-tile--featured]="tile.featured">
+            <h3>{{ tile.title }}</h3>
+            <div class="metric-tile__icon">
+              <i [class]="tile.icon"></i>
+            </div>
+            <div class="metric-tile__values">
+              <strong>{{ tile.primary }}</strong>
+              @if (tile.secondary) {
+                <span>{{ tile.secondary }}</span>
+              }
+            </div>
+          </article>
+        }
+      </section>
+
+      <section class="performance-section">
+        <div class="section-header">
+          <div>
+            <h2>Vehicle Performance</h2>
+            <p>Performance per vehicle across each analytics category.</p>
+          </div>
+        </div>
+
+        <p-table
+          [value]="vehiclePerformance"
+          [paginator]="true"
+          [rows]="10"
+          [rowsPerPageOptions]="[10, 25, 50]"
+          sortMode="multiple"
+          styleClass="analytics-table"
+          stripedRows
+        >
+          <ng-template pTemplate="header">
+            <tr>
+              <th pSortableColumn="fleetNo">Fleet <p-sortIcon field="fleetNo" /></th>
+              <th pSortableColumn="registration">Registration <p-sortIcon field="registration" /></th>
+              <th pSortableColumn="operator">Operator <p-sortIcon field="operator" /></th>
+              <th pSortableColumn="distanceCost">Distance / Cost <p-sortIcon field="distanceCost" /></th>
+              <th pSortableColumn="tripDuration">Trip Duration <p-sortIcon field="tripDuration" /></th>
+              <th pSortableColumn="speedCost">Speed / Cost <p-sortIcon field="speedCost" /></th>
+              <th pSortableColumn="idleDuration">Excess Idle <p-sortIcon field="idleDuration" /></th>
+              <th pSortableColumn="highRiskTrips">High Risk <p-sortIcon field="highRiskTrips" /></th>
+              <th pSortableColumn="afterHoursCost">After Hours / Cost <p-sortIcon field="afterHoursCost" /></th>
+              <th pSortableColumn="score">Score <p-sortIcon field="score" /></th>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="body" let-row>
+            <tr>
+              <td class="fleet-cell">{{ row.fleetNo }}</td>
+              <td>{{ row.registration }}</td>
+              <td>{{ row.operator }}</td>
+              <td>{{ row.distanceCost }}</td>
+              <td>{{ row.tripDuration }}</td>
+              <td>{{ row.speedCost }}</td>
+              <td>{{ row.idleDuration }}</td>
+              <td>{{ row.highRiskTrips }}</td>
+              <td>{{ row.afterHoursCost }}</td>
+              <td>
+                <p-tag [value]="row.score + '%'" [severity]="scoreSeverity(row.score)" />
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </section>
+    </main>
+  </div>
+</div>

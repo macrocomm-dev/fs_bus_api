@@ -20,7 +20,7 @@
         pTooltip="Toggle navigation"
         tooltipPosition="bottom"
       />
-      <img src="macrocomm-orange-background.png" alt="Macrocomm" class="toolbar-logo" />
+      <img src="macrocomm-black-background.png" alt="Macrocomm" class="toolbar-logo" />
       <span class="app-name">
         <i class="pi pi-map mr-2"></i>FS Bus &#8211; Smart Fleet Live Map
       </span>
@@ -85,11 +85,18 @@
             <p>Signing into Smart Fleet...</p>
           </div>
         } @else if (iframeSrc(); as safeUrl) {
+          @if (iframeLoading()) {
+            <div class="map-state map-state--overlay">
+              <p-progress-spinner strokeWidth="4" ariaLabel="Loading Smart Fleet map" />
+            </div>
+          }
           <iframe
             [src]="safeUrl"
             class="smart-fleet-iframe"
             title="Smart Fleet Live Map"
             referrerpolicy="strict-origin-when-cross-origin"
+            (load)="onIframeLoad()"
+            (error)="onIframeError()"
           ></iframe>
         } @else {
           <div class="map-state">

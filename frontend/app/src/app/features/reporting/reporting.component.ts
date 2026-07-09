@@ -149,6 +149,67 @@ function filterRecordsForKey(
   });
 }
 
+const INSPECTION_DRILL_KEYS = [
+  'external-inspections',
+  'internal-inspections',
+  'driver-inspections',
+  'technical-inspections',
+];
+
+const INSPECTION_TREND_CONFIG = [
+  { key: 'external-inspections', label: 'External' },
+  { key: 'internal-inspections', label: 'Internal' },
+  { key: 'driver-inspections', label: 'Driver' },
+  { key: 'passenger-counts-drill', label: 'Passenger' },
+  { key: 'technical-inspections', label: 'Technical' },
+];
+
+const CHART_OPERATORS = ['Interstate Bus Lines', 'Bophelong Transport'];
+
+const INSPECTION_TREND_DUMMY_DATA = {
+  dates: ['2026-06-03', '2026-06-06', '2026-06-09', '2026-06-12', '2026-06-15'],
+  series: [
+    { name: 'External', data: [4, 6, 5, 7, 6] },
+    { name: 'Internal', data: [3, 5, 4, 6, 5] },
+    { name: 'Driver', data: [2, 3, 5, 4, 4] },
+    { name: 'Passenger', data: [5, 4, 6, 7, 8] },
+    { name: 'Technical', data: [1, 2, 2, 3, 4] },
+  ],
+};
+
+const DELAYED_STARTS_DUMMY_DATA = {
+  dates: ['2026-06-03', '2026-06-06', '2026-06-09', '2026-06-12', '2026-06-15'],
+  series: [
+    { name: 'Delayed Route Starts', data: [2, 4, 3, 5, 4] },
+    { name: 'Major Delays', data: [1, 1, 2, 2, 1] },
+  ],
+};
+
+function hasFailedInspectionValue(row: Record<string, string | number>): boolean {
+  if (row['defectType']) return true;
+
+  const failureValues = new Set(['fail', 'missing', 'no', 'high', 'critical']);
+  return Object.entries(row).some(([field, value]) => {
+    if (field.startsWith('_')) return false;
+    if (
+      [
+        'busReg',
+        'fleetNo',
+        'inspector',
+        'driver',
+        'terminal',
+        'date',
+        'gps',
+        'startTime',
+        'endTime',
+      ].includes(field)
+    ) {
+      return false;
+    }
+    return failureValues.has(String(value).trim().toLowerCase());
+  });
+}
+
 // ─── Drill-down data ─────────────────────────────────────────────────────────
 
 const DRILL_CONFIGS: Record<string, DrillConfig> = {
@@ -751,6 +812,136 @@ const DRILL_CONFIGS: Record<string, DrillConfig> = {
   },
 
   // ── Tile 2: Route Exceptions ──────────────────────────────────────────────
+  'route-deviation-events': {
+    title: 'Route Deviations',
+    columns: [
+      { field: 'busReg', header: 'Bus Reg' },
+      { field: 'fleetNo', header: 'Fleet No' },
+      { field: 'route', header: 'Route' },
+      { field: 'driver', header: 'Driver' },
+      { field: 'date', header: 'Date' },
+      { field: 'time', header: 'Time' },
+      { field: 'deviation', header: 'Deviation' },
+      { field: 'gps', header: 'GPS' },
+    ],
+    data: [
+      {
+        busReg: 'FSB123FS',
+        fleetNo: '1024',
+        route: 'R12',
+        driver: 'John Smith',
+        date: '2026-06-11',
+        time: '07:14',
+        deviation: '4.2 km',
+        gps: '-29.2645, 26.7150',
+      },
+      {
+        busReg: 'FSB234FS',
+        fleetNo: '1033',
+        route: 'R08',
+        driver: 'David Motaung',
+        date: '2026-06-11',
+        time: '09:22',
+        deviation: '6.7 km',
+        gps: '-29.3200, 26.8420',
+      },
+      {
+        busReg: 'FSB765FS',
+        fleetNo: '1066',
+        route: 'R22',
+        driver: 'Sipho Radebe',
+        date: '2026-06-11',
+        time: '10:05',
+        deviation: '3.1 km',
+        gps: '-29.3200, 26.8420',
+      },
+      {
+        busReg: 'FSB432FS',
+        fleetNo: '1077',
+        route: 'R04',
+        driver: 'Andile Molefe',
+        date: '2026-06-11',
+        time: '11:15',
+        deviation: '8.4 km',
+        gps: '-27.9874, 26.7343',
+      },
+      {
+        busReg: 'FSB155FS',
+        fleetNo: '1022',
+        route: 'R03',
+        driver: 'Thabo Khumalo',
+        date: '2026-06-11',
+        time: '06:55',
+        deviation: '0.8 km',
+        gps: '-29.1187, 26.2145',
+      },
+      {
+        busReg: 'FSB266FS',
+        fleetNo: '1031',
+        route: 'R07',
+        driver: 'Nomsa Dlamini',
+        date: '2026-06-11',
+        time: '07:42',
+        deviation: '1.2 km',
+        gps: '-27.9874, 26.7343',
+      },
+    ],
+  },
+  'missed-stops': {
+    title: 'Missed Stops',
+    columns: [
+      { field: 'busReg', header: 'Bus Reg' },
+      { field: 'fleetNo', header: 'Fleet No' },
+      { field: 'route', header: 'Route' },
+      { field: 'missedStop', header: 'Missed Stop' },
+      { field: 'driver', header: 'Driver' },
+      { field: 'date', header: 'Date' },
+      { field: 'time', header: 'Time' },
+      { field: 'gps', header: 'GPS' },
+    ],
+    data: [
+      {
+        busReg: 'FSB888FS',
+        fleetNo: '1187',
+        route: 'R15',
+        missedStop: 'Hamilton Depot',
+        driver: 'Peter Jones',
+        date: '2026-06-11',
+        time: '08:33',
+        gps: '-29.1187, 26.2145',
+      },
+      {
+        busReg: 'FSB444FS',
+        fleetNo: '1190',
+        route: 'R22',
+        missedStop: 'Thaba Nchu Rank',
+        driver: 'Peter Sithole',
+        date: '2026-06-11',
+        time: '09:02',
+        gps: '-29.3200, 26.8420',
+      },
+      {
+        busReg: 'FSB555FS',
+        fleetNo: '1201',
+        route: 'R05',
+        missedStop: 'Welkom Central',
+        driver: 'Jan Booysen',
+        date: '2026-06-11',
+        time: '10:15',
+        gps: '-27.9874, 26.7343',
+      },
+      {
+        busReg: 'FSB666FS',
+        fleetNo: '1215',
+        route: 'R14',
+        missedStop: 'Botshabelo Mall',
+        driver: 'Kelebogile Mosia',
+        date: '2026-06-10',
+        time: '11:30',
+        gps: '-29.2645, 26.7150',
+      },
+    ],
+  },
   'route-deviations': {
     title: 'Route Deviations',
     columns: [
@@ -1098,6 +1289,32 @@ const DRILL_CONFIGS: Record<string, DrillConfig> = {
   },
 
   // ── Tile 4: Interior Defects ──────────────────────────────────────────────
+  'fire-extinguisher-defects': {
+    title: 'Fire Extinguisher Defects',
+    columns: [
+      { field: 'busReg', header: 'Bus Reg' },
+      { field: 'fleetNo', header: 'Fleet No' },
+      { field: 'defectDescription', header: 'Description' },
+      { field: 'inspector', header: 'Inspector' },
+      { field: 'date', header: 'Date' },
+    ],
+    data: [
+      {
+        busReg: 'FSB789FS',
+        fleetNo: '1187',
+        defectDescription: 'Fire extinguisher missing',
+        inspector: 'James Nkosi',
+        date: '2026-06-11',
+      },
+      {
+        busReg: 'FSB606FS',
+        fleetNo: '1066',
+        defectDescription: 'Fire extinguisher pressure gauge low',
+        inspector: 'Mike Radebe',
+        date: '2026-06-10',
+      },
+    ],
+  },
   'seat-defects': {
     title: 'Seat Defects',
     columns: [
@@ -1142,6 +1359,58 @@ const DRILL_CONFIGS: Record<string, DrillConfig> = {
       },
     ],
   },
+  'tyre-defects': {
+    title: 'Tyre Defects',
+    columns: [
+      { field: 'busReg', header: 'Bus Reg' },
+      { field: 'fleetNo', header: 'Fleet No' },
+      { field: 'defectDescription', header: 'Description' },
+      { field: 'inspector', header: 'Inspector' },
+      { field: 'date', header: 'Date' },
+    ],
+    data: [
+      {
+        busReg: 'FSB321FS',
+        fleetNo: '1056',
+        defectDescription: 'Tyre tread below threshold',
+        inspector: 'Sarah Mokoena',
+        date: '2026-06-10',
+      },
+      {
+        busReg: 'FSB444FS',
+        fleetNo: '1044',
+        defectDescription: 'Uneven front tyre wear',
+        inspector: 'Joe Bloggs',
+        date: '2026-06-11',
+      },
+    ],
+  },
+  'window-defects': {
+    title: 'Window Defects',
+    columns: [
+      { field: 'busReg', header: 'Bus Reg' },
+      { field: 'fleetNo', header: 'Fleet No' },
+      { field: 'defectDescription', header: 'Description' },
+      { field: 'inspector', header: 'Inspector' },
+      { field: 'date', header: 'Date' },
+    ],
+    data: [
+      {
+        busReg: 'FSB456FS',
+        fleetNo: '1045',
+        defectDescription: 'Passenger window latch failed',
+        inspector: 'Jane Doe',
+        date: '2026-06-11',
+      },
+      {
+        busReg: 'FSB887FS',
+        fleetNo: '1120',
+        defectDescription: 'Cracked windscreen',
+        inspector: 'Jane Smith',
+        date: '2026-06-11',
+      },
+    ],
+  },
   'aisle-obstructions': {
     title: 'Aisle Obstructions',
     columns: [
@@ -1168,6 +1437,35 @@ const DRILL_CONFIGS: Record<string, DrillConfig> = {
         description: 'Luggage blocking exit',
         inspector: 'Zanele Mokoena',
         date: '2026-06-10',
+      },
+    ],
+  },
+  'other-defects': {
+    title: 'Other Defects',
+    columns: [
+      { field: 'busReg', header: 'Bus Reg' },
+      { field: 'fleetNo', header: 'Fleet No' },
+      { field: 'area', header: 'Area' },
+      { field: 'description', header: 'Description' },
+      { field: 'inspector', header: 'Inspector' },
+      { field: 'date', header: 'Date' },
+    ],
+    data: [
+      {
+        busReg: 'FSB654FS',
+        fleetNo: '1078',
+        area: 'Exterior other',
+        description: 'Loose body panel',
+        inspector: 'Peter Dlamini',
+        date: '2026-06-10',
+      },
+      {
+        busReg: 'FSB111FS',
+        fleetNo: '1099',
+        area: 'Interior other',
+        description: 'Damaged fare signage',
+        inspector: 'Tom Leballo',
+        date: '2026-06-11',
       },
     ],
   },
@@ -1777,12 +2075,13 @@ const TILES: KpiTile[] = [
     id: 'route-exceptions',
     title: 'Route Compliance',
     metric: 'Route Exceptions',
-    value: 17,
+    value: 10,
     status: 'warning',
     icon: 'pi pi-map',
     summaryItems: [
-      { label: 'Route Deviations', value: 17, drillKey: 'route-deviations' },
-      { label: 'Total Exceptions', value: 17, drillKey: null },
+      { label: 'Missed Stops', value: 4, drillKey: 'missed-stops' },
+      { label: 'Route Deviations', value: 6, drillKey: 'route-deviation-events' },
+      { label: 'Total Exceptions', value: 10, drillKey: null },
     ],
   },
   {
@@ -1807,11 +2106,13 @@ const TILES: KpiTile[] = [
     status: 'critical',
     icon: 'pi pi-exclamation-circle',
     summaryItems: [
-      { label: 'Seat Defects', value: 4, drillKey: 'seat-defects' },
-      { label: 'Aisle Obstructions', value: 2, drillKey: 'aisle-obstructions' },
-      { label: 'General Condition Issues', value: 2, drillKey: 'general-condition' },
-      { label: 'Critical Defects', value: 5, drillKey: 'critical-defects-photo' },
-      { label: 'Minor Defects', value: 5, drillKey: 'minor-defects-photo' },
+      { label: 'Fire Extinguisher', value: 2, drillKey: 'fire-extinguisher-defects' },
+      { label: 'Seats', value: 4, drillKey: 'seat-defects' },
+      { label: 'Aisle', value: 2, drillKey: 'aisle-obstructions' },
+      { label: 'Tyres', value: 2, drillKey: 'tyre-defects' },
+      { label: 'Windows', value: 2, drillKey: 'window-defects' },
+      { label: 'Other', value: 2, drillKey: 'other-defects' },
+      { label: 'Technical', value: 4, drillKey: 'technical-inspections' },
       { label: 'Total Defects', value: 18, drillKey: null },
     ],
   },
@@ -1840,6 +2141,47 @@ const TILES: KpiTile[] = [
       { label: 'Behind Schedule (10–15 mins)', value: 4, drillKey: 'behind-schedule-10-15' },
       { label: 'Behind Schedule (15+ mins)', value: 5, drillKey: 'behind-schedule-15-plus' },
       { label: 'Total Delayed', value: 12, drillKey: null },
+    ],
+  },
+  {
+    id: 'service-reliability',
+    title: 'Service Reliability',
+    metric: 'On-Time Performance',
+    value: '96.4%',
+    status: 'good',
+    icon: 'pi pi-chart-line',
+    summaryItems: [
+      { label: 'Delayed Starts (0-5 mins)', value: 0, drillKey: 'behind-schedule-0-5' },
+      { label: 'Delayed Starts (5-10 mins)', value: 1, drillKey: 'behind-schedule-5-10' },
+      { label: 'Delayed Starts (10-15 mins)', value: 1, drillKey: 'behind-schedule-10-15' },
+      { label: 'Delayed Starts (15+ mins)', value: 1, drillKey: 'behind-schedule-15-plus' },
+      { label: 'Total Delayed Route Starts', value: 3, drillKey: null },
+    ],
+  },
+  {
+    id: 'operator-compliance',
+    title: 'Monthly Contract Compliance',
+    metric: 'Operator Compliance Score',
+    value: '88.7%',
+    status: 'warning',
+    icon: 'pi pi-building',
+    summaryItems: [
+      { label: 'Compliant Operators', value: 6, drillKey: 'compliant-operators' },
+      { label: 'Non-Compliant Operators', value: 1, drillKey: 'non-compliant-operators' },
+      { label: 'Total Operators', value: 7, drillKey: null },
+    ],
+  },
+  {
+    id: 'photo-evidence',
+    title: 'Photo Evidence',
+    metric: 'Defects Requiring Attention',
+    value: 10,
+    status: 'critical',
+    icon: 'pi pi-camera',
+    summaryItems: [
+      { label: 'Critical Defects', value: 5, drillKey: 'critical-defects-photo' },
+      { label: 'Minor Defects', value: 5, drillKey: 'minor-defects-photo' },
+      { label: 'Total Items', value: 10, drillKey: null },
     ],
   },
 ];
@@ -1883,9 +2225,9 @@ export class ReportingComponent {
   menuVisible = true;
   readonly navigationItems: MenuItem[] = [
     {
-      label: 'Vehicles',
-      icon: 'pi pi-car',
-      command: () => this.openVehicles(),
+      label: 'Reports',
+      icon: 'pi pi-chart-bar',
+      command: () => this.openReporting(),
     },
     {
       label: 'Live Map',
@@ -1893,19 +2235,24 @@ export class ReportingComponent {
       command: () => this.openSmartFleet(),
     },
     {
+      label: 'Analytics',
+      icon: 'pi pi-chart-line',
+      command: () => this.openAnalytics(),
+    },
+    {
+      label: 'Vehicles',
+      icon: 'pi pi-car',
+      command: () => this.openVehicles(),
+    },
+    {
       label: 'Inspections',
       icon: 'pi pi-search',
-      command: () => this.closeMenu(),
+      command: () => this.openInspections(),
     },
     {
       label: 'Shifts',
       icon: 'pi pi-calendar',
-      command: () => this.closeMenu(),
-    },
-    {
-      label: 'Reports',
-      icon: 'pi pi-chart-bar',
-      command: () => this.openReporting(),
+      command: () => this.openShifts(),
     },
   ];
 
@@ -1935,11 +2282,6 @@ export class ReportingComponent {
         const totalSvcs = rows.reduce((s: number, r) => s + Number(r['total'] ?? 0), 0);
         const onTimeSvcs = rows.reduce((s: number, r) => s + Number(r['onTime'] ?? 0), 0);
         tileValue = totalSvcs > 0 ? `${((onTimeSvcs / totalSvcs) * 100).toFixed(1)}%` : 'N/A';
-        newItems = newItems.map((i) => {
-          if (i.drillKey === 'on-time') return { ...i, value: rows.length };
-          if (i.drillKey === null) return { ...i, value: rows.length };
-          return i;
-        });
       }
 
       // Operator Compliance: recalculate compliance %
@@ -1954,9 +2296,42 @@ export class ReportingComponent {
     });
   });
 
-  readonly filteredRow1 = computed(() => this.filteredTiles().slice(0, 3));
-  readonly filteredRow2 = computed(() => this.filteredTiles().slice(3, 6));
-  readonly filteredRow3 = computed(() => this.filteredTiles().slice(6, 9));
+  readonly filteredRow1 = computed(() => this.filteredTiles().slice(6, 9));
+  readonly filteredRow2 = computed(() => this.filteredTiles().slice(0, 3));
+  readonly filteredRow3 = computed(() => this.filteredTiles().slice(3, 6));
+
+  readonly failedInspectionsPercentage = computed(() => {
+    const f = this.appliedFilters();
+    const inspectionRows = INSPECTION_DRILL_KEYS.flatMap((key) => filterRecordsForKey(key, f));
+    if (inspectionRows.length === 0) return 'N/A';
+    const failedRows = inspectionRows.filter(hasFailedInspectionValue).length;
+    return `${((failedRows / inspectionRows.length) * 100).toFixed(1)}%`;
+  });
+
+  readonly topKpiRow = computed<KpiTile[]>(() => {
+    const [onTimeTile, routeComplianceTile, failedTile] = this.filteredRow1();
+    return [
+      {
+        ...onTimeTile,
+        title: 'On Time Performance',
+        metric: 'On Time Performance',
+        icon: 'pi pi-stopwatch',
+      },
+      {
+        ...routeComplianceTile,
+        title: 'Route Compliance',
+        metric: 'Route Compliance',
+        icon: 'pi pi-map',
+      },
+      {
+        ...failedTile,
+        title: 'Percentage of Failed Inspections',
+        metric: 'Percentage of Failed Inspections',
+        value: this.failedInspectionsPercentage(),
+        icon: 'pi pi-clipboard',
+      },
+    ];
+  });
 
   // ── Global filters – draft (bound to form controls) ──────────────────────
   draftDateRange: Date[] = [this.defaultDateFrom(), new Date()];
@@ -2031,37 +2406,124 @@ export class ReportingComponent {
   readonly activeTileRow = computed<number | null>(() => {
     const id = this.activeTileId();
     if (!id) return null;
-    const idx = TILES.findIndex((t) => t.id === id);
-    if (idx < 0) return null;
-    return Math.floor(idx / 3) + 1;
+    if (this.filteredRow1().some((tile) => tile.id === id)) return 1;
+    if (this.filteredRow2().some((tile) => tile.id === id)) return 2;
+    if (this.filteredRow3().some((tile) => tile.id === id)) return 3;
+    return null;
   });
 
   readonly tileBarChartOptions = computed<EChartsOption | null>(() => {
     const tile = this.activeTile();
     if (!tile) return null;
-    const drillable = tile.summaryItems.filter((i) => i.drillKey !== null);
-    const colors = ['#1d4ed8', '#d97706', '#dc2626', '#16a34a', '#7c3aed', '#0891b2'];
+    const sourceTile = TILES.find((item) => item.id === tile.id) ?? tile;
+    const drillable = sourceTile.summaryItems.filter((i) => i.drillKey !== null);
+    const categories = drillable.map((i) => i.label);
+    const totals = drillable.map((i) =>
+      typeof i.value === 'number' ? i.value : parseFloat(String(i.value)) || 0,
+    );
+    const operatorOneValues = totals.map((value, idx) => Math.round(value * (idx % 2 ? 0.55 : 0.62)));
+    const operatorTwoValues = totals.map((value, idx) => Math.max(value - operatorOneValues[idx], 0));
+
     return {
       tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-      grid: { left: '3%', right: '4%', bottom: '10%', top: '8%', containLabel: true },
-      xAxis: {
-        type: 'category',
-        data: drillable.map((i) => i.label),
-        axisLabel: { rotate: 30, fontSize: 11, interval: 0 },
+      legend: {
+        top: 0,
+        left: 0,
+        textStyle: { fontSize: 10 },
       },
-      yAxis: { type: 'value', minInterval: 1 },
+      grid: { left: 8, right: 46, bottom: 12, top: 34, containLabel: true },
+      xAxis: {
+        type: 'value',
+        minInterval: 1,
+        axisLabel: { fontSize: 11 },
+      },
+      yAxis: {
+        type: 'category',
+        data: categories,
+        inverse: true,
+        axisLabel: {
+          fontSize: 11,
+          interval: 0,
+          width: 135,
+          overflow: 'break',
+          lineHeight: 14,
+        },
+      },
       series: [
         {
+          name: CHART_OPERATORS[0],
           type: 'bar',
-          data: drillable.map((i, idx) => ({
-            value: typeof i.value === 'number' ? i.value : parseFloat(String(i.value)) || 0,
-            itemStyle: { color: colors[idx % colors.length], borderRadius: [4, 4, 0, 0] },
-          })),
-          label: { show: true, position: 'top', fontSize: 12, fontWeight: 'bold' },
+          stack: 'operator',
+          data: operatorOneValues,
+          itemStyle: { color: '#1d4ed8' },
+          label: { show: true, position: 'insideRight', fontSize: 10, color: '#ffffff' },
+          barMaxWidth: 28,
+        },
+        {
+          name: CHART_OPERATORS[1],
+          type: 'bar',
+          stack: 'operator',
+          data: operatorTwoValues,
+          itemStyle: { color: '#f97316', borderRadius: [0, 4, 4, 0] },
+          label: { show: true, position: 'right', fontSize: 12, fontWeight: 'bold' },
+          barMaxWidth: 28,
         },
       ],
     };
   });
+
+  readonly inspectionTrendChartOptions = computed<EChartsOption | null>(() => {
+    const tile = this.activeTile();
+    if (tile?.id !== 'daily-monitoring' && tile?.id !== 'service-reliability') return null;
+
+    const chartData =
+      tile.id === 'service-reliability' ? DELAYED_STARTS_DUMMY_DATA : INSPECTION_TREND_DUMMY_DATA;
+
+    return {
+      color:
+        tile.id === 'service-reliability'
+          ? ['#dc2626', '#d97706']
+          : ['#1d4ed8', '#16a34a', '#d97706', '#7c3aed', '#dc2626'],
+      tooltip: { trigger: 'axis' },
+      legend: {
+        type: 'scroll',
+        top: 0,
+        left: 0,
+        right: 0,
+        textStyle: { fontSize: 10 },
+      },
+      grid: { left: 8, right: 16, bottom: 12, top: 42, containLabel: true },
+      xAxis: {
+        type: 'category',
+        boundaryGap: false,
+        data: chartData.dates,
+        axisLabel: {
+          fontSize: 10,
+          interval: 0,
+          formatter: (value: string) => value.slice(5),
+        },
+      },
+      yAxis: {
+        type: 'value',
+        minInterval: 1,
+        axisLabel: { fontSize: 11 },
+      },
+      series: chartData.series.map((item) => ({
+        name: item.name,
+        type: 'line',
+        smooth: true,
+        symbol: 'circle',
+        symbolSize: 6,
+        data: item.data,
+      })),
+    };
+  });
+
+  readonly secondaryLineChartLabel = computed(() =>
+    this.activeTile()?.id === 'service-reliability'
+      ? 'Delayed Route Starts Over Time'
+      : 'Inspection Type Over Time',
+  );
 
   readonly tilePieChartOptions = computed<EChartsOption | null>(() => {
     const tile = this.activeTile();
@@ -2301,6 +2763,21 @@ export class ReportingComponent {
   openSmartFleet(): void {
     this.menuVisible = false;
     this.router.navigate(['/smart-fleet']);
+  }
+
+  openAnalytics(): void {
+    this.menuVisible = false;
+    this.router.navigate(['/analytics']);
+  }
+
+  openInspections(): void {
+    this.menuVisible = false;
+    this.router.navigate(['/inspections']);
+  }
+
+  openShifts(): void {
+    this.menuVisible = false;
+    this.router.navigate(['/shifts']);
   }
 
   openReporting(): void {

@@ -1,4 +1,4 @@
-.vehicles-wrapper {
+.inspections-wrapper {
   --toolbar-height: 62px;
   --drawer-width: min(18rem, 86vw);
 
@@ -91,17 +91,17 @@
   margin-right: 0.75rem;
 }
 
-.vehicles-body {
+.inspections-body {
   flex: 1;
   min-width: 0;
   transition: padding-left 0.2s ease;
 }
 
-.vehicles-body--drawer-open {
+.inspections-body--drawer-open {
   padding-left: var(--drawer-width);
 }
 
-.vehicles-content {
+.inspections-content {
   padding: 1.75rem 1.5rem 3rem;
 }
 
@@ -127,41 +127,61 @@
   margin: 0;
 }
 
-:host ::ng-deep .vehicle-search .p-inputtext {
-  min-width: min(26rem, 80vw);
+:host ::ng-deep .record-search .p-inputtext {
+  min-width: min(28rem, 80vw);
 }
 
 .error-banner {
   margin-bottom: 1rem;
   padding: 0.75rem 1rem;
-  border-radius: 0.75rem;
+  border-radius: 8px;
   background: #fef2f2;
   border: 1px solid #fecaca;
   color: #991b1b;
 }
 
-:host ::ng-deep .vehicle-table {
+:host ::ng-deep .records-table {
   background: #ffffff;
-  border-radius: 0.75rem;
+  border-radius: 8px;
   overflow: hidden;
 }
 
-:host ::ng-deep .vehicle-table .p-datatable-thead > tr > th {
+:host ::ng-deep .records-table .p-datatable-thead > tr > th {
   white-space: nowrap;
+  background: #f9fafb;
+  color: #374151;
+  font-size: 0.78rem;
 }
 
-.vehicle-vin {
+:host ::ng-deep .records-table .p-datatable-tbody > tr > td {
+  font-size: 0.85rem;
+  color: #111827;
+  vertical-align: top;
+}
+
+.mono-cell {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
     'Courier New', monospace;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
+}
+
+.summary-cell {
+  min-width: 22rem;
+  max-width: 34rem;
+}
+
+.empty-message {
+  padding: 2rem !important;
+  text-align: center;
+  color: #9ca3af;
 }
 
 @media (max-width: 960px) {
-  .vehicles-body--drawer-open {
+  .inspections-body--drawer-open {
     padding-left: 0;
   }
 
-  .vehicles-content {
+  .inspections-content {
     padding: 1.25rem 1rem 2rem;
   }
 }

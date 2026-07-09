@@ -21,7 +21,7 @@
         pTooltip="Toggle navigation"
         tooltipPosition="bottom"
       />
-      <img src="macrocomm-orange-background.png" alt="Macrocomm" class="toolbar-logo" />
+      <img src="macrocomm-black-background.png" alt="Macrocomm" class="toolbar-logo" />
       <span class="app-name">
         <i class="pi pi-chart-bar mr-2"></i>FS Bus &#8211; Reporting Dashboard
       </span>
@@ -90,7 +90,7 @@
               styleClass="filter-input"
             />
           </div>
-          <div class="filter-item">
+          <!-- <div class="filter-item">
             <label class="filter-label">Terminal</label>
             <p-multiselect
               [options]="terminals"
@@ -113,7 +113,7 @@
               [showClear]="true"
               styleClass="filter-input"
             />
-          </div>
+          </div> -->
           <div class="filter-item filter-actions">
             <p-button
               label="Apply Filters"
@@ -133,32 +133,29 @@
         </div>
       </div>
 
-      <!-- ── Row 1 ── Operational Monitoring ─────────────────────────────────── -->
-      <div class="tile-section">
-        <h3 class="section-label">
-          <i class="pi pi-cog section-icon"></i>
-          Row 1 &mdash; Operational Monitoring
-        </h3>
-        <div class="tile-row">
-          @for (tile of filteredRow1(); track tile.id) {
+      <!-- ── Top KPIs ────────────────────────────────────────────────────────── -->
+      <div class="tile-section macro-kpi-section">
+        <div class="macro-kpi-panel">
+          @for (tile of topKpiRow(); track tile.id) {
             <div
-              class="kpi-tile"
-              [class]="'kpi-tile--' + tile.status"
-              [class.kpi-tile--active]="activeTileId() === tile.id"
+              class="macro-kpi"
+              [class]="'macro-kpi--' + tile.status"
+              [class.macro-kpi--active]="activeTileId() === tile.id"
               (click)="openTile(tile)"
               role="button"
               tabindex="0"
               (keyup.enter)="openTile(tile)"
             >
-              <div class="kpi-tile__header">
-                <span class="kpi-tile__title">{{ tile.title }}</span>
-                <i [class]="tile.icon + ' kpi-tile__icon'"></i>
+              <div class="macro-kpi__icon-wrap">
+                <i [class]="tile.icon + ' macro-kpi__icon'"></i>
               </div>
-              <div class="kpi-tile__value">{{ tile.value }}</div>
-              <div class="kpi-tile__metric">{{ tile.metric }}</div>
-              <div class="kpi-tile__footer">
+              <div class="macro-kpi__content">
+                <div class="macro-kpi__value">{{ tile.value }}</div>
+                <div class="macro-kpi__label">{{ tile.metric }}</div>
+              </div>
+              <div class="macro-kpi__hint">
                 <i
-                  class="pi kpi-tile__arrow"
+                  class="pi macro-kpi__arrow"
                   [class.pi-chevron-down]="activeTileId() === tile.id"
                   [class.pi-chevron-right]="activeTileId() !== tile.id"
                 ></i>
@@ -173,11 +170,11 @@
         }
       </div>
 
-      <!-- ── Row 2 ── Vehicle Monitoring ──────────────────────────────────────── -->
+      <!-- ── Row 2 ── Operational Monitoring ─────────────────────────────────── -->
       <div class="tile-section">
         <h3 class="section-label">
-          <i class="pi pi-car section-icon"></i>
-          Row 2 &mdash; Vehicle Monitoring
+          <i class="pi pi-cog section-icon"></i>
+          Operational Monitoring
         </h3>
         <div class="tile-row">
           @for (tile of filteredRow2(); track tile.id) {
@@ -207,6 +204,46 @@
           }
         </div>
         @if (activeTileRow() === 2 && activeTile()) {
+          <div class="tile-detail-panel">
+            <ng-container *ngTemplateOutlet="tilePanelContent" />
+          </div>
+        }
+      </div>
+
+      <!-- ── Row 3 ── Vehicle Monitoring ──────────────────────────────────────── -->
+      <div class="tile-section">
+        <h3 class="section-label">
+          <i class="pi pi-car section-icon"></i>
+          Vehicle Monitoring
+        </h3>
+        <div class="tile-row">
+          @for (tile of filteredRow3(); track tile.id) {
+            <div
+              class="kpi-tile"
+              [class]="'kpi-tile--' + tile.status"
+              [class.kpi-tile--active]="activeTileId() === tile.id"
+              (click)="openTile(tile)"
+              role="button"
+              tabindex="0"
+              (keyup.enter)="openTile(tile)"
+            >
+              <div class="kpi-tile__header">
+                <span class="kpi-tile__title">{{ tile.title }}</span>
+                <i [class]="tile.icon + ' kpi-tile__icon'"></i>
+              </div>
+              <div class="kpi-tile__value">{{ tile.value }}</div>
+              <div class="kpi-tile__metric">{{ tile.metric }}</div>
+              <div class="kpi-tile__footer">
+                <i
+                  class="pi kpi-tile__arrow"
+                  [class.pi-chevron-down]="activeTileId() === tile.id"
+                  [class.pi-chevron-right]="activeTileId() !== tile.id"
+                ></i>
+              </div>
+            </div>
+          }
+        </div>
+        @if (activeTileRow() === 3 && activeTile()) {
           <div class="tile-detail-panel">
             <ng-container *ngTemplateOutlet="tilePanelContent" />
           </div>
@@ -246,6 +283,12 @@
           <div class="chart-card">
             <span class="chart-card__label">By Category</span>
             <div echarts [options]="barOpts" class="chart-container"></div>
+          </div>
+        }
+        @if (inspectionTrendChartOptions(); as trendOpts) {
+          <div class="chart-card">
+            <span class="chart-card__label">{{ secondaryLineChartLabel() }}</span>
+            <div echarts [options]="trendOpts" class="chart-container"></div>
           </div>
         }
         @if (tilePieChartOptions(); as pieOpts) {

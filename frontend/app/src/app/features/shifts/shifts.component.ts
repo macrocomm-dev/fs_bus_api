@@ -15,12 +15,18 @@ import { TagModule } from 'primeng/tag';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { VehicleService } from '../../core/api/api/vehicle.service';
-import type { VehicleResponse } from '../../core/api/model/vehicleResponse';
+import { ShiftsService } from '../../core/api/api/shifts.service';
+import type { ShiftResponse } from '../../core/api/model/shiftResponse';
 import { AuthService } from '../../core/services/auth.service';
 
+type ShiftRow = ShiftResponse & {
+  duration: string;
+  startGps: string;
+  endGps: string;
+};
+
 @Component({
-  selector: 'app-vehicles',
+  selector: 'app-shifts',
   standalone: true,
   imports: [
     CommonModule,
@@ -36,52 +42,27 @@ import { AuthService } from '../../core/services/auth.service';
     ToolbarModule,
     TooltipModule,
   ],
-  templateUrl: './vehicles.component.html',
-  styleUrl: './vehicles.component.css',
+  templateUrl: './shifts.component.html',
+  styleUrl: './shifts.component.css',
 })
-export class VehiclesComponent implements OnInit {
+export class ShiftsComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
-  private readonly vehicleApi = inject(VehicleService);
+  private readonly shiftsApi = inject(ShiftsService);
 
   readonly session = this.auth.session;
-  readonly vehicles = signal<VehicleResponse[]>([]);
+  readonly shifts = signal<ShiftRow[]>([]);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
-  readonly total = signal(0);
 
   menuVisible = true;
   readonly navigationItems: MenuItem[] = [
-    {
-      label: 'Reports',
-      icon: 'pi pi-chart-bar',
-      command: () => this.openReporting(),
-    },
-    {
-      label: 'Live Map',
-      icon: 'pi pi-map',
-      command: () => this.openSmartFleet(),
-    },
-    {
-      label: 'Analytics',
-      icon: 'pi pi-chart-line',
-      command: () => this.openAnalytics(),
-    },
-    {
-      label: 'Vehicles',
-      icon: 'pi pi-car',
-      command: () => this.closeMenu(),
-    },
-    {
-      label: 'Inspections',
-      icon: 'pi pi-search',
-      command: () => this.openInspections(),
-    },
-    {
-      label: 'Shifts',
-      icon: 'pi pi-calendar',
-      command: () => this.openShifts(),
-    },
+    { label: 'Reports', icon: 'pi pi-chart-bar', command: () => this.openReporting() },
+    { label: 'Live Map', icon: 'pi pi-map', command: () => this.openSmartFleet() },
+    { label: 'Analytics', icon: 'pi pi-chart-line', command: () => this.openAnalytics() },
+    { label: 'Vehicles', icon: 'pi pi-car', command: () => this.openVehicles() },
+    { label: 'Inspections', icon: 'pi pi-search', command: () => this.openInspections() },
+    { label: 'Shifts', icon: 'pi pi-calendar', command: () => this.closeMenu() },
   ];
 
   ngOnInit(): void {
@@ -90,7 +71,7 @@ export class VehiclesComponent implements OnInit {
       return;
     }
 
-    this.loadVehicles();
+    this.loadShifts();
   }
 
   toggleMenu(): void {
@@ -116,52 +97,61 @@ export class VehiclesComponent implements OnInit {
     this.router.navigate(['/analytics']);
   }
 
+  openVehicles(): void {
+    this.menuVisible = false;
+    this.router.navigate(['/vehicles']);
+  }
+
   openInspections(): void {
     this.menuVisible = false;
     this.router.navigate(['/inspections']);
-  }
-
-  openShifts(): void {
-    this.menuVisible = false;
-    this.router.navigate(['/shifts']);
   }
 
   logout(): void {
     this.auth.logout();
   }
 
-  statusSeverity(isActive: boolean): 'success' | 'danger' {
-    return isActive ? 'success' : 'danger';
-  }
-
-  private loadVehicles(): void {
+  private loadShifts(): void {
     this.loading.set(true);
     this.error.set(null);
 
-    this.vehicleApi
-      .getVehiclesVehicleVehiclesGet(
-        { page: 1, pageSize: 500 },
+    this.shiftsApi
+      .getAllShiftsShiftShiftsGet(
+        { limit: 500 },
         'body',
         false,
         { transferCache: false },
       )
       .subscribe({
         next: (response) => {
-          if (!response) {
-            this.error.set('Vehicle service returned an empty response.');
-            this.loading.set(false);
-            return;
-          }
-
-          this.vehicles.set(response.vehicles ?? []);
-          this.total.set(response.total ?? response.vehicles?.length ?? 0);
+          this.shifts.set(
+            (response ?? [])
+              .map((shift) => ({
+                ...shift,
+                duration: this.duration(shift.start_time, shift.end_time),
+                startGps: this.gps(shift.start_lat, shift.start_lon),
+                endGps: this.gps(shift.end_lat, shift.end_lon),
+              }))
+              .sort((a, b) => Date.parse(b.start_time) - Date.parse(a.start_time)),
+          );
           this.loading.set(false);
         },
         error: (err) => {
           this.loading.set(false);
-          const detail = err?.error?.detail;
-          this.error.set(detail ?? 'Could not load vehicles.');
+          this.error.set(err?.error?.detail ?? 'Could not load shifts.');
         },
       });
+  }
+
+  private gps(lat: number, lon: number): string {
+    return `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+  }
+
+  private duration(start: string, end: string): string {
+    const diffMs = Math.max(Date.parse(end) - Date.parse(start), 0);
+    const totalMinutes = Math.floor(diffMs / 60000);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours}h ${minutes}m`;
   }
 }
