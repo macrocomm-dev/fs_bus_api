@@ -185,6 +185,73 @@ const DELAYED_STARTS_DUMMY_DATA = {
   ],
 };
 
+const OPERATOR_COMPLIANCE_ROWS = [
+  {
+    operator: 'Interstate Bus Lines',
+    drillKey: 'operator-compliance-interstate',
+    shifts: 18,
+    inspections: 85,
+    passed: 82,
+    failed: 3,
+  },
+  {
+    operator: 'Bophelong Transport',
+    drillKey: 'operator-compliance-bophelong',
+    shifts: 14,
+    inspections: 60,
+    passed: 57,
+    failed: 3,
+  },
+];
+
+const OPERATOR_COMPLIANCE_TOTALS = OPERATOR_COMPLIANCE_ROWS.reduce(
+  (totals, row) => ({
+    shifts: totals.shifts + row.shifts,
+    inspections: totals.inspections + row.inspections,
+    passed: totals.passed + row.passed,
+    failed: totals.failed + row.failed,
+  }),
+  { shifts: 0, inspections: 0, passed: 0, failed: 0 },
+);
+
+const OPERATOR_COMPLIANCE_SUMMARY_ITEMS: SummaryItem[] = [
+  ...OPERATOR_COMPLIANCE_ROWS.map((row) => ({
+    label: row.operator,
+    value: `${row.shifts} shifts, ${row.inspections} inspections, ${row.passed} passed, ${row.failed} failed`,
+    drillKey: row.drillKey,
+  })),
+  {
+    label: 'Total',
+    value: `${OPERATOR_COMPLIANCE_TOTALS.shifts} shifts, ${OPERATOR_COMPLIANCE_TOTALS.inspections} inspections, ${OPERATOR_COMPLIANCE_TOTALS.passed} passed, ${OPERATOR_COMPLIANCE_TOTALS.failed} failed`,
+    drillKey: null,
+  },
+];
+
+const TOP_KPI_DUMMY_VALUES: Record<string, string> = {
+  'service-reliability': '94.8%',
+  'operator-compliance': '91.6%',
+  'photo-evidence': '4.1%',
+};
+
+function buildOperatorComplianceDrillData(row: (typeof OPERATOR_COMPLIANCE_ROWS)[number]) {
+  return [
+    { metric: 'Shifts', count: row.shifts },
+    { metric: 'Inspections', count: row.inspections },
+    { metric: 'Passed Inspections', count: row.passed },
+    { metric: 'Failed Inspections', count: row.failed },
+  ];
+}
+
+function isFailedInspectionTypeRow(
+  sourceKey: string,
+  row: Record<string, string | number>,
+): boolean {
+  if (sourceKey === 'passenger-counts-drill') {
+    return Number(row['overloadedCount'] ?? 0) > 0;
+  }
+  return hasFailedInspectionValue(row);
+}
+
 function hasFailedInspectionValue(row: Record<string, string | number>): boolean {
   if (row['defectType']) return true;
 
@@ -1848,6 +1915,22 @@ const DRILL_CONFIGS: Record<string, DrillConfig> = {
   },
 
   // ── Tile 8: Operator Compliance ───────────────────────────────────────────
+  'operator-compliance-interstate': {
+    title: 'Interstate Bus Lines Compliance',
+    columns: [
+      { field: 'metric', header: 'Metric' },
+      { field: 'count', header: 'Count' },
+    ],
+    data: buildOperatorComplianceDrillData(OPERATOR_COMPLIANCE_ROWS[0]),
+  },
+  'operator-compliance-bophelong': {
+    title: 'Bophelong Transport Compliance',
+    columns: [
+      { field: 'metric', header: 'Metric' },
+      { field: 'count', header: 'Count' },
+    ],
+    data: buildOperatorComplianceDrillData(OPERATOR_COMPLIANCE_ROWS[1]),
+  },
   'compliant-operators': {
     title: 'Compliant Operators',
     columns: [
@@ -2052,6 +2135,59 @@ const DRILL_CONFIGS: Record<string, DrillConfig> = {
   },
 };
 
+const FAILED_INSPECTION_TYPES = [
+  {
+    label: 'External Inspections',
+    drillKey: 'failed-external-inspections',
+    sourceKey: 'external-inspections',
+  },
+  {
+    label: 'Internal Inspections',
+    drillKey: 'failed-internal-inspections',
+    sourceKey: 'internal-inspections',
+  },
+  {
+    label: 'Driver Inspections',
+    drillKey: 'failed-driver-inspections',
+    sourceKey: 'driver-inspections',
+  },
+  {
+    label: 'Passenger Counts',
+    drillKey: 'failed-passenger-counts',
+    sourceKey: 'passenger-counts-drill',
+  },
+  {
+    label: 'Technical Inspections',
+    drillKey: 'failed-technical-inspections',
+    sourceKey: 'technical-inspections',
+  },
+];
+
+for (const type of FAILED_INSPECTION_TYPES) {
+  const source = DRILL_CONFIGS[type.sourceKey];
+  DRILL_CONFIGS[type.drillKey] = {
+    title: `Failed ${type.label}`,
+    columns: source.columns,
+    data: source.data.filter((row) => isFailedInspectionTypeRow(type.sourceKey, row)),
+  };
+}
+
+const FAILED_INSPECTION_SUMMARY_ITEMS: SummaryItem[] = [
+  ...FAILED_INSPECTION_TYPES.map((type) => ({
+    label: type.label,
+    value: DRILL_CONFIGS[type.drillKey].data.length,
+    drillKey: type.drillKey,
+  })),
+  {
+    label: 'Total Failed Inspections',
+    value: FAILED_INSPECTION_TYPES.reduce(
+      (total, type) => total + DRILL_CONFIGS[type.drillKey].data.length,
+      0,
+    ),
+    drillKey: null,
+  },
+];
+
 // ─── KPI Tiles (original document order) ─────────────────────────────────────
 
 const TILES: KpiTile[] = [
@@ -2165,24 +2301,16 @@ const TILES: KpiTile[] = [
     value: '88.7%',
     status: 'warning',
     icon: 'pi pi-building',
-    summaryItems: [
-      { label: 'Compliant Operators', value: 6, drillKey: 'compliant-operators' },
-      { label: 'Non-Compliant Operators', value: 1, drillKey: 'non-compliant-operators' },
-      { label: 'Total Operators', value: 7, drillKey: null },
-    ],
+    summaryItems: OPERATOR_COMPLIANCE_SUMMARY_ITEMS,
   },
   {
     id: 'photo-evidence',
-    title: 'Photo Evidence',
-    metric: 'Defects Requiring Attention',
-    value: 10,
+    title: 'Failed Inspections',
+    metric: 'Failed Inspections by Type',
+    value: 15,
     status: 'critical',
-    icon: 'pi pi-camera',
-    summaryItems: [
-      { label: 'Critical Defects', value: 5, drillKey: 'critical-defects-photo' },
-      { label: 'Minor Defects', value: 5, drillKey: 'minor-defects-photo' },
-      { label: 'Total Items', value: 10, drillKey: null },
-    ],
+    icon: 'pi pi-clipboard',
+    summaryItems: FAILED_INSPECTION_SUMMARY_ITEMS,
   },
 ];
 
@@ -2261,6 +2389,34 @@ export class ReportingComponent {
     const f = this.appliedFilters();
 
     return TILES.map((tile): KpiTile => {
+      if (tile.id === 'operator-compliance') {
+        const totalInspections = OPERATOR_COMPLIANCE_TOTALS.inspections;
+        const passRate =
+          totalInspections > 0
+            ? `${((OPERATOR_COMPLIANCE_TOTALS.passed / totalInspections) * 100).toFixed(1)}%`
+            : 'N/A';
+
+        return {
+          ...tile,
+          value: passRate,
+          summaryItems: OPERATOR_COMPLIANCE_SUMMARY_ITEMS,
+        };
+      }
+
+      if (tile.id === 'photo-evidence') {
+        const totalFailed = FAILED_INSPECTION_SUMMARY_ITEMS.reduce(
+          (total, item) =>
+            item.drillKey && typeof item.value === 'number' ? total + item.value : total,
+          0,
+        );
+
+        return {
+          ...tile,
+          value: totalFailed,
+          summaryItems: FAILED_INSPECTION_SUMMARY_ITEMS,
+        };
+      }
+
       // Recount each drillable summary item
       let newItems: SummaryItem[] = tile.summaryItems.map((item) => {
         if (!item.drillKey) return item;
@@ -2282,14 +2438,6 @@ export class ReportingComponent {
         const totalSvcs = rows.reduce((s: number, r) => s + Number(r['total'] ?? 0), 0);
         const onTimeSvcs = rows.reduce((s: number, r) => s + Number(r['onTime'] ?? 0), 0);
         tileValue = totalSvcs > 0 ? `${((onTimeSvcs / totalSvcs) * 100).toFixed(1)}%` : 'N/A';
-      }
-
-      // Operator Compliance: recalculate compliance %
-      if (tile.id === 'operator-compliance') {
-        const compliant = filterRecordsForKey('compliant-operators', f).length;
-        const nonCompliant = filterRecordsForKey('non-compliant-operators', f).length;
-        const total = compliant + nonCompliant;
-        tileValue = total > 0 ? `${((compliant / total) * 100).toFixed(1)}%` : 'N/A';
       }
 
       return { ...tile, value: tileValue, summaryItems: newItems };
@@ -2315,19 +2463,21 @@ export class ReportingComponent {
         ...onTimeTile,
         title: 'On Time Performance',
         metric: 'On Time Performance',
+        value: TOP_KPI_DUMMY_VALUES[onTimeTile.id],
         icon: 'pi pi-stopwatch',
       },
       {
         ...routeComplianceTile,
         title: 'Route Compliance',
         metric: 'Route Compliance',
+        value: TOP_KPI_DUMMY_VALUES[routeComplianceTile.id],
         icon: 'pi pi-map',
       },
       {
         ...failedTile,
         title: 'Percentage of Failed Inspections',
         metric: 'Percentage of Failed Inspections',
-        value: this.failedInspectionsPercentage(),
+        value: TOP_KPI_DUMMY_VALUES[failedTile.id],
         icon: 'pi pi-clipboard',
       },
     ];
@@ -2415,6 +2565,56 @@ export class ReportingComponent {
   readonly tileBarChartOptions = computed<EChartsOption | null>(() => {
     const tile = this.activeTile();
     if (!tile) return null;
+
+    if (tile.id === 'operator-compliance') {
+      const categories = ['Shifts', 'Inspections', 'Passed Inspections', 'Failed Inspections'];
+
+      return {
+        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+        legend: {
+          top: 0,
+          left: 0,
+          textStyle: { fontSize: 10 },
+        },
+        grid: { left: 8, right: 52, bottom: 12, top: 34, containLabel: true },
+        xAxis: {
+          type: 'value',
+          minInterval: 1,
+          axisLabel: { fontSize: 11 },
+        },
+        yAxis: {
+          type: 'category',
+          data: categories,
+          inverse: true,
+          axisLabel: {
+            fontSize: 11,
+            interval: 0,
+            width: 135,
+            overflow: 'break',
+            lineHeight: 14,
+          },
+        },
+        series: OPERATOR_COMPLIANCE_ROWS.map((row, idx) => ({
+          name: row.operator,
+          type: 'bar',
+          stack: 'operator',
+          data: [row.shifts, row.inspections, row.passed, row.failed],
+          itemStyle: {
+            color: idx === 0 ? '#1d4ed8' : '#f97316',
+            borderRadius: idx === OPERATOR_COMPLIANCE_ROWS.length - 1 ? [0, 4, 4, 0] : 0,
+          },
+          label: {
+            show: true,
+            position: idx === 0 ? 'insideRight' : 'right',
+            fontSize: idx === 0 ? 10 : 12,
+            fontWeight: idx === 0 ? 'normal' : 'bold',
+            color: idx === 0 ? '#ffffff' : '#333333',
+          },
+          barMaxWidth: 28,
+        })),
+      };
+    }
+
     const sourceTile = TILES.find((item) => item.id === tile.id) ?? tile;
     const drillable = sourceTile.summaryItems.filter((i) => i.drillKey !== null);
     const categories = drillable.map((i) => i.label);
@@ -2528,6 +2728,27 @@ export class ReportingComponent {
   readonly tilePieChartOptions = computed<EChartsOption | null>(() => {
     const tile = this.activeTile();
     if (!tile) return null;
+
+    if (tile.id === 'operator-compliance') {
+      return {
+        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+        legend: { orient: 'vertical', left: '52%', top: 'middle', textStyle: { fontSize: 11 } },
+        series: [
+          {
+            type: 'pie',
+            radius: ['40%', '68%'],
+            center: ['25%', '50%'],
+            data: OPERATOR_COMPLIANCE_ROWS.flatMap((row) => [
+              { name: `${row.operator} Passed`, value: row.passed },
+              { name: `${row.operator} Failed`, value: row.failed },
+            ]),
+            label: { show: false },
+            emphasis: { label: { show: true, fontSize: 13, fontWeight: 'bold' } },
+          },
+        ],
+      };
+    }
+
     const drillable = tile.summaryItems.filter(
       (i) =>
         i.drillKey !== null &&

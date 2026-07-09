@@ -109,65 +109,48 @@
 .metric-strip {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  background: #070707;
-  border: 1px solid #1f2937;
-  border-radius: 8px;
-  overflow: hidden;
+  gap: 1rem;
 }
 
 .metric-tile {
-  min-height: 270px;
-  padding: 1.25rem 1rem;
-  color: #f9fafb;
+  min-height: 230px;
+  padding: 1rem;
+  color: #111827;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
   text-align: center;
-  border-right: 1px solid #1f2937;
-}
-
-.metric-tile:last-child {
-  border-right: none;
-}
-
-.metric-tile--featured {
-  background: #1b0f0b;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
 }
 
 .metric-tile h3 {
-  min-height: 2.4rem;
+  min-height: 2.2rem;
   margin: 0;
-  color: #ffffff;
-  font-size: 0.95rem;
+  color: #111827;
+  font-size: 0.9rem;
   font-weight: 800;
   line-height: 1.25;
 }
 
 .metric-tile__icon {
-  width: 5.5rem;
-  height: 5.5rem;
-  color: #f97316;
+  width: 4.75rem;
+  height: 4.75rem;
+  color: var(--metric-color);
+  background: color-mix(in srgb, var(--metric-color) 12%, #ffffff);
+  border: 1px solid color-mix(in srgb, var(--metric-color) 24%, #ffffff);
+  border-radius: 8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
-.metric-tile--featured .metric-tile__icon {
-  width: 4.4rem;
-  height: 4.4rem;
-  border: 0.35rem solid #f97316;
-  border-radius: 8px;
-  transform: rotate(45deg);
-}
-
 .metric-tile__icon .pi {
-  font-size: 4.25rem;
-}
-
-.metric-tile--featured .metric-tile__icon .pi {
-  font-size: 2.25rem;
-  transform: rotate(-45deg);
+  font-size: 2.35rem;
+  line-height: 1;
 }
 
 .metric-tile__values {
@@ -182,8 +165,12 @@
 
 .metric-tile__values strong,
 .metric-tile__values span {
-  color: #e5edf9;
+  color: #111827;
   font-weight: 800;
+}
+
+.metric-tile__values span {
+  color: #4b5563;
 }
 
 .performance-section {
@@ -236,10 +223,6 @@
   .metric-strip {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
-
-  .metric-tile:nth-child(3n) {
-    border-right: none;
-  }
 }
 
 @media (max-width: 960px) {
@@ -256,12 +239,6 @@
   }
 
   .metric-tile {
-    min-height: 220px;
-    border-right: none;
-    border-bottom: 1px solid #1f2937;
-  }
-
-  .metric-tile:last-child {
-    border-bottom: none;
+    min-height: 210px;
   }
 }

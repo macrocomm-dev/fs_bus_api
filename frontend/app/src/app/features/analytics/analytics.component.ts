@@ -17,9 +17,9 @@ import { AuthService } from '../../core/services/auth.service';
 type MetricTile = {
   title: string;
   icon: string;
+  color: string;
   primary: string;
   secondary?: string;
-  featured?: boolean;
 };
 
 type VehiclePerformance = {
@@ -96,35 +96,40 @@ export class AnalyticsComponent implements OnInit {
     {
       title: 'Distance traveled/cost',
       icon: 'pi pi-arrow-right',
+      color: '#1d4ed8',
       primary: '28,705.34 km',
       secondary: 'R 44,888.00',
-      featured: true,
     },
     {
       title: 'Trip duration',
       icon: 'pi pi-stopwatch',
+      color: '#16a34a',
       primary: '699 hrs 43 mins',
     },
     {
       title: 'Speed duration/cost',
       icon: 'pi pi-gauge',
+      color: '#d97706',
       primary: '00 hrs 00 mins',
       secondary: 'R 0.00',
     },
     {
       title: 'Excess idle duration',
       icon: 'pi pi-clock',
+      color: '#7c3aed',
       primary: '00 hrs 00 mins',
       secondary: 'R 0.00',
     },
     {
       title: 'High risk trips',
       icon: 'pi pi-exclamation-circle',
+      color: '#dc2626',
       primary: '13',
     },
     {
       title: 'After hours distance/cost',
       icon: 'pi pi-moon',
+      color: '#0891b2',
       primary: '842.97 km',
       secondary: 'R 1,325.04',
     },

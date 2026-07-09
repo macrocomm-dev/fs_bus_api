@@ -51,7 +51,7 @@
     <main class="analytics-content">
       <section class="metric-strip" aria-label="Fleet analytics summary">
         @for (tile of metricTiles; track tile.title) {
-          <article class="metric-tile" [class.metric-tile--featured]="tile.featured">
+          <article class="metric-tile" [style.--metric-color]="tile.color">
             <h3>{{ tile.title }}</h3>
             <div class="metric-tile__icon">
               <i [class]="tile.icon"></i>
