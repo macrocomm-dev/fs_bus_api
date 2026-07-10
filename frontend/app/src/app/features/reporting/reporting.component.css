@@ -229,6 +229,11 @@
   padding-bottom: 0;
 }
 
+:host ::ng-deep .filter-action-btn.p-button {
+  min-height: 3.55rem;
+  padding-block: 0.75rem;
+}
+
 /* ─── Tile sections ──────────────────────────────────────────────────────── */
 
 .tile-section {
@@ -263,7 +268,7 @@
 
 .macro-kpi-panel {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1rem;
   background: #e5e7eb;
   border: 1px solid #d1d5db;
@@ -329,7 +334,7 @@
 }
 
 .macro-kpi__value {
-  font-size: clamp(2.2rem, 4vw, 3.6rem);
+  font-size: clamp(2.2rem, 3.2vw, 3.4rem);
   font-weight: 800;
   line-height: 1;
   color: #111827;
@@ -341,6 +346,14 @@
   font-weight: 800;
   line-height: 1.2;
   text-transform: uppercase;
+}
+
+.macro-kpi__secondary {
+  color: #6b7280;
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-top: 0.35rem;
 }
 
 .macro-kpi__hint {
@@ -362,6 +375,12 @@
 
 .macro-kpi--critical .macro-kpi__icon-wrap {
   background: #b91c1c;
+}
+
+@media (max-width: 1280px) {
+  .macro-kpi-panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 900px) {

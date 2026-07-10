@@ -41,6 +41,7 @@ export interface KpiTile {
   title: string;
   metric: string;
   value: number | string;
+  secondaryText?: string;
   status: TileStatus;
   icon: string;
   summaryItems: SummaryItem[];
@@ -231,7 +232,28 @@ const TOP_KPI_DUMMY_VALUES: Record<string, string> = {
   'service-reliability': '94.8%',
   'operator-compliance': '91.6%',
   'photo-evidence': '4.1%',
+  'fleet-health': '87.4%',
 };
+
+const FLEET_HEALTH_SCORE_BUCKETS = [
+  { label: 'Under 50% Score', interstate: 2, bophelong: 3 },
+  { label: 'Over 50% Score', interstate: 18, bophelong: 14 },
+  { label: 'Over 80% Score', interstate: 13, bophelong: 9 },
+  { label: 'Over 95% Score', interstate: 5, bophelong: 3 },
+];
+
+const FLEET_HEALTH_SUMMARY_ITEMS: SummaryItem[] = [
+  ...FLEET_HEALTH_SCORE_BUCKETS.map((bucket) => ({
+    label: bucket.label,
+    value: bucket.interstate + bucket.bophelong,
+    drillKey: null,
+  })),
+  {
+    label: 'Overall Analytics Score',
+    value: TOP_KPI_DUMMY_VALUES['fleet-health'],
+    drillKey: null,
+  },
+];
 
 function buildOperatorComplianceDrillData(row: (typeof OPERATOR_COMPLIANCE_ROWS)[number]) {
   return [
@@ -1301,6 +1323,35 @@ const DRILL_CONFIGS: Record<string, DrillConfig> = {
       },
     ],
   },
+  'expired-bus-license-disk': {
+    title: 'Expired Bus Licence Disks',
+    columns: [
+      { field: 'busReg', header: 'Bus Reg' },
+      { field: 'fleetNo', header: 'Fleet No' },
+      { field: 'operator', header: 'Operator' },
+      { field: 'terminal', header: 'Terminal' },
+      { field: 'diskExpiry', header: 'Disk Expiry' },
+      { field: 'daysOverdue', header: 'Days Overdue' },
+    ],
+    data: [
+      {
+        busReg: 'FSB707FS',
+        fleetNo: '1077',
+        operator: 'Bophelong Transport',
+        terminal: 'Botshabelo',
+        diskExpiry: '2026-05-18',
+        daysOverdue: 24,
+      },
+      {
+        busReg: 'FSB808FS',
+        fleetNo: '1088',
+        operator: 'Interstate Bus Lines',
+        terminal: 'Bloemfontein',
+        diskExpiry: '2026-06-01',
+        daysOverdue: 10,
+      },
+    ],
+  },
   roadworthiness: {
     title: 'Roadworthiness Failures',
     columns: [
@@ -2224,14 +2275,15 @@ const TILES: KpiTile[] = [
     id: 'compliance-violations',
     title: 'Driver & Bus Compliance',
     metric: 'Compliance Violations',
-    value: 6,
+    value: 8,
     status: 'critical',
     icon: 'pi pi-exclamation-triangle',
     summaryItems: [
       { label: 'Expired PDP', value: 3, drillKey: 'expired-pdp' },
       { label: 'Expired Driver Licence', value: 2, drillKey: 'expired-driver-licence' },
       { label: 'Expired Route Licence', value: 1, drillKey: 'expired-route-licence' },
-      { label: 'Total Violations', value: 6, drillKey: null },
+      { label: 'Expired Bus Licence Disk', value: 2, drillKey: 'expired-bus-license-disk' },
+      { label: 'Total Violations', value: 8, drillKey: null },
     ],
   },
   {
@@ -2311,6 +2363,15 @@ const TILES: KpiTile[] = [
     status: 'critical',
     icon: 'pi pi-clipboard',
     summaryItems: FAILED_INSPECTION_SUMMARY_ITEMS,
+  },
+  {
+    id: 'fleet-health',
+    title: 'Fleet Health',
+    metric: 'Overall Analytics Score',
+    value: TOP_KPI_DUMMY_VALUES['fleet-health'],
+    status: 'good',
+    icon: 'pi pi-heart',
+    summaryItems: FLEET_HEALTH_SUMMARY_ITEMS,
   },
 ];
 
@@ -2445,7 +2506,7 @@ export class ReportingComponent {
     });
   });
 
-  readonly filteredRow1 = computed(() => this.filteredTiles().slice(6, 9));
+  readonly filteredRow1 = computed(() => this.filteredTiles().slice(6, 10));
   readonly filteredRow2 = computed(() => this.filteredTiles().slice(0, 3));
   readonly filteredRow3 = computed(() => this.filteredTiles().slice(3, 6));
 
@@ -2458,13 +2519,15 @@ export class ReportingComponent {
   });
 
   readonly topKpiRow = computed<KpiTile[]>(() => {
-    const [onTimeTile, routeComplianceTile, failedTile] = this.filteredRow1();
+    const [onTimeTile, routeComplianceTile, failedTile, fleetHealthTile] = this.filteredRow1();
+    const counts = this.topKpiCounts();
     return [
       {
         ...onTimeTile,
         title: 'On Time Performance',
         metric: 'On Time Performance',
         value: TOP_KPI_DUMMY_VALUES[onTimeTile.id],
+        secondaryText: counts.onTime,
         icon: 'pi pi-stopwatch',
       },
       {
@@ -2472,16 +2535,46 @@ export class ReportingComponent {
         title: 'Route Compliance',
         metric: 'Route Compliance',
         value: TOP_KPI_DUMMY_VALUES[routeComplianceTile.id],
+        secondaryText: counts.routeCompliance,
         icon: 'pi pi-map',
       },
       {
         ...failedTile,
-        title: 'Percentage of Failed Inspections',
-        metric: 'Percentage of Failed Inspections',
+        title: 'Failed Inspections',
+        metric: 'Failed Inspections',
         value: TOP_KPI_DUMMY_VALUES[failedTile.id],
+        secondaryText: counts.failedInspections,
         icon: 'pi pi-clipboard',
       },
+      {
+        ...fleetHealthTile,
+        title: 'Fleet Health',
+        metric: 'Fleet Health',
+        value: TOP_KPI_DUMMY_VALUES[fleetHealthTile.id],
+        icon: 'pi pi-heart',
+      },
     ];
+  });
+
+  readonly topKpiCounts = computed(() => {
+    const f = this.appliedFilters();
+    const onTimeRows = filterRecordsForKey('on-time', f);
+    const onTimeTotal = onTimeRows.reduce((sum, row) => sum + Number(row['total'] ?? 0), 0);
+    const onTimeCount = onTimeRows.reduce((sum, row) => sum + Number(row['onTime'] ?? 0), 0);
+
+    const routeExceptionCount =
+      filterRecordsForKey('missed-stops', f).length +
+      filterRecordsForKey('route-deviation-events', f).length;
+    const routeCompliantCount = Math.max(onTimeTotal - routeExceptionCount, 0);
+
+    const inspectionRows = INSPECTION_DRILL_KEYS.flatMap((key) => filterRecordsForKey(key, f));
+    const failedInspectionCount = inspectionRows.filter(hasFailedInspectionValue).length;
+
+    return {
+      onTime: `${onTimeCount}/${onTimeTotal}`,
+      routeCompliance: `${routeCompliantCount}/${onTimeTotal}`,
+      failedInspections: `${failedInspectionCount}/${inspectionRows.length}`,
+    };
   });
 
   // ── Global filters – draft (bound to form controls) ──────────────────────
@@ -2566,6 +2659,55 @@ export class ReportingComponent {
   readonly tileBarChartOptions = computed<EChartsOption | null>(() => {
     const tile = this.activeTile();
     if (!tile) return null;
+
+    if (tile.id === 'fleet-health') {
+      return {
+        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+        legend: {
+          top: 0,
+          left: 0,
+          textStyle: { fontSize: 10 },
+        },
+        grid: { left: 8, right: 46, bottom: 12, top: 34, containLabel: true },
+        xAxis: {
+          type: 'value',
+          minInterval: 1,
+          axisLabel: { fontSize: 11 },
+        },
+        yAxis: {
+          type: 'category',
+          data: FLEET_HEALTH_SCORE_BUCKETS.map((bucket) => bucket.label),
+          inverse: true,
+          axisLabel: {
+            fontSize: 11,
+            interval: 0,
+            width: 135,
+            overflow: 'break',
+            lineHeight: 14,
+          },
+        },
+        series: [
+          {
+            name: CHART_OPERATORS[0],
+            type: 'bar',
+            stack: 'operator',
+            data: FLEET_HEALTH_SCORE_BUCKETS.map((bucket) => bucket.interstate),
+            itemStyle: { color: '#1d4ed8' },
+            label: { show: true, position: 'insideRight', fontSize: 10, color: '#ffffff' },
+            barMaxWidth: 28,
+          },
+          {
+            name: CHART_OPERATORS[1],
+            type: 'bar',
+            stack: 'operator',
+            data: FLEET_HEALTH_SCORE_BUCKETS.map((bucket) => bucket.bophelong),
+            itemStyle: { color: '#f97316', borderRadius: [0, 4, 4, 0] },
+            label: { show: true, position: 'right', fontSize: 12, fontWeight: 'bold' },
+            barMaxWidth: 28,
+          },
+        ],
+      };
+    }
 
     if (tile.id === 'operator-compliance') {
       const categories = ['Shifts', 'Inspections', 'Passed Inspections', 'Failed Inspections'];
