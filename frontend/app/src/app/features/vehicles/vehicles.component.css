@@ -1,6 +1,6 @@
 .vehicles-wrapper {
-  --toolbar-height: 98px;
-  --drawer-width: min(18rem, 86vw);
+  --toolbar-height: 96px;
+  --drawer-width: min(13.5rem, 78vw);
 
   min-height: 100vh;
   display: flex;
@@ -15,7 +15,7 @@
   height: var(--toolbar-height);
   min-height: var(--toolbar-height);
   overflow: hidden;
-  padding: 0.95rem 1rem;
+  padding: 5px 1rem;
   position: sticky;
   top: 0;
   z-index: 1102;
@@ -39,6 +39,9 @@
 
 :host ::ng-deep .top-bar .p-toolbar-group-start,
 :host ::ng-deep .top-bar .p-toolbar-group-end {
+  height: 100%;
+  display: flex;
+  align-items: center;
   color: #ffffff;
 }
 
@@ -57,11 +60,12 @@
 }
 
 .toolbar-logo {
-  height: 164px;
+  height: 86px;
+  max-height: calc(var(--toolbar-height) - 10px);
   width: auto;
   display: block;
-  margin-top: -34px;
-  margin-bottom: -34px;
+  margin-top: 0;
+  margin-bottom: 0;
   margin-right: 0.35rem;
 }
 

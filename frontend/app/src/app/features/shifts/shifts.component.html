@@ -20,7 +20,7 @@
         pTooltip="Toggle navigation"
         tooltipPosition="bottom"
       />
-      <img src="macrocomm-black-background.png" alt="Macrocomm" class="toolbar-logo" />
+      <img src="macrocomm-black-background-toolbar.png" alt="Macrocomm" class="toolbar-logo" />
       <span class="app-name">
         <i class="pi pi-calendar mr-2"></i>FS Bus &#8211; Shifts
       </span>
@@ -55,16 +55,19 @@
           <p class="subtitle">{{ shifts().length }} monitor shifts captured.</p>
         </div>
 
-        <p-iconfield iconPosition="left" styleClass="record-search">
-          <p-inputicon styleClass="pi pi-search" />
-          <input
-            pInputText
-            #searchInput
-            type="text"
-            placeholder="Search shift, device, GPS or date"
-            (input)="shiftsTable.filterGlobal(searchInput.value, 'contains')"
-          />
-        </p-iconfield>
+        <p-floatlabel variant="on" class="app-float-label record-search">
+          <p-iconfield iconPosition="left">
+            <p-inputicon styleClass="pi pi-search" />
+            <input
+              pInputText
+              id="shift-search"
+              #searchInput
+              type="text"
+              (input)="shiftsTable.filterGlobal(searchInput.value, 'contains')"
+            />
+          </p-iconfield>
+          <label for="shift-search">Search shift, device, GPS or date</label>
+        </p-floatlabel>
       </div>
 
       @if (error()) {

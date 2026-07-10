@@ -38,7 +38,7 @@ body .nav-drawer__menu .p-menu-list {
 }
 
 body .nav-drawer__menu .p-menu-item-link {
-  padding: 0.75rem 1.35rem;
+  padding: 0.7rem 0.95rem;
 }
 
 body .nav-drawer__menu .p-menu-item-icon {
@@ -57,4 +57,22 @@ body .nav-drawer__menu .nav-item-active .p-menu-item-label {
   text-decoration-color: #ff6b00;
   text-decoration-thickness: 3px;
   text-underline-offset: 0.4rem;
+}
+
+.app-float-label,
+.app-float-label .p-inputtext,
+.app-float-label .p-datepicker,
+.app-float-label .p-multiselect,
+.app-float-label .p-iconfield,
+.app-float-label .p-password,
+.app-float-label p-password {
+  width: 100%;
+}
+
+.app-float-label > label {
+  font-weight: 700;
+}
+
+.app-float-label:has(.p-iconfield) > label {
+  margin-left: 1.9rem;
 }

@@ -21,7 +21,7 @@
         pTooltip="Toggle navigation"
         tooltipPosition="bottom"
       />
-      <img src="macrocomm-black-background.png" alt="Macrocomm" class="toolbar-logo" />
+      <img src="macrocomm-black-background-toolbar.png" alt="Macrocomm" class="toolbar-logo" />
       <span class="app-name">
         <i class="pi pi-chart-bar mr-2"></i>FS Bus &#8211; Reporting Dashboard
       </span>
@@ -68,51 +68,61 @@
         </div>
         <div class="filters-grid">
           <div class="filter-item filter-item--date-range">
-            <label class="filter-label">Date Range</label>
-            <p-datepicker
-              [(ngModel)]="draftDateRange"
-              selectionMode="range"
-              dateFormat="dd/mm/yy"
-              [showIcon]="true"
-              [readonlyInput]="true"
-              styleClass="filter-input"
-            />
+            <p-floatlabel variant="on" class="app-float-label">
+              <p-datepicker
+                inputId="report-date-range"
+                [(ngModel)]="draftDateRange"
+                selectionMode="range"
+                dateFormat="dd/mm/yy"
+                [showIcon]="true"
+                [readonlyInput]="true"
+                styleClass="filter-input"
+              />
+              <label for="report-date-range">Date Range</label>
+            </p-floatlabel>
           </div>
           <div class="filter-item">
-            <label class="filter-label">Operator</label>
-            <p-multiselect
-              [options]="operators"
-              [(ngModel)]="draftOperators"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="All Operators"
-              [showClear]="true"
-              styleClass="filter-input"
-            />
+            <p-floatlabel variant="on" class="app-float-label">
+              <p-select
+                inputId="report-operator-filter"
+                [options]="operatorOptions"
+                [(ngModel)]="draftOperator"
+                optionLabel="label"
+                optionValue="value"
+                styleClass="filter-input"
+              />
+              <label for="report-operator-filter">Operator</label>
+            </p-floatlabel>
           </div>
           <!-- <div class="filter-item">
-            <label class="filter-label">Terminal</label>
-            <p-multiselect
-              [options]="terminals"
-              [(ngModel)]="draftTerminals"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="All Terminals"
-              [showClear]="true"
-              styleClass="filter-input"
-            />
+            <p-floatlabel variant="on" class="app-float-label">
+              <p-multiselect
+                inputId="report-terminal-filter"
+                [options]="terminals"
+                [(ngModel)]="draftTerminals"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="All Terminals"
+                [showClear]="true"
+                styleClass="filter-input"
+              />
+              <label for="report-terminal-filter">Terminal</label>
+            </p-floatlabel>
           </div>
           <div class="filter-item">
-            <label class="filter-label">Route</label>
-            <p-multiselect
-              [options]="routes"
-              [(ngModel)]="draftRoutes"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="All Routes"
-              [showClear]="true"
-              styleClass="filter-input"
-            />
+            <p-floatlabel variant="on" class="app-float-label">
+              <p-multiselect
+                inputId="report-route-filter"
+                [options]="routes"
+                [(ngModel)]="draftRoutes"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="All Routes"
+                [showClear]="true"
+                styleClass="filter-input"
+              />
+              <label for="report-route-filter">Route</label>
+            </p-floatlabel>
           </div> -->
           <div class="filter-item filter-actions">
             <p-button
@@ -152,9 +162,9 @@
             >
               <div class="macro-kpi__icon-wrap">
                 <i [class]="tile.icon + ' macro-kpi__icon'"></i>
+                <div class="macro-kpi__value">{{ tile.value }}</div>
               </div>
               <div class="macro-kpi__content">
-                <div class="macro-kpi__value">{{ tile.value }}</div>
                 <div class="macro-kpi__label">{{ tile.metric }}</div>
                 @if (tile.secondaryText) {
                   <div class="macro-kpi__secondary">{{ tile.secondaryText }}</div>
@@ -364,16 +374,19 @@
     <div class="detail-view">
       <!-- Toolbar: search + export -->
       <div class="detail-toolbar">
-        <p-iconfield>
-          <p-inputicon styleClass="pi pi-search" />
-          <input
-            pInputText
-            type="text"
-            placeholder="Search records..."
-            [value]="searchQuery()"
-            (input)="searchQuery.set($any($event.target).value)"
-          />
-        </p-iconfield>
+        <p-floatlabel variant="on" class="app-float-label detail-search">
+          <p-iconfield>
+            <p-inputicon styleClass="pi pi-search" />
+            <input
+              pInputText
+              id="drill-search"
+              type="text"
+              [value]="searchQuery()"
+              (input)="searchQuery.set($any($event.target).value)"
+            />
+          </p-iconfield>
+          <label for="drill-search">Search records</label>
+        </p-floatlabel>
         <div class="export-buttons">
           <p-button
             label="CSV"

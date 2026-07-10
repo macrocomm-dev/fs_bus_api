@@ -6,6 +6,7 @@ import type { MenuItem } from 'primeng/api';
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
 import { DrawerModule } from 'primeng/drawer';
+import { FloatLabelModule } from 'primeng/floatlabel';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
@@ -58,6 +59,7 @@ const INSPECTION_METRIC_TYPES = [
     AvatarModule,
     ButtonModule,
     DrawerModule,
+    FloatLabelModule,
     IconFieldModule,
     InputIconModule,
     InputTextModule,

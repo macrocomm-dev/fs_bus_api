@@ -20,7 +20,7 @@
         pTooltip="Toggle navigation"
         tooltipPosition="bottom"
       />
-      <img src="macrocomm-black-background.png" alt="Macrocomm" class="toolbar-logo" />
+      <img src="macrocomm-black-background-toolbar.png" alt="Macrocomm" class="toolbar-logo" />
       <span class="app-name">
         <i class="pi pi-chart-line mr-2"></i>FS Bus &#8211; Analytics
       </span>
@@ -49,6 +49,17 @@
 
   <div class="analytics-body" [class.analytics-body--drawer-open]="menuVisible">
     <main class="analytics-content">
+      <section class="gauge-strip" aria-label="Driver behaviour score summary">
+        @for (gauge of gaugeScores; track gauge.label) {
+          <article class="gauge-card" [style.--gauge-score]="gauge.score" [style.--gauge-color]="gauge.color">
+            <div class="gauge-card__ring">
+              <div class="gauge-card__value">{{ gauge.score }}%</div>
+            </div>
+            <h3>{{ gauge.label }}</h3>
+          </article>
+        }
+      </section>
+
       <section class="metric-strip" aria-label="Fleet analytics summary">
         @for (tile of metricTiles; track tile.title) {
           <article class="metric-tile" [style.--metric-color]="tile.color">

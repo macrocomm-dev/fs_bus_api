@@ -8,6 +8,7 @@ import { PasswordModule } from 'primeng/password';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 import { CardModule } from 'primeng/card';
+import { FloatLabelModule } from 'primeng/floatlabel';
 
 @Component({
   selector: 'app-login',
@@ -20,6 +21,7 @@ import { CardModule } from 'primeng/card';
     ButtonModule,
     MessageModule,
     CardModule,
+    FloatLabelModule,
   ],
   templateUrl: './login.component.html',
   styleUrl: './login.component.css',

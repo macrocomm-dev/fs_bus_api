@@ -1,8 +1,8 @@
 /* ─── Layout ─────────────────────────────────────────────────────────────── */
 
 .reporting-wrapper {
-  --toolbar-height: 98px;
-  --drawer-width: min(18rem, 86vw);
+  --toolbar-height: 96px;
+  --drawer-width: min(13.5rem, 78vw);
 
   min-height: 100vh;
   display: flex;
@@ -19,7 +19,7 @@
   height: var(--toolbar-height);
   min-height: var(--toolbar-height);
   overflow: hidden;
-  padding: 0.95rem 1rem;
+  padding: 5px 1rem;
   position: sticky;
   top: 0;
   z-index: 1102;
@@ -43,6 +43,9 @@
 
 :host ::ng-deep .top-bar .p-toolbar-group-start,
 :host ::ng-deep .top-bar .p-toolbar-group-end {
+  height: 100%;
+  display: flex;
+  align-items: center;
   color: #ffffff;
 }
 
@@ -61,11 +64,12 @@
 }
 
 .toolbar-logo {
-  height: 164px;
+  height: 86px;
+  max-height: calc(var(--toolbar-height) - 10px);
   width: auto;
   display: block;
-  margin-top: -34px;
-  margin-bottom: -34px;
+  margin-top: 0;
+  margin-bottom: 0;
   margin-right: 0.35rem;
 }
 
@@ -216,22 +220,34 @@
 }
 
 :host ::ng-deep .filter-input .p-multiselect,
-:host ::ng-deep .filter-input.p-multiselect {
+:host ::ng-deep .filter-input.p-multiselect,
+:host ::ng-deep .filter-input .p-select,
+:host ::ng-deep .filter-input.p-select {
   width: 100%;
 }
 
 .filter-actions {
   flex-direction: row;
-  align-items: flex-end;
+  align-items: stretch;
+  align-self: flex-end;
   gap: 0.5rem;
   flex: 0 0 auto;
+  height: 2.625rem;
   min-width: unset;
   padding-bottom: 0;
 }
 
 :host ::ng-deep .filter-action-btn.p-button {
-  min-height: 3.55rem;
-  padding-block: 0.75rem;
+  height: 100% !important;
+  min-height: 100% !important;
+  padding-block: 0 !important;
+}
+
+:host ::ng-deep .filter-actions p-button,
+:host ::ng-deep .filter-actions .p-button {
+  height: 100% !important;
+  min-height: 100% !important;
+  padding-block: 0 !important;
 }
 
 /* ─── Tile sections ──────────────────────────────────────────────────────── */
@@ -269,27 +285,28 @@
 .macro-kpi-panel {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1rem;
+  gap: 1.25rem;
   background: #e5e7eb;
   border: 1px solid #d1d5db;
   border-radius: 8px;
-  padding: 1.1rem;
+  padding: 1.35rem 1.1rem;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
 }
 
 .macro-kpi {
-  min-height: 155px;
-  background: #f9fafb;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
+  position: relative;
+  min-height: 13.25rem;
+  background: transparent;
+  border: none;
+  border-radius: 999px;
   cursor: pointer;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  gap: 1rem;
-  padding: 1.25rem 1rem;
-  text-align: left;
+  gap: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  text-align: center;
   transition:
     background 0.15s ease,
     border-color 0.15s ease,
@@ -299,45 +316,56 @@
 
 .macro-kpi:hover,
 .macro-kpi:focus {
-  background: #ffffff;
-  border-color: #9ca3af;
-  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.12);
   outline: none;
   transform: translateY(-2px);
 }
 
+.macro-kpi:hover .macro-kpi__icon-wrap,
+.macro-kpi:focus .macro-kpi__icon-wrap {
+  box-shadow: 0 18px 32px rgba(15, 23, 42, 0.18);
+}
+
 .macro-kpi--active {
-  background: #ffffff;
-  border-color: #111827;
-  box-shadow: 0 0 0 2px rgba(17, 24, 39, 0.14);
+  background: transparent;
+  box-shadow: none;
+}
+
+.macro-kpi--active .macro-kpi__icon-wrap {
+  box-shadow:
+    0 0 0 4px rgba(255, 255, 255, 0.95),
+    0 0 0 7px rgba(17, 24, 39, 0.28),
+    0 18px 32px rgba(15, 23, 42, 0.18);
 }
 
 .macro-kpi__icon-wrap {
   flex: 0 0 auto;
-  width: 4.25rem;
-  height: 4.25rem;
+  width: 9.75rem;
+  height: 9.75rem;
   border-radius: 50%;
   background: #111827;
   color: #ffffff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex-direction: column;
+  gap: 0.35rem;
+  box-shadow: inset 0 -10px 24px rgba(0, 0, 0, 0.14);
 }
 
 .macro-kpi__icon {
-  font-size: 2.2rem;
+  font-size: 2rem;
 }
 
 .macro-kpi__content {
   min-width: 0;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
 }
 
 .macro-kpi__value {
-  font-size: clamp(2.2rem, 3.2vw, 3.4rem);
+  font-size: clamp(1.8rem, 2.6vw, 2.45rem);
   font-weight: 800;
   line-height: 1;
-  color: #111827;
+  color: #ffffff;
 }
 
 .macro-kpi__label {
@@ -357,7 +385,9 @@
 }
 
 .macro-kpi__hint {
-  flex: 0 0 auto;
+  position: absolute;
+  right: 0.55rem;
+  top: 4.4rem;
   color: #6b7280;
 }
 

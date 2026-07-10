@@ -13,6 +13,7 @@ import { CardModule } from 'primeng/card';
 import { DatePickerModule } from 'primeng/datepicker';
 import { DialogModule } from 'primeng/dialog';
 import { DividerModule } from 'primeng/divider';
+import { FloatLabelModule } from 'primeng/floatlabel';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
@@ -2370,7 +2371,7 @@ const TILES: KpiTile[] = [
     metric: 'Overall Analytics Score',
     value: TOP_KPI_DUMMY_VALUES['fleet-health'],
     status: 'good',
-    icon: 'pi pi-heart',
+    icon: 'pi pi-wave-pulse',
     summaryItems: FLEET_HEALTH_SUMMARY_ITEMS,
   },
 ];
@@ -2389,6 +2390,7 @@ const TILES: KpiTile[] = [
     DatePickerModule,
     DialogModule,
     DividerModule,
+    FloatLabelModule,
     DrawerModule,
     IconFieldModule,
     InputIconModule,
@@ -2551,7 +2553,7 @@ export class ReportingComponent {
         title: 'Fleet Health',
         metric: 'Fleet Health',
         value: TOP_KPI_DUMMY_VALUES[fleetHealthTile.id],
-        icon: 'pi pi-heart',
+        icon: 'pi pi-wave-pulse',
       },
     ];
   });
@@ -2579,7 +2581,7 @@ export class ReportingComponent {
 
   // ── Global filters – draft (bound to form controls) ──────────────────────
   draftDateRange: Date[] = [this.defaultDateFrom(), new Date()];
-  draftOperators: string[] = [];
+  draftOperator = 'all';
   draftTerminals: string[] = [];
   draftRoutes: string[] = [];
 
@@ -2600,6 +2602,17 @@ export class ReportingComponent {
       (f.routes.length > 0 ? 1 : 0)
     );
   });
+
+  readonly operatorOptions = [
+    { label: 'All Operators', value: 'all' },
+    { label: 'Interstate Bus Lines', value: 'interstate' },
+    { label: 'Free State Express', value: 'fse' },
+    { label: 'Bophelong Transport', value: 'bophelong' },
+    { label: 'Mangaung City Bus', value: 'mangaung' },
+    { label: 'Motheo Bus Service', value: 'motheo' },
+    { label: 'Welkom Transport Co', value: 'welkom' },
+    { label: 'SA Roadlink FS', value: 'saroadlink' },
+  ];
 
   readonly operators = [
     { label: 'Interstate Bus Lines', value: 'interstate' },
@@ -3076,7 +3089,7 @@ export class ReportingComponent {
     this.appliedFilters.set({
       dateFrom,
       dateTo,
-      operators: [...this.draftOperators],
+      operators: this.draftOperator === 'all' ? [] : [this.draftOperator],
       terminals: [...this.draftTerminals],
       routes: [...this.draftRoutes],
     });
@@ -3086,7 +3099,7 @@ export class ReportingComponent {
     const defaultFrom = this.defaultDateFrom();
     const defaultTo = new Date();
     this.draftDateRange = [defaultFrom, defaultTo];
-    this.draftOperators = [];
+    this.draftOperator = 'all';
     this.draftTerminals = [];
     this.draftRoutes = [];
     this.appliedFilters.set({

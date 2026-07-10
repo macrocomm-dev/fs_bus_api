@@ -22,6 +22,12 @@ type MetricTile = {
   secondary?: string;
 };
 
+type GaugeScore = {
+  label: string;
+  score: number;
+  color: string;
+};
+
 type VehiclePerformance = {
   fleetNo: string;
   registration: string;
@@ -133,6 +139,34 @@ export class AnalyticsComponent implements OnInit {
       color: '#0891b2',
       primary: '842.97 km',
       secondary: 'R 1,325.04',
+    },
+  ];
+
+  readonly gaugeScores: GaugeScore[] = [
+    {
+      label: 'Speeding',
+      score: 92,
+      color: '#1d4ed8',
+    },
+    {
+      label: 'Cornering',
+      score: 88,
+      color: '#16a34a',
+    },
+    {
+      label: 'Acceleration',
+      score: 84,
+      color: '#d97706',
+    },
+    {
+      label: 'After Hours',
+      score: 79,
+      color: '#0891b2',
+    },
+    {
+      label: 'Braking',
+      score: 91,
+      color: '#dc2626',
     },
   ];
 

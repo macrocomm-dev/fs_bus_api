@@ -29,9 +29,11 @@
           }
 
           <div class="form-field">
-            <label for="email">Email address</label>
-            <input pInputText id="email" type="email" formControlName="email" autocomplete="email" placeholder="you@example.com"
-              class="w-full" [class.ng-invalid]="emailCtrl.invalid && emailCtrl.touched" [class.ng-dirty]="emailCtrl.touched" />
+            <p-floatlabel variant="on" class="app-float-label">
+              <input pInputText id="email" type="email" formControlName="email" autocomplete="email"
+                class="w-full" [class.ng-invalid]="emailCtrl.invalid && emailCtrl.touched" [class.ng-dirty]="emailCtrl.touched" />
+              <label for="email">Email address</label>
+            </p-floatlabel>
             @if (emailCtrl.touched && emailCtrl.hasError('required')) {
             <small class="field-error">Email is required.</small>
             } @else if (emailCtrl.touched && emailCtrl.hasError('email')) {
@@ -40,11 +42,13 @@
             </div>
 
           <div class="form-field">
-            <label for="password">Password</label>
-            <p-password inputId="password" formControlName="password" placeholder="••••••••" [feedback]="false" [toggleMask]="true"
-              styleClass="w-full" [inputStyleClass]="
+            <p-floatlabel variant="on" class="app-float-label">
+              <p-password inputId="password" formControlName="password" [feedback]="false" [toggleMask]="true"
+                styleClass="w-full" [inputStyleClass]="
                                       'w-full' + (passwordCtrl.invalid && passwordCtrl.touched ? ' ng-invalid ng-dirty' : '')
                         " autocomplete="current-password" />
+              <label for="password">Password</label>
+            </p-floatlabel>
             @if (passwordCtrl.touched && passwordCtrl.hasError('required')) {
             <small class="field-error">Password is required.</small>
             } @else if (passwordCtrl.touched && passwordCtrl.hasError('minlength')) {
