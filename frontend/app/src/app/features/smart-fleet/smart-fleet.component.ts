@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import type { MenuItem } from 'primeng/api';
 import { AvatarModule } from 'primeng/avatar';
@@ -35,6 +35,7 @@ import { SmartFleetService } from '../../core/services/smart-fleet.service';
 })
 export class SmartFleetComponent implements OnInit, OnDestroy {
   private readonly auth = inject(AuthService);
+  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly sanitizer = inject(DomSanitizer);
   private readonly smartFleet = inject(SmartFleetService);
@@ -45,6 +46,8 @@ export class SmartFleetComponent implements OnInit, OnDestroy {
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
   readonly iframeLoading = signal(false);
+  readonly targetDeviceId = signal<string | null>(null);
+  readonly targetVehicle = signal<string | null>(null);
   private iframeRetryAttempted = false;
   private iframeLoadTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -89,6 +92,9 @@ export class SmartFleetComponent implements OnInit, OnDestroy {
       return;
     }
 
+    const queryParams = this.route.snapshot.queryParamMap;
+    this.targetDeviceId.set(queryParams.get('deviceId'));
+    this.targetVehicle.set(queryParams.get('vehicle'));
     this.loadIframeUrl();
   }
 

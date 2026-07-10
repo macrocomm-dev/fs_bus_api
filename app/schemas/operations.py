@@ -349,6 +349,11 @@ class VehicleResponse(BaseModel):
     date_of_1st_reg: datetime | None
     is_active: bool
     created_at: datetime
+    smart_fleet_device_id: int | None = None
+    smart_fleet_last_address: str | None = None
+    smart_fleet_last_response_time: datetime | None = None
+    last_inspection_at: datetime | None = None
+    last_inspection_passed: bool | None = None
 
 
 class VehicleEnvelope(BaseModel):

@@ -154,10 +154,29 @@
   white-space: nowrap;
 }
 
+:host ::ng-deep .vehicle-table table {
+  min-width: 98rem;
+}
+
 .vehicle-vin {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
     'Courier New', monospace;
   font-size: 0.85rem;
+}
+
+.vehicle-map-cell {
+  width: 4rem;
+  text-align: center;
+}
+
+:host ::ng-deep .vehicle-map-btn.p-button {
+  width: 2.25rem;
+  height: 2.25rem;
+  color: #1d4ed8;
+}
+
+.vehicle-map-empty {
+  color: #9ca3af;
 }
 
 @media (max-width: 960px) {

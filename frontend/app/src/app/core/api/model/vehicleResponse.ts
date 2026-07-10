@@ -28,5 +28,9 @@ export interface VehicleResponse {
     date_of_1st_reg: string | null;
     is_active: boolean;
     created_at: string;
+    smart_fleet_device_id?: number | null;
+    smart_fleet_last_address?: string | null;
+    smart_fleet_last_response_time?: string | null;
+    last_inspection_at?: string | null;
+    last_inspection_passed?: boolean | null;
 }
-

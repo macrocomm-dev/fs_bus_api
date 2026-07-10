@@ -3,6 +3,7 @@
 from datetime import datetime
 from typing import List, Optional
 
+from collections.abc import Iterable
 from fastapi import (
     Depends,
     File,
@@ -15,11 +16,14 @@ from fastapi import (
 )
 from fastapi.responses import JSONResponse, Response
 from firebase_admin import db
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from app.auth import TokenData, get_current_user, split_user_name
+from app.config import Settings, get_settings
 from app.database import get_db
 from app.models.app_auth import AppUser
+from app.models.bus_inspection import BusInspection
 from app.models.master_data import Operator, Route, Vehicle
 from app.models.operations import (
     Inspection,
@@ -34,6 +38,11 @@ from app.schemas.operations import (
     VehicleEnvelope,
     VehicleListEnvelope,
     VehicleResponse,
+)
+from app.services.smartfleet_service import (
+    SmartFleetVehiclePosition,
+    get_latest_vehicle_positions,
+    vehicle_identifier_keys,
 )
 
 vehicle_router = APIRouter()
@@ -107,10 +116,102 @@ def _is_internal(operator) -> bool:
     return operator is None or operator.operator_name == "Internal"
 
 
+def _vehicle_raw_identifiers(vehicle: Vehicle) -> set[str]:
+    """Return lowercase raw identifiers useful for SQL filtering."""
+
+    return {
+        value.strip().lower()
+        for value in (
+            vehicle.vin,
+            vehicle.registration_number,
+            vehicle.fleet_number,
+        )
+        if value and value.strip()
+    }
+
+
+def _vehicle_lookup_keys(vehicle: Vehicle) -> set[str]:
+    """Return normalized identifiers used to merge enrichment data."""
+
+    return vehicle_identifier_keys(
+        vehicle.vin,
+        vehicle.registration_number,
+        vehicle.fleet_number,
+    )
+
+
+def _vehicle_smart_fleet_lookup_keys(vehicle: Vehicle) -> set[str]:
+    """Return temporary Smart Fleet matching keys.
+
+    Smart Fleet object names currently expose registration numbers most
+    consistently, so avoid VIN/fleet matching until those values are fully
+    loaded and trusted across both systems.
+    """
+
+    return vehicle_identifier_keys(vehicle.registration_number)
+
+
+def _get_latest_inspections_by_vehicle_key(
+    vehicles: Iterable[Vehicle], db: Session
+) -> dict[str, BusInspection]:
+    """Load the latest inspection for each vehicle identifier represented in *vehicles*."""
+
+    raw_identifiers: set[str] = set()
+    for vehicle in vehicles:
+        raw_identifiers.update(_vehicle_raw_identifiers(vehicle))
+
+    if not raw_identifiers:
+        return {}
+
+    rows = (
+        db.query(BusInspection)
+        .filter(
+            or_(
+                func.lower(BusInspection.bus_id).in_(raw_identifiers),
+                func.lower(BusInspection.fleet_number).in_(raw_identifiers),
+            )
+        )
+        .order_by(BusInspection.inspection_time.desc())
+        .all()
+    )
+
+    latest_by_key: dict[str, BusInspection] = {}
+    for inspection in rows:
+        for key in vehicle_identifier_keys(inspection.bus_id, inspection.fleet_number):
+            latest_by_key.setdefault(key, inspection)
+    return latest_by_key
+
+
+def _first_matching_position(
+    vehicle: Vehicle, positions: dict[str, SmartFleetVehiclePosition]
+) -> SmartFleetVehiclePosition | None:
+    for key in _vehicle_smart_fleet_lookup_keys(vehicle):
+        position = positions.get(key)
+        if position is not None:
+            return position
+    return None
+
+
+def _first_matching_inspection(
+    vehicle: Vehicle, inspections: dict[str, BusInspection]
+) -> BusInspection | None:
+    for key in _vehicle_lookup_keys(vehicle):
+        inspection = inspections.get(key)
+        if inspection is not None:
+            return inspection
+    return None
+
+
 def _build_vehicle_response(
-    vehicle: Vehicle, operator: Optional[Operator]
+    vehicle: Vehicle,
+    operator: Optional[Operator],
+    smart_fleet_positions: dict[str, SmartFleetVehiclePosition] | None = None,
+    latest_inspections: dict[str, BusInspection] | None = None,
 ) -> VehicleResponse:
     """Convert ORM vehicle rows into the API response schema."""
+    smart_fleet_position = _first_matching_position(vehicle, smart_fleet_positions or {})
+    latest_inspection = _first_matching_inspection(vehicle, latest_inspections or {})
+
     return VehicleResponse(
         vehicle_id=vehicle.vehicle_id,
         vin=vehicle.vin,
@@ -128,6 +229,21 @@ def _build_vehicle_response(
         date_of_1st_reg=vehicle.date_of_1st_reg,
         is_active=vehicle.is_active,
         created_at=vehicle.created_at,
+        smart_fleet_device_id=(
+            smart_fleet_position.smart_fleet_device_id
+            if smart_fleet_position
+            else None
+        ),
+        smart_fleet_last_address=(
+            smart_fleet_position.last_address if smart_fleet_position else None
+        ),
+        smart_fleet_last_response_time=(
+            smart_fleet_position.last_response_time if smart_fleet_position else None
+        ),
+        last_inspection_at=(
+            latest_inspection.inspection_time if latest_inspection else None
+        ),
+        last_inspection_passed=latest_inspection.pass_ if latest_inspection else None,
     )
 
 
@@ -145,6 +261,7 @@ async def get_vehicles(
     page_size: int = Query(100, ge=1, le=500, description="Results per page"),
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
+    settings: Settings = Depends(get_settings),
 ):
     """Return a filtered, paginated list of vehicles visible to the caller."""
     try:
@@ -169,13 +286,24 @@ async def get_vehicles(
             .limit(page_size)
             .all()
         )
+        vehicles = [vehicle for vehicle, _operator in rows]
+        smart_fleet_positions = get_latest_vehicle_positions(settings)
+        latest_inspections = _get_latest_inspections_by_vehicle_key(vehicles, db)
 
         return {
             "message": MessageResponse.success,
             "total": total,
             "page": page,
             "page_size": page_size,
-            "vehicles": [_build_vehicle_response(v, op) for v, op in rows],
+            "vehicles": [
+                _build_vehicle_response(
+                    v,
+                    op,
+                    smart_fleet_positions=smart_fleet_positions,
+                    latest_inspections=latest_inspections,
+                )
+                for v, op in rows
+            ],
         }
     except HTTPException:
         raise
@@ -198,6 +326,7 @@ async def get_vehicle(
     vin: str,
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
+    settings: Settings = Depends(get_settings),
 ):
     """Return one vehicle identified by VIN, enforcing operator scoping rules."""
     try:
@@ -219,9 +348,16 @@ async def get_vehicle(
             )
 
         vehicle, op = row
+        smart_fleet_positions = get_latest_vehicle_positions(settings)
+        latest_inspections = _get_latest_inspections_by_vehicle_key([vehicle], db)
         return {
             "message": MessageResponse.success,
-            "vehicle": _build_vehicle_response(vehicle, op),
+            "vehicle": _build_vehicle_response(
+                vehicle,
+                op,
+                smart_fleet_positions=smart_fleet_positions,
+                latest_inspections=latest_inspections,
+            ),
         }
     except HTTPException:
         raise

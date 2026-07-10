@@ -114,6 +114,20 @@ export class VehiclesComponent implements OnInit {
     this.router.navigate(['/smart-fleet']);
   }
 
+  openLiveMapForVehicle(vehicle: VehicleResponse): void {
+    if (!vehicle.smart_fleet_device_id) {
+      return;
+    }
+
+    this.menuVisible = false;
+    this.router.navigate(['/smart-fleet'], {
+      queryParams: {
+        deviceId: vehicle.smart_fleet_device_id,
+        vehicle: vehicle.registration_number ?? vehicle.fleet_number ?? vehicle.vin,
+      },
+    });
+  }
+
   openAnalytics(): void {
     this.menuVisible = false;
     this.router.navigate(['/analytics']);
@@ -135,6 +149,30 @@ export class VehiclesComponent implements OnInit {
 
   statusSeverity(isActive: boolean): 'success' | 'danger' {
     return isActive ? 'success' : 'danger';
+  }
+
+  inspectionSeverity(passed: boolean | null | undefined): 'success' | 'danger' | 'secondary' {
+    if (passed === true) {
+      return 'success';
+    }
+    if (passed === false) {
+      return 'danger';
+    }
+    return 'secondary';
+  }
+
+  inspectionStatusLabel(passed: boolean | null | undefined): string {
+    if (passed === true) {
+      return 'Passed';
+    }
+    if (passed === false) {
+      return 'Failed';
+    }
+    return 'No inspection';
+  }
+
+  mapTooltip(vehicle: VehicleResponse): string {
+    return vehicle.smart_fleet_last_address || 'No Smart Fleet address available';
   }
 
   private loadVehicles(): void {

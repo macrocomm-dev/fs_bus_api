@@ -87,7 +87,10 @@
           'vin',
           'operator_name',
           'make',
-          'year'
+          'year',
+          'smart_fleet_last_address',
+          'smart_fleet_last_response_time',
+          'last_inspection_at'
         ]"
         sortMode="multiple"
         styleClass="vehicle-table"
@@ -103,6 +106,16 @@
             <th pSortableColumn="operator_name">Operator <p-sortIcon field="operator_name" /></th>
             <th pSortableColumn="make">Make <p-sortIcon field="make" /></th>
             <th pSortableColumn="year">Year <p-sortIcon field="year" /></th>
+            <th pSortableColumn="smart_fleet_last_address">Map <p-sortIcon field="smart_fleet_last_address" /></th>
+            <th pSortableColumn="smart_fleet_last_response_time">
+              Last Response <p-sortIcon field="smart_fleet_last_response_time" />
+            </th>
+            <th pSortableColumn="last_inspection_at">
+              Last Inspection <p-sortIcon field="last_inspection_at" />
+            </th>
+            <th pSortableColumn="last_inspection_passed">
+              Inspection Result <p-sortIcon field="last_inspection_passed" />
+            </th>
             <th pSortableColumn="is_active">Status <p-sortIcon field="is_active" /></th>
           </tr>
         </ng-template>
@@ -115,6 +128,41 @@
             <td>{{ vehicle.operator_name || '—' }}</td>
             <td>{{ vehicle.make || '—' }}</td>
             <td>{{ vehicle.year || '—' }}</td>
+            <td class="vehicle-map-cell">
+              @if (vehicle.smart_fleet_device_id) {
+                <p-button
+                  icon="pi pi-map-marker"
+                  [text]="true"
+                  severity="secondary"
+                  styleClass="vehicle-map-btn"
+                  [pTooltip]="mapTooltip(vehicle)"
+                  tooltipPosition="left"
+                  (onClick)="openLiveMapForVehicle(vehicle)"
+                />
+              } @else {
+                <span class="vehicle-map-empty">—</span>
+              }
+            </td>
+            <td>
+              {{
+                vehicle.smart_fleet_last_response_time
+                  ? (vehicle.smart_fleet_last_response_time | date: 'dd/MM/yyyy HH:mm')
+                  : '—'
+              }}
+            </td>
+            <td>
+              {{
+                vehicle.last_inspection_at
+                  ? (vehicle.last_inspection_at | date: 'dd/MM/yyyy HH:mm')
+                  : '—'
+              }}
+            </td>
+            <td>
+              <p-tag
+                [value]="inspectionStatusLabel(vehicle.last_inspection_passed)"
+                [severity]="inspectionSeverity(vehicle.last_inspection_passed)"
+              />
+            </td>
             <td>
               <p-tag
                 [value]="vehicle.is_active ? 'Active' : 'Inactive'"
@@ -126,7 +174,7 @@
 
         <ng-template pTemplate="emptymessage">
           <tr>
-            <td colspan="7">No vehicles matched the current search.</td>
+            <td colspan="11">No vehicles matched the current search.</td>
           </tr>
         </ng-template>
       </p-table>

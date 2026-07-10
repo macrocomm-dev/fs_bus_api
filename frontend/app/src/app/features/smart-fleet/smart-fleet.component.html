@@ -52,6 +52,9 @@
       <div class="page-header">
         <div>
           <h2>Smart Fleet Live Map</h2>
+          @if (targetVehicle()) {
+            <p-tag [value]="'Vehicle: ' + targetVehicle()" severity="info" />
+          }
           <!-- <p class="subtitle">Embedded Smart Fleet session using server-generated OTT login.</p> -->
         </div>
 
