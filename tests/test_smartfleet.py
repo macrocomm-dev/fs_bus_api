@@ -64,7 +64,7 @@ class SmartFleetTests(unittest.TestCase):
             smart_fleet_api_hash="Macrocomm12#",
         )
 
-        fake_response = Mock(status_code=200)
+        fake_response = Mock(status_code=401)
         fake_response.json.return_value = {"status": 0, "message": "Wrong credentials."}
 
         with patch("app.routers.smartfleet.re.post", return_value=fake_response):
@@ -75,3 +75,22 @@ class SmartFleetTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 502)
         self.assertEqual(response.json()["detail"], "Wrong credentials.")
+
+    def test_iframe_login_url_returns_server_error_when_not_configured(self):
+        app.dependency_overrides[get_current_user] = lambda: TokenData(
+            sub="firebase-user-3", role="Admin"
+        )
+        app.dependency_overrides[get_settings] = lambda: Settings(
+            load_gcp_secrets=False,
+            smart_fleet_base_url="https://smart-fleet.co.za",
+            smart_fleet_email="",
+            smart_fleet_api_hash="",
+        )
+
+        response = client.get(
+            "/smartfleet/iframe-login-url",
+            headers={"Authorization": "Bearer firebase-token"},
+        )
+
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(response.json()["detail"], "Smart Fleet is not configured.")

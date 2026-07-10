@@ -68,8 +68,20 @@ async def get_iframe_login_url(
 ) -> SmartFleetIframeUrlResponse:
     """Return a Smart Fleet iframe login URL built from a server-side OTT exchange."""
 
+    if not settings.smart_fleet_base_url or not settings.smart_fleet_email or not settings.smart_fleet_api_hash:
+        logger.error(
+            "Smart Fleet OTT configuration is incomplete: base_url_set=%s email_set=%s api_hash_set=%s",
+            bool(settings.smart_fleet_base_url),
+            bool(settings.smart_fleet_email),
+            bool(settings.smart_fleet_api_hash),
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Smart Fleet is not configured.",
+        )
+
+    token_url = _build_smart_fleet_url(settings.smart_fleet_base_url, "/api/one_time_token")
     try:
-        token_url = _build_smart_fleet_url(settings.smart_fleet_base_url, "/api/one_time_token")
         response = re.post(
             token_url,
             params={"lang": "en", "user_api_hash": settings.smart_fleet_api_hash},
@@ -85,9 +97,14 @@ async def get_iframe_login_url(
         ) from exc
 
     try:
-        payload = SmartFleetOttTokenResponse.model_validate(response.json())
+        response_body = response.json()
+        payload = SmartFleetOttTokenResponse.model_validate(response_body)
     except ValueError as exc:
-        logger.exception("Smart Fleet OTT response was not valid JSON")
+        logger.exception(
+            "Smart Fleet OTT response was not valid JSON: status=%s body_prefix=%r",
+            response.status_code,
+            response.text[:500],
+        )
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="Smart Fleet returned an invalid response.",
@@ -95,6 +112,13 @@ async def get_iframe_login_url(
 
     if response.status_code >= 400 or not payload.token:
         detail = payload.message or "Could not create Smart Fleet login link."
+        logger.warning(
+            "Smart Fleet OTT request was rejected: http_status=%s smart_status=%s message=%r email=%s",
+            response.status_code,
+            payload.status,
+            payload.message,
+            settings.smart_fleet_email,
+        )
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=detail,

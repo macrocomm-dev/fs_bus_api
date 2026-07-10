@@ -20,3 +20,41 @@ body {
   --brand-primary: #1e3a5f;
   --brand-accent: #2563eb;
 }
+
+body .nav-drawer .p-drawer-header {
+  display: none;
+}
+
+body .nav-drawer .p-drawer-content {
+  padding: 0.75rem 0 0;
+}
+
+body .nav-drawer__menu {
+  background: transparent;
+}
+
+body .nav-drawer__menu .p-menu-list {
+  padding: 0;
+}
+
+body .nav-drawer__menu .p-menu-item-link {
+  padding: 0.75rem 1.35rem;
+}
+
+body .nav-drawer__menu .p-menu-item-icon {
+  color: #94a3b8;
+}
+
+body .nav-drawer__menu .nav-item-active .p-menu-item-link,
+body .nav-drawer__menu .nav-item-active .p-menu-item-content,
+body .nav-drawer__menu .nav-item-active .p-menu-item-label {
+  color: #111827;
+  font-weight: 800;
+}
+
+body .nav-drawer__menu .nav-item-active .p-menu-item-label {
+  text-decoration: underline;
+  text-decoration-color: #ff6b00;
+  text-decoration-thickness: 3px;
+  text-underline-offset: 0.4rem;
+}

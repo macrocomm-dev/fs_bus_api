@@ -12,6 +12,7 @@ build/
 venv/
 env/
 .env
+.local/
 
 # Testing
 .pytest_cache/

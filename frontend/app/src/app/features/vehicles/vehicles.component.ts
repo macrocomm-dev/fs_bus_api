@@ -70,6 +70,7 @@ export class VehiclesComponent implements OnInit {
     {
       label: 'Vehicles',
       icon: 'pi pi-car',
+      styleClass: 'nav-item-active',
       command: () => this.closeMenu(),
     },
     {

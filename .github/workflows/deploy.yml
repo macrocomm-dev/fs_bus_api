@@ -135,8 +135,8 @@ jobs:
             --service-account "fs-bus-api-runtime@${{ env.GCP_PROJECT_ID }}.iam.gserviceaccount.com" \
             --allow-unauthenticated \
             --add-cloudsql-instances "${{ vars.CLOUD_SQL_INSTANCE }}" \
-            --set-secrets="SECRET_KEY=api-secret-key:latest,DB_PASSWORD=db-password:latest,DB_NAME=db-name:latest,DB_USER=db-user:latest" \
-            --set-env-vars="GOOGLE_CLOUD_PROJECT=${{ env.GCP_PROJECT_ID }},DB_HOST=/cloudsql/${{ vars.CLOUD_SQL_INSTANCE }}" \
+            --set-secrets="SECRET_KEY=api-secret-key:latest,DB_PASSWORD=db-password:latest,DB_NAME=db-name:latest,DB_USER=db-user:latest,SMART_FLEET_EMAIL=smart-fleet-email:latest,SMART_FLEET_API_HASH=smart-fleet-api-hash:latest" \
+            --set-env-vars="GOOGLE_CLOUD_PROJECT=${{ env.GCP_PROJECT_ID }},DB_HOST=/cloudsql/${{ vars.CLOUD_SQL_INSTANCE }},SMART_FLEET_BASE_URL=https://smart-fleet.co.za" \
             --quiet
 
       - name: Show service URL

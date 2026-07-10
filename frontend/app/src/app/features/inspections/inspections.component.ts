@@ -107,7 +107,7 @@ export class InspectionsComponent implements OnInit {
     { label: 'Live Map', icon: 'pi pi-map', command: () => this.openSmartFleet() },
     { label: 'Analytics', icon: 'pi pi-chart-line', command: () => this.openAnalytics() },
     { label: 'Vehicles', icon: 'pi pi-car', command: () => this.openVehicles() },
-    { label: 'Inspections', icon: 'pi pi-search', command: () => this.closeMenu() },
+    { label: 'Inspections', icon: 'pi pi-search', styleClass: 'nav-item-active', command: () => this.closeMenu() },
     { label: 'Shifts', icon: 'pi pi-calendar', command: () => this.openShifts() },
   ];
 

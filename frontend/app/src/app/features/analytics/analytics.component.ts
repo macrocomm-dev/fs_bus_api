@@ -73,6 +73,7 @@ export class AnalyticsComponent implements OnInit {
     {
       label: 'Analytics',
       icon: 'pi pi-chart-line',
+      styleClass: 'nav-item-active',
       command: () => this.closeMenu(),
     },
     {

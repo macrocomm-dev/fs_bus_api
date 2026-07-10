@@ -2355,6 +2355,7 @@ export class ReportingComponent {
     {
       label: 'Reports',
       icon: 'pi pi-chart-bar',
+      styleClass: 'nav-item-active',
       command: () => this.openReporting(),
     },
     {

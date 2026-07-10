@@ -1,5 +1,5 @@
 .smart-fleet-wrapper {
-  --toolbar-height: 62px;
+  --toolbar-height: 98px;
   --drawer-width: min(18rem, 86vw);
 
   height: 100dvh;
@@ -17,7 +17,7 @@
   height: var(--toolbar-height);
   min-height: var(--toolbar-height);
   overflow: hidden;
-  padding: 0.1rem 0.9rem;
+  padding: 0.95rem 1rem;
   position: sticky;
   top: 0;
   z-index: 1102;
@@ -36,7 +36,7 @@
 }
 
 :host ::ng-deep .nav-drawer .p-drawer-content {
-  padding-top: 0.25rem;
+  padding: 0.75rem 0 0;
 }
 
 :host ::ng-deep .top-bar .p-toolbar-group-start,
@@ -59,11 +59,11 @@
 }
 
 .toolbar-logo {
-  height: 142px;
+  height: 164px;
   width: auto;
   display: block;
-  margin-top: -40px;
-  margin-bottom: -40px;
+  margin-top: -34px;
+  margin-bottom: -34px;
   margin-right: 0.35rem;
 }
 

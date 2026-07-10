@@ -58,6 +58,7 @@ export class SmartFleetComponent implements OnInit, OnDestroy {
     {
       label: 'Live Map',
       icon: 'pi pi-map',
+      styleClass: 'nav-item-active',
       command: () => this.closeMenu(),
     },
     {

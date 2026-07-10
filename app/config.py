@@ -93,8 +93,8 @@ class Settings(BaseSettings):
 
     # Smart Fleet / GPSWox
     smart_fleet_base_url: str = "https://smart-fleet.co.za"
-    smart_fleet_email: str = "FreeStateBus@macrocomm.co.za"
-    smart_fleet_api_hash: str = "Macrocomm12#"
+    smart_fleet_email: str = ""
+    smart_fleet_api_hash: str = ""
 
     # Error alert email
     alert_email_enabled: bool = True
@@ -137,6 +137,8 @@ class Settings(BaseSettings):
         "smtp_host": "SMTP_HOST",
         "smtp_port": "SMTP_PORT",
         "smtp_use_ssl": "SMTP_USE_SSL",
+        "smart_fleet_email": "smart-fleet-email",
+        "smart_fleet_api_hash": "smart-fleet-api-hash",
     }
 
     def load_from_secret_manager(self) -> None:
