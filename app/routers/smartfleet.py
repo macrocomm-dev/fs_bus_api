@@ -1,4 +1,5 @@
 import logging
+from hashlib import sha256
 from typing import Annotated
 from urllib.parse import urlencode
 
@@ -14,7 +15,7 @@ from fastapi import (
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
-from app.auth import TokenData, get_current_user
+from app.auth import TokenData, get_current_user, require_role
 from app.config import Settings, get_settings
 from app.database import get_db
 from app.schemas.smartfleet import (
@@ -30,6 +31,20 @@ smartfleet_router = APIRouter()
 
 def _build_smart_fleet_url(base_url: str, path: str) -> str:
     return f"{base_url.rstrip('/')}/{path.lstrip('/')}"
+
+
+def _secret_fingerprint(value: str | None) -> dict[str, str | int | bool | None]:
+    if value is None:
+        return {
+            "set": False,
+            "length": 0,
+            "sha256_prefix": None,
+        }
+    return {
+        "set": bool(value),
+        "length": len(value),
+        "sha256_prefix": sha256(value.encode("utf-8")).hexdigest()[:12],
+    }
 
 
 @smartfleet_router.post("/create-geofence")
@@ -113,11 +128,11 @@ async def get_iframe_login_url(
     if response.status_code >= 400 or not payload.token:
         detail = payload.message or "Could not create Smart Fleet login link."
         logger.warning(
-            "Smart Fleet OTT request was rejected: http_status=%s smart_status=%s message=%r email=%s",
+            "Smart Fleet OTT request was rejected: http_status=%s smart_status=%s message=%r email_set=%s",
             response.status_code,
             payload.status,
             payload.message,
-            settings.smart_fleet_email,
+            bool(settings.smart_fleet_email),
         )
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
@@ -129,3 +144,60 @@ async def get_iframe_login_url(
         f"/login?{urlencode({'ott': payload.token})}",
     )
     return SmartFleetIframeUrlResponse(iframe_url=iframe_url)
+
+
+@smartfleet_router.get("/diagnostics/runtime", include_in_schema=False)
+async def smart_fleet_runtime_diagnostics(
+    current_user: Annotated[TokenData, Depends(require_role("Admin"))],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> dict:
+    """Return safe Smart Fleet runtime diagnostics for deployed configuration checks."""
+
+    token_url = _build_smart_fleet_url(settings.smart_fleet_base_url, "/api/one_time_token")
+    diagnostics = {
+        "current_user": {
+            "email": current_user.email,
+            "role": current_user.role,
+        },
+        "runtime_config": {
+            "base_url": settings.smart_fleet_base_url,
+            "email": _secret_fingerprint(settings.smart_fleet_email),
+            "api_hash": _secret_fingerprint(settings.smart_fleet_api_hash),
+        },
+        "smart_fleet_probe": {
+            "endpoint": "/api/one_time_token",
+            "http_status": None,
+            "smart_status": None,
+            "message": None,
+            "token_present": False,
+            "error": None,
+        },
+    }
+
+    if not settings.smart_fleet_base_url or not settings.smart_fleet_email or not settings.smart_fleet_api_hash:
+        diagnostics["smart_fleet_probe"]["error"] = "Smart Fleet configuration is incomplete."
+        return diagnostics
+
+    try:
+        response = re.post(
+            token_url,
+            params={"lang": "en", "user_api_hash": settings.smart_fleet_api_hash},
+            json={"email": settings.smart_fleet_email},
+            headers={"Accept": "application/json", "Content-Type": "application/json"},
+            timeout=20,
+        )
+        diagnostics["smart_fleet_probe"]["http_status"] = response.status_code
+        try:
+            body = response.json()
+        except ValueError:
+            diagnostics["smart_fleet_probe"]["error"] = "Smart Fleet returned non-JSON response."
+            return diagnostics
+
+        payload = SmartFleetOttTokenResponse.model_validate(body)
+        diagnostics["smart_fleet_probe"]["smart_status"] = payload.status
+        diagnostics["smart_fleet_probe"]["message"] = payload.message
+        diagnostics["smart_fleet_probe"]["token_present"] = bool(payload.token)
+    except re.RequestException as exc:
+        diagnostics["smart_fleet_probe"]["error"] = f"{type(exc).__name__}: {exc}"
+
+    return diagnostics

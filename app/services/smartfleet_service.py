@@ -72,7 +72,13 @@ def get_latest_vehicle_positions(
             headers={"Accept": "application/json"},
             timeout=20,
         )
-        response.raise_for_status()
+        if response.status_code >= 400:
+            logger.warning(
+                "Smart Fleet latest-device request was rejected: status=%s body_prefix=%r",
+                response.status_code,
+                response.text[:300],
+            )
+            return {}
         payload = response.json()
     except requests.RequestException:
         logger.exception("Smart Fleet latest-device request failed.")
