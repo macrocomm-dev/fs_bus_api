@@ -154,15 +154,29 @@
   margin-bottom: 0.4rem;
 }
 
-:host ::ng-deep .form-field .p-floatlabel label {
-  color: #dbeafe;
+:host ::ng-deep .form-field .app-float-label label {
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  min-height: 1rem;
+  background: #172235;
+  border: 1px solid rgba(191, 219, 254, 0.24);
+  border-radius: 999px;
+  color: #f8fafc !important;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.1;
+  padding: 0 0.35rem;
 }
 
+:host ::ng-deep .form-field .p-floatlabel-on:has(.p-filled) label,
+:host ::ng-deep .form-field .p-floatlabel-on:has(input.ng-dirty) label,
 :host ::ng-deep .form-field .p-floatlabel-on:has(.p-inputwrapper-filled) label,
+:host ::ng-deep .form-field .p-floatlabel-on:has(input:-webkit-autofill) label,
 :host ::ng-deep .form-field .p-floatlabel-on:has(input:focus) label {
   background: #172235;
   border-radius: 999px;
-  padding: 0 0.25rem;
+  color: #eff6ff !important;
 }
 
 :host ::ng-deep .form-field .p-inputtext {

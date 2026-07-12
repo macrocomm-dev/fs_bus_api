@@ -3,6 +3,33 @@ set -euo pipefail
 
 PROJECT_ID="${PROJECT_ID:-bus-track-480813}"
 
+load_dotenv_file() {
+  local env_file="$1"
+  local line key value
+
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    [[ "$line" =~ ^[[:space:]]*# ]] && continue
+    [[ -z "${line//[[:space:]]/}" ]] && continue
+    [[ "$line" != *"="* ]] && continue
+
+    key="${line%%=*}"
+    value="${line#*=}"
+    key="${key#"${key%%[![:space:]]*}"}"
+    key="${key%"${key##*[![:space:]]}"}"
+
+    if [[ "$value" =~ ^\".*\"$ ]] || [[ "$value" =~ ^\'.*\'$ ]]; then
+      value="${value:1:-1}"
+    fi
+
+    printf -v "$key" '%s' "$value"
+    export "$key"
+  done < "$env_file"
+}
+
+if [[ -f ".env" ]]; then
+  load_dotenv_file ".env"
+fi
+
 if [[ -z "${SMART_FLEET_EMAIL:-}" ]]; then
   echo "SMART_FLEET_EMAIL is required." >&2
   echo "Example: SMART_FLEET_EMAIL='user@example.com' SMART_FLEET_API_HASH='...' $0" >&2
