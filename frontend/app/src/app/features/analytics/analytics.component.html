@@ -80,6 +80,47 @@
       <section class="performance-section">
         <div class="section-header">
           <div>
+            <h2>Last Events</h2>
+            <p>Latest vehicle events from the analytics feed.</p>
+          </div>
+        </div>
+
+        <p-table
+          [value]="lastEvents"
+          [paginator]="true"
+          [rows]="5"
+          [rowsPerPageOptions]="[5, 10, 25]"
+          sortMode="multiple"
+          styleClass="analytics-table"
+          stripedRows
+        >
+          <ng-template pTemplate="header">
+            <tr>
+              <th pSortableColumn="bus">Bus <p-sortIcon field="bus" /></th>
+              <th pSortableColumn="location">Location <p-sortIcon field="location" /></th>
+              <th pSortableColumn="time">Time <p-sortIcon field="time" /></th>
+              <th pSortableColumn="eventType">Event Type <p-sortIcon field="eventType" /></th>
+              <th pSortableColumn="measurement">Measurement <p-sortIcon field="measurement" /></th>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="body" let-row>
+            <tr>
+              <td class="fleet-cell">{{ row.bus }}</td>
+              <td class="location-cell">{{ row.location }}</td>
+              <td>{{ row.time }}</td>
+              <td>
+                <p-tag [value]="row.eventType" [severity]="eventSeverity(row.eventType)" />
+              </td>
+              <td class="measurement-cell">{{ row.measurement }}</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </section>
+
+      <section class="performance-section">
+        <div class="section-header">
+          <div>
             <h2>Vehicle Performance</h2>
             <p>Performance per vehicle across each analytics category.</p>
           </div>
@@ -126,6 +167,19 @@
             </tr>
           </ng-template>
         </p-table>
+      </section>
+
+      <section class="performance-section">
+        <div class="section-header">
+          <div>
+            <h2>Vehicle Scores</h2>
+            <p>Scores sorted from worst to best, with bars coloured by operator.</p>
+          </div>
+        </div>
+
+        <div class="score-chart-card">
+          <div echarts [options]="vehicleScoreChartOptions" class="score-chart"></div>
+        </div>
       </section>
     </main>
   </div>

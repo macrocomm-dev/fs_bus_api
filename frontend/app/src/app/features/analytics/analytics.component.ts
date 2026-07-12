@@ -2,6 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 
+import type { EChartsOption } from 'echarts';
+import { NgxEchartsDirective } from 'ngx-echarts';
 import type { MenuItem } from 'primeng/api';
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
@@ -41,6 +43,15 @@ type VehiclePerformance = {
   score: number;
 };
 
+type LastEvent = {
+  bus: string;
+  location: string;
+  time: string;
+  eventType: string;
+  measurement: string;
+  operator: string;
+};
+
 @Component({
   selector: 'app-analytics',
   standalone: true,
@@ -50,6 +61,7 @@ type VehiclePerformance = {
     ButtonModule,
     DrawerModule,
     MenuModule,
+    NgxEchartsDirective,
     TableModule,
     TagModule,
     ToolbarModule,
@@ -233,6 +245,144 @@ export class AnalyticsComponent implements OnInit {
     },
   ];
 
+  readonly lastEvents: LastEvent[] = [
+    {
+      bus: '1024 / FSB123FS',
+      location: 'Nelson Mandela Drive, Bloemfontein',
+      time: '2026-07-12 08:42',
+      eventType: 'Speeding',
+      measurement: '86 km/h in 60 km/h zone',
+      operator: 'Interstate Bus Lines',
+    },
+    {
+      bus: '1078 / FSB654FS',
+      location: 'N8 near Botshabelo',
+      time: '2026-07-12 08:18',
+      eventType: 'Harsh Braking',
+      measurement: '-0.42 g',
+      operator: 'Bophelong Transport',
+    },
+    {
+      bus: '1056 / FSB321FS',
+      location: 'Dr Belcher Road, Bloemfontein',
+      time: '2026-07-12 07:56',
+      eventType: 'Cornering',
+      measurement: '0.36 g',
+      operator: 'Interstate Bus Lines',
+    },
+    {
+      bus: '1045 / FSB456FS',
+      location: 'M10, Thaba Nchu',
+      time: '2026-07-12 07:31',
+      eventType: 'After Hours',
+      measurement: '18.4 km after schedule',
+      operator: 'Bophelong Transport',
+    },
+    {
+      bus: '1090 / FSB987FS',
+      location: 'R702 toward Dewetsdorp',
+      time: '2026-07-12 06:48',
+      eventType: 'Acceleration',
+      measurement: '0.31 g',
+      operator: 'Interstate Bus Lines',
+    },
+  ];
+
+  readonly vehicleScoreChartOptions: EChartsOption = {
+    color: ['#1d4ed8', '#f97316'],
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' },
+      formatter: (params) => {
+        const items = Array.isArray(params) ? params : [params];
+        const item = items.find((entry) => entry.data !== null && entry.data !== undefined);
+        if (!item) return '';
+        return `${item.name}<br/>${item.seriesName}<br/>Score: ${item.data}%`;
+      },
+    },
+    legend: {
+      top: 0,
+      data: ['Interstate Bus Lines', 'Bophelong Transport'],
+      textStyle: {
+        color: '#374151',
+        fontWeight: 600,
+      },
+    },
+    grid: {
+      left: 48,
+      right: 24,
+      top: 56,
+      bottom: 70,
+    },
+    xAxis: {
+      type: 'category',
+      data: this.sortedVehicleScores.map((vehicle) => vehicle.fleetNo),
+      axisLabel: {
+        color: '#4b5563',
+        fontWeight: 600,
+      },
+      axisTick: { alignWithLabel: true },
+    },
+    yAxis: {
+      type: 'value',
+      min: 0,
+      max: 100,
+      axisLabel: {
+        formatter: '{value}%',
+        color: '#4b5563',
+      },
+      splitLine: {
+        lineStyle: {
+          color: '#e5e7eb',
+        },
+      },
+    },
+    series: [
+      {
+        name: 'Interstate Bus Lines',
+        type: 'bar',
+        barMaxWidth: 42,
+        data: this.vehicleScoreSeriesData('Interstate Bus Lines'),
+        label: {
+          show: true,
+          position: 'top',
+          formatter: '{c}%',
+          color: '#111827',
+          fontWeight: 800,
+        },
+        itemStyle: {
+          color: this.operatorColor('Interstate Bus Lines'),
+          borderRadius: [6, 6, 0, 0],
+        },
+      },
+      {
+        name: 'Bophelong Transport',
+        type: 'bar',
+        barMaxWidth: 42,
+        data: this.vehicleScoreSeriesData('Bophelong Transport'),
+        label: {
+          show: true,
+          position: 'top',
+          formatter: '{c}%',
+          color: '#111827',
+          fontWeight: 800,
+        },
+        itemStyle: {
+          color: this.operatorColor('Bophelong Transport'),
+          borderRadius: [6, 6, 0, 0],
+        },
+      },
+    ],
+  };
+
+  private get sortedVehicleScores(): VehiclePerformance[] {
+    return [...this.vehiclePerformance].sort((a, b) => a.score - b.score);
+  }
+
+  private vehicleScoreSeriesData(operator: string): Array<number | null> {
+    return this.sortedVehicleScores.map((vehicle) => (vehicle.operator === operator ? vehicle.score : null));
+  }
+
   ngOnInit(): void {
     if (!this.auth.isLoggedIn()) {
       this.router.navigate(['/login']);
@@ -280,5 +430,16 @@ export class AnalyticsComponent implements OnInit {
     if (score >= 94) return 'success';
     if (score >= 88) return 'warn';
     return 'danger';
+  }
+
+  eventSeverity(eventType: string): 'success' | 'info' | 'warn' | 'danger' {
+    if (eventType === 'Speeding' || eventType === 'Harsh Braking') return 'danger';
+    if (eventType === 'Cornering' || eventType === 'Acceleration') return 'warn';
+    if (eventType === 'After Hours') return 'info';
+    return 'success';
+  }
+
+  operatorColor(operator: string): string {
+    return operator === 'Bophelong Transport' ? '#f97316' : '#1d4ed8';
   }
 }
