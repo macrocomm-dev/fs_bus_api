@@ -2,7 +2,7 @@ import os
 import sys
 import unittest
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -251,6 +251,23 @@ class AuthTests(unittest.TestCase):
         self.assertEqual(response.json()["name"], "Ada")
         self.assertEqual(response.json()["surname"], "Lovelace")
         self.assertIsNotNone(response.json()["expires_at"])
+
+    def test_auth_get_token_invalid_credentials_does_not_send_error_alert(self):
+        with patch(
+            "app.main.sign_in_with_email_password",
+            side_effect=FirebaseInvalidCredentialsError("INVALID_LOGIN_CREDENTIALS"),
+        ), patch("app.main.send_error_alert", new_callable=AsyncMock) as send_alert:
+            response = client.post(
+                "/auth/get_token",
+                json={
+                    "email": "ada@example.com",
+                    "password": "wrong-password",
+                },
+            )
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json()["detail"], "Invalid email or password")
+        send_alert.assert_not_awaited()
 
     def test_auth_refresh_returns_name_surname_and_role(self):
         result = FirebaseRefreshResult(

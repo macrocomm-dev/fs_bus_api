@@ -81,6 +81,27 @@ def _get_cors_origins(settings: Settings) -> list[str]:
 # Exception handlers — log every error to audit.api_error_log
 # ---------------------------------------------------------------------------
 
+_INVALID_CREDENTIALS_ALERT_EXEMPT_PATHS = {
+    "/auth/get_token",
+    "/auth/test/token",
+}
+
+
+def _is_expected_invalid_credentials_error(
+    request: Request, exc: HTTPException
+) -> bool:
+    """Return True for expected failed sign-in attempts that should not email."""
+
+    if request.method.upper() != "POST":
+        return False
+    if request.url.path not in _INVALID_CREDENTIALS_ALERT_EXEMPT_PATHS:
+        return False
+    if exc.status_code != status.HTTP_401_UNAUTHORIZED:
+        return False
+
+    detail = str(exc.detail).strip().rstrip(".").lower()
+    return detail == "invalid email or password"
+
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
@@ -94,9 +115,10 @@ async def http_exception_handler(request: Request, exc: HTTPException):
         exc=exc,
     )
     context = f"{request.method} {request.url.path}"
-    await send_error_alert(
-        exc, context=context, user_id=extract_user_id_from_request(request)
-    )
+    if not _is_expected_invalid_credentials_error(request, exc):
+        await send_error_alert(
+            exc, context=context, user_id=extract_user_id_from_request(request)
+        )
     return await _default_http_handler(request, exc)
 
 
