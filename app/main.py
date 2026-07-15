@@ -117,7 +117,10 @@ async def http_exception_handler(request: Request, exc: HTTPException):
     context = f"{request.method} {request.url.path}"
     if not _is_expected_invalid_credentials_error(request, exc):
         await send_error_alert(
-            exc, context=context, user_id=extract_user_id_from_request(request)
+            exc,
+            context=context,
+            user_id=extract_user_id_from_request(request),
+            request=request,
         )
     return await _default_http_handler(request, exc)
 
@@ -136,7 +139,10 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     )
     context = f"{request.method} {request.url.path}"
     await send_error_alert(
-        exc, context=context, user_id=extract_user_id_from_request(request)
+        exc,
+        context=context,
+        user_id=extract_user_id_from_request(request),
+        request=request,
     )
     return await _default_validation_handler(request, exc)
 
@@ -154,7 +160,10 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     )
     context = f"{request.method} {request.url.path}"
     await send_error_alert(
-        exc, context=context, user_id=extract_user_id_from_request(request)
+        exc,
+        context=context,
+        user_id=extract_user_id_from_request(request),
+        request=request,
     )
     return JSONResponse(
         status_code=500,

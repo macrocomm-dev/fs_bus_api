@@ -17,10 +17,13 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
+import platform
 import smtplib
 import traceback
 from datetime import datetime, timezone
 from email.mime.text import MIMEText
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -55,6 +58,7 @@ async def send_error_alert(
     exc: Exception,
     context: str = "",
     user_id: str | None = None,
+    request: "Request | None" = None,
 ) -> None:
     """Send an error-alert email in a fire-and-forget fashion.
 
@@ -66,6 +70,7 @@ async def send_error_alert(
         context:  Human-readable label for where the error occurred,
                   e.g. ``"POST /shift/create_shift/"``.
         user_id:  Optional Firebase UID of the authenticated caller.
+        request:  Optional FastAPI request for safe request/runtime context.
     """
     # Import here to avoid a circular-import at module load time.
     from app.config import get_settings  # noqa: PLC0415
@@ -100,9 +105,36 @@ async def send_error_alert(
             f"User      : {user_id or 'unknown'}",
             f"Exception : {type(exc).__name__}: {exc}",
             "",
-            "Traceback:",
-            tb,
+            "Runtime:",
+            f"  Hostname            : {platform.node() or 'unknown'}",
+            f"  CWD                 : {Path.cwd()}",
+            f"  Python              : {platform.python_version()} ({platform.python_implementation()})",
+            f"  Platform            : {platform.platform()}",
+            f"  Cloud Run service   : {os.getenv('K_SERVICE') or 'not set'}",
+            f"  Cloud Run revision  : {os.getenv('K_REVISION') or 'not set'}",
+            f"  Cloud Run config    : {os.getenv('K_CONFIGURATION') or 'not set'}",
         ]
+        if request is not None:
+            body_lines.extend(
+                [
+                    "",
+                    "Request:",
+                    f"  Client IP           : {request.client.host if request.client else 'unknown'}",
+                    f"  User-Agent          : {request.headers.get('user-agent') or 'unknown'}",
+                    f"  Referer             : {request.headers.get('referer') or 'unknown'}",
+                    f"  Origin              : {request.headers.get('origin') or 'unknown'}",
+                    f"  X-Forwarded-For     : {request.headers.get('x-forwarded-for') or 'unknown'}",
+                    f"  X-Cloud-Trace       : {request.headers.get('x-cloud-trace-context') or 'unknown'}",
+                    f"  X-Device-Id         : {request.headers.get('x-device-id') or 'unknown'}",
+                ]
+            )
+        body_lines.extend(
+            [
+                "",
+                "Traceback:",
+                tb,
+            ]
+        )
         body = "\n".join(body_lines)
 
         msg = MIMEText(body, "plain")
