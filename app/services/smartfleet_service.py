@@ -64,7 +64,7 @@ def get_latest_vehicle_positions(
         logger.warning("Smart Fleet position lookup skipped because configuration is incomplete.")
         return {}
 
-    url = f"{settings.smart_fleet_base_url.rstrip('/')}/api/get_devices_latest"
+    url = f"{settings.smart_fleet_base_url.rstrip('/')}/api/get_devices"
     try:
         response = requests.get(
             url,
@@ -87,9 +87,9 @@ def get_latest_vehicle_positions(
         logger.exception("Smart Fleet latest-device response was not valid JSON.")
         return {}
 
-    items = payload.get("items") if isinstance(payload, dict) else None
-    if not isinstance(items, list):
-        logger.warning("Smart Fleet latest-device response did not contain an items list.")
+    items = _extract_device_items(payload)
+    if not items:
+        logger.warning("Smart Fleet device response did not contain any device items.")
         return {}
 
     entries: list[
@@ -102,7 +102,6 @@ def get_latest_vehicle_positions(
             float | None,
         ]
     ] = []
-    coordinates_needing_address: set[tuple[float, float]] = set()
 
     for item in items:
         if not isinstance(item, dict):
@@ -124,8 +123,6 @@ def get_latest_vehicle_positions(
         latitude = _coerce_float(item.get("lat"))
         longitude = _coerce_float(item.get("lng"))
         address = _coerce_address(item.get("address"))
-        if address is None and latitude is not None and longitude is not None:
-            coordinates_needing_address.add((latitude, longitude))
 
         entries.append(
             (
@@ -138,16 +135,9 @@ def get_latest_vehicle_positions(
             )
         )
 
-    resolved_addresses = _resolve_addresses(
-        settings=settings,
-        coordinates=coordinates_needing_address,
-    )
-
     positions: dict[str, SmartFleetVehiclePosition] = {}
     for keys, device_id, address, response_time, latitude, longitude in entries:
         resolved_address = address
-        if resolved_address is None and latitude is not None and longitude is not None:
-            resolved_address = resolved_addresses.get((latitude, longitude))
         if resolved_address is None and latitude is not None and longitude is not None:
             resolved_address = _format_coordinates(latitude, longitude)
 
@@ -160,6 +150,29 @@ def get_latest_vehicle_positions(
             positions[key] = position
 
     return positions
+
+
+def _extract_device_items(payload: Any) -> list[dict[str, Any]]:
+    """Return device items from Smart Fleet's flat or grouped device payloads."""
+
+    if isinstance(payload, dict):
+        items = payload.get("items")
+        if isinstance(items, list):
+            return [item for item in items if isinstance(item, dict)]
+        return []
+
+    if not isinstance(payload, list):
+        return []
+
+    devices: list[dict[str, Any]] = []
+    for group in payload:
+        if not isinstance(group, dict):
+            continue
+        group_items = group.get("items")
+        if not isinstance(group_items, list):
+            continue
+        devices.extend(item for item in group_items if isinstance(item, dict))
+    return devices
 
 
 def _resolve_addresses(

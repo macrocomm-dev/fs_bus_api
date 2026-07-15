@@ -141,14 +141,13 @@ def _vehicle_lookup_keys(vehicle: Vehicle) -> set[str]:
 
 
 def _vehicle_smart_fleet_lookup_keys(vehicle: Vehicle) -> set[str]:
-    """Return temporary Smart Fleet matching keys.
+    """Return normalized local identifiers used to match Smart Fleet objects."""
 
-    Smart Fleet object names currently expose registration numbers most
-    consistently, so avoid VIN/fleet matching until those values are fully
-    loaded and trusted across both systems.
-    """
-
-    return vehicle_identifier_keys(vehicle.registration_number)
+    return vehicle_identifier_keys(
+        vehicle.vin,
+        vehicle.registration_number,
+        vehicle.fleet_number,
+    )
 
 
 def _get_latest_inspections_by_vehicle_key(
