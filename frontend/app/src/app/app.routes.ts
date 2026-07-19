@@ -5,6 +5,7 @@ import { InspectionsComponent } from './features/inspections/inspections.compone
 import { ReportingComponent } from './features/reporting/reporting.component';
 import { ShiftsComponent } from './features/shifts/shifts.component';
 import { SmartFleetComponent } from './features/smart-fleet/smart-fleet.component';
+import { VehicleDetailComponent } from './features/vehicle-detail/vehicle-detail.component';
 import { VehiclesComponent } from './features/vehicles/vehicles.component';
 
 export const routes: Routes = [
@@ -17,4 +18,5 @@ export const routes: Routes = [
   { path: 'shifts', component: ShiftsComponent },
   { path: 'smart-fleet', component: SmartFleetComponent },
   { path: 'vehicles', component: VehiclesComponent },
+  { path: 'vehicles/:vehicleKey', component: VehicleDetailComponent },
 ];

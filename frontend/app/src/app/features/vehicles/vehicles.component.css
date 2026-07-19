@@ -154,6 +154,14 @@
   white-space: nowrap;
 }
 
+:host ::ng-deep .vehicle-table .p-datatable-tbody > tr.vehicle-row {
+  cursor: pointer;
+}
+
+:host ::ng-deep .vehicle-table .p-datatable-tbody > tr.vehicle-row:hover > td {
+  background: #f8fafc;
+}
+
 :host ::ng-deep .vehicle-table table {
   min-width: 98rem;
 }

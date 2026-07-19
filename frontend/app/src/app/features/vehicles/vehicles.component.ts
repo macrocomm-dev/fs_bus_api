@@ -161,6 +161,15 @@ export class VehiclesComponent implements OnInit {
     return vehicle.smart_fleet_last_address || 'No Smart Fleet address available';
   }
 
+  openVehicleDetail(vehicle: VehicleResponse): void {
+    const vehicleKey = vehicle.vin || vehicle.fleet_number || vehicle.registration_number;
+    if (!vehicleKey) {
+      return;
+    }
+
+    this.router.navigate(['/vehicles', vehicleKey]);
+  }
+
   private loadVehicles(): void {
     this.loading.set(true);
     this.error.set(null);

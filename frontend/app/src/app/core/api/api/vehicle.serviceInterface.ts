@@ -13,12 +13,17 @@ import { Observable }                                        from 'rxjs';
 
 import { AppSchemasOperationsErrorResponse } from '../model/models';
 import { HTTPValidationError } from '../model/models';
+import { VehicleDetailEnvelope } from '../model/models';
 import { VehicleEnvelope } from '../model/models';
 import { VehicleListEnvelope } from '../model/models';
 
 
 import { Configuration }                                     from '../configuration';
 
+
+export interface GetVehicleDetailVehicleVehicleDetailVehicleKeyGetRequestParams {
+    vehicleKey: string;
+}
 
 export interface GetVehicleVehicleVehicleVinGetRequestParams {
     vin: string;
@@ -35,6 +40,14 @@ export interface GetVehiclesVehicleVehiclesGetRequestParams {
 export interface VehicleServiceInterface {
     defaultHeaders: HttpHeaders;
     configuration: Configuration;
+
+    /**
+     * Get Vehicle Detail
+     * Return a complete vehicle drilldown using VIN, registration, fleet or chart label.
+     * @endpoint get /vehicle/vehicle-detail/{vehicle_key}
+* @param requestParameters
+     */
+    getVehicleDetailVehicleVehicleDetailVehicleKeyGet(requestParameters: GetVehicleDetailVehicleVehicleDetailVehicleKeyGetRequestParams, extraHttpRequestParams?: any): Observable<VehicleDetailEnvelope>;
 
     /**
      * Get Vehicle

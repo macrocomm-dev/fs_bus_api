@@ -155,21 +155,25 @@
               <th pSortableColumn="distance">Distance <p-sortIcon field="distance" /></th>
               <th pSortableColumn="tripDuration">Trip Duration <p-sortIcon field="tripDuration" /></th>
               <th pSortableColumn="speedDuration">Speed Duration <p-sortIcon field="speedDuration" /></th>
-              <th pSortableColumn="idleDuration">Excess Idle <p-sortIcon field="idleDuration" /></th>
               <th pSortableColumn="highRiskTrips">High Risk <p-sortIcon field="highRiskTrips" /></th>
               <th pSortableColumn="score">Score <p-sortIcon field="score" /></th>
             </tr>
           </ng-template>
 
           <ng-template pTemplate="body" let-row>
-            <tr>
+            <tr
+              class="analytics-clickable-row"
+              tabindex="0"
+              role="button"
+              (click)="openVehicleDetailFromPerformance(row)"
+              (keyup.enter)="openVehicleDetailFromPerformance(row)"
+            >
               <td class="fleet-cell">{{ row.fleetNo }}</td>
               <td>{{ row.registration }}</td>
               <td>{{ row.operator }}</td>
               <td>{{ row.distance }}</td>
               <td>{{ row.tripDuration }}</td>
               <td>{{ row.speedDuration }}</td>
-              <td>{{ row.idleDuration }}</td>
               <td>{{ row.highRiskTrips }}</td>
               <td>
                 <p-tag [value]="row.score + '%'" [severity]="scoreSeverity(row.score)" />
@@ -179,7 +183,7 @@
 
           <ng-template pTemplate="emptymessage">
             <tr>
-              <td colspan="9">No vehicle analytics records are available.</td>
+              <td colspan="8">No vehicle analytics records are available.</td>
             </tr>
           </ng-template>
         </p-table>
@@ -194,7 +198,12 @@
         </div>
 
         <div class="score-chart-card">
-          <div echarts [options]="vehicleScoreChartOptions()" class="score-chart"></div>
+          <div
+            echarts
+            [options]="vehicleScoreChartOptions()"
+            (chartClick)="openVehicleDetailFromChart($event)"
+            class="score-chart"
+          ></div>
         </div>
       </section>
     </main>

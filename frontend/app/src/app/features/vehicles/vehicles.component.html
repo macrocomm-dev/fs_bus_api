@@ -121,7 +121,13 @@
         </ng-template>
 
         <ng-template pTemplate="body" let-vehicle>
-          <tr>
+          <tr
+            class="vehicle-row"
+            tabindex="0"
+            role="button"
+            (click)="openVehicleDetail(vehicle)"
+            (keyup.enter)="openVehicleDetail(vehicle)"
+          >
             <td>{{ vehicle.fleet_number || '—' }}</td>
             <td>{{ vehicle.registration_number || '—' }}</td>
             <td class="vehicle-vin">{{ vehicle.vin }}</td>
@@ -130,7 +136,11 @@
             <td>{{ vehicle.year || '—' }}</td>
             <td class="vehicle-map-cell">
               @if (vehicle.smart_fleet_device_id) {
-                <span [pTooltip]="mapTooltip(vehicle)" tooltipPosition="left">
+                <span
+                  [pTooltip]="mapTooltip(vehicle)"
+                  tooltipPosition="left"
+                  (click)="$event.stopPropagation()"
+                >
                   <p-button
                     icon="pi pi-map-marker"
                     [text]="true"

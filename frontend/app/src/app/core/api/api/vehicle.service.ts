@@ -21,6 +21,8 @@ import { AppSchemasOperationsErrorResponse } from '../model/appSchemasOperations
 // @ts-ignore
 import { HTTPValidationError } from '../model/hTTPValidationError';
 // @ts-ignore
+import { VehicleDetailEnvelope } from '../model/vehicleDetailEnvelope';
+// @ts-ignore
 import { VehicleEnvelope } from '../model/vehicleEnvelope';
 // @ts-ignore
 import { VehicleListEnvelope } from '../model/vehicleListEnvelope';
@@ -31,6 +33,7 @@ import { Configuration }                                     from '../configurat
 import { BaseService } from '../api.base.service';
 import {
     VehicleServiceInterface,
+    GetVehicleDetailVehicleVehicleDetailVehicleKeyGetRequestParams,
     GetVehicleVehicleVehicleVinGetRequestParams,
     GetVehiclesVehicleVehiclesGetRequestParams
 } from './vehicle.serviceInterface';
@@ -44,6 +47,67 @@ export class VehicleService extends BaseService implements VehicleServiceInterfa
 
     constructor(protected httpClient: HttpClient, @Optional() @Inject(BASE_PATH) basePath: string|string[], @Optional() configuration?: Configuration) {
         super(basePath, configuration);
+    }
+
+    /**
+     * Get Vehicle Detail
+     * Return a complete vehicle drilldown using VIN, registration, fleet or chart label.
+     * @endpoint get /vehicle/vehicle-detail/{vehicle_key}
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public getVehicleDetailVehicleVehicleDetailVehicleKeyGet(requestParameters: GetVehicleDetailVehicleVehicleDetailVehicleKeyGetRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<VehicleDetailEnvelope>;
+    public getVehicleDetailVehicleVehicleDetailVehicleKeyGet(requestParameters: GetVehicleDetailVehicleVehicleDetailVehicleKeyGetRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<VehicleDetailEnvelope>>;
+    public getVehicleDetailVehicleVehicleDetailVehicleKeyGet(requestParameters: GetVehicleDetailVehicleVehicleDetailVehicleKeyGetRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<VehicleDetailEnvelope>>;
+    public getVehicleDetailVehicleVehicleDetailVehicleKeyGet(requestParameters: GetVehicleDetailVehicleVehicleDetailVehicleKeyGetRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const vehicleKey = requestParameters?.vehicleKey;
+        if (vehicleKey === null || vehicleKey === undefined) {
+            throw new Error('Required parameter vehicleKey was null or undefined when calling getVehicleDetailVehicleVehicleDetailVehicleKeyGet.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (HTTPBearer) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('HTTPBearer', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/vehicle/vehicle-detail/${this.configuration.encodeParam({name: "vehicleKey", value: vehicleKey, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<VehicleDetailEnvelope>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
     }
 
     /**

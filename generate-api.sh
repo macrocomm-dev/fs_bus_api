@@ -137,7 +137,7 @@ openapi-generator-cli generate \
     -g typescript-angular \
     -o "${OUTPUT_DIR}" \
     --additional-properties=\
-ngVersion=17,\
+ngVersion=21,\
 npmName=fs-bus-api-client,\
 supportsES6=true,\
 withInterfaces=true,\

@@ -373,6 +373,99 @@ class VehicleListEnvelope(BaseModel):
     vehicles: List[VehicleResponse]
 
 
+class VehicleCurrentStatusResponse(BaseModel):
+    """Current Smart Fleet and latest-inspection status for one vehicle."""
+
+    smart_fleet_device_id: int | None = None
+    current_location: str | None = None
+    last_ping_time: datetime | None = None
+    latest_inspection_at: datetime | None = None
+    latest_inspection_type: str | None = None
+    latest_inspection_passed: bool | None = None
+
+
+class VehicleTripDetailResponse(BaseModel):
+    """One analytics trip row for a vehicle detail page."""
+
+    trip_start: datetime | None = None
+    trip_end: datetime | None = None
+    driver: str | None = None
+    start_location: str | None = None
+    end_location: str | None = None
+    distance_km: float
+    duration_minutes: float
+    speed_duration_minutes: float
+    route_score: float | None = None
+    style_score: float | None = None
+    risk_factor: float | None = None
+    high_risk: bool
+
+
+class VehicleEventDetailResponse(BaseModel):
+    """One analytics event row for a vehicle detail page."""
+
+    event_time: datetime | None = None
+    event_type: str
+    location: str | None = None
+    measurement: str
+    driver: str | None = None
+
+
+class VehicleScorePointResponse(BaseModel):
+    """One plotted score point for a vehicle trip graph."""
+
+    label: str
+    trip_start: datetime | None = None
+    style_score: float | None = None
+    route_score: float | None = None
+
+
+class VehicleInspectionHistoryResponse(BaseModel):
+    """One inspection row for a vehicle detail page."""
+
+    inspection_time: datetime
+    inspection_type: str
+    passed: bool | None = None
+    inspector: str | None = None
+    notes: str | None = None
+    failed_checks: List[str] = Field(default_factory=list)
+    gps: str | None = None
+
+
+class VehicleDataQualityResponse(BaseModel):
+    """Counts and match flags explaining which sources contributed to the page."""
+
+    matched_vehicle_master: bool
+    matched_smart_fleet: bool
+    matched_trip_data: bool
+    matched_bi_data: bool
+    matched_events: bool
+    matched_inspections: bool
+    trip_count: int
+    event_count: int
+    inspection_count: int
+    bi_score_count: int
+
+
+class VehicleDetailResponse(BaseModel):
+    """Full vehicle drilldown payload."""
+
+    vehicle: VehicleResponse
+    current_status: VehicleCurrentStatusResponse
+    trips: List[VehicleTripDetailResponse] = Field(default_factory=list)
+    events: List[VehicleEventDetailResponse] = Field(default_factory=list)
+    score_points: List[VehicleScorePointResponse] = Field(default_factory=list)
+    inspection_history: List[VehicleInspectionHistoryResponse] = Field(default_factory=list)
+    data_quality: VehicleDataQualityResponse
+
+
+class VehicleDetailEnvelope(BaseModel):
+    """Single-vehicle detail response wrapper."""
+
+    message: MessageResponse
+    detail: VehicleDetailResponse
+
+
 class RouteResponse(BaseModel):
     """API response model for master-data routes."""
 

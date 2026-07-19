@@ -78,9 +78,17 @@ model/userLoginResponse.ts
 model/userRefreshResponse.ts
 model/validationError.ts
 model/value.ts
+model/vehicleCurrentStatusResponse.ts
+model/vehicleDataQualityResponse.ts
+model/vehicleDetailEnvelope.ts
+model/vehicleDetailResponse.ts
 model/vehicleEnvelope.ts
+model/vehicleEventDetailResponse.ts
+model/vehicleInspectionHistoryResponse.ts
 model/vehicleListEnvelope.ts
 model/vehicleResponse.ts
+model/vehicleScorePointResponse.ts
+model/vehicleTripDetailResponse.ts
 ng-package.json
 package.json
 param.ts

@@ -180,11 +180,7 @@ export class AnalyticsComponent implements OnInit {
         barMaxWidth: 42,
         data: sortedScores.map((vehicle) => (vehicle.operator === operator ? vehicle.score : null)),
         label: {
-          show: true,
-          position: 'top',
-          formatter: '{c}%',
-          color: '#111827',
-          fontWeight: 800,
+          show: false,
         },
         itemStyle: {
           color: this.operatorColor(operator),
@@ -242,6 +238,22 @@ export class AnalyticsComponent implements OnInit {
     this.router.navigate(['/vehicles']);
   }
 
+  openVehicleDetail(vehicleKey: string | null | undefined): void {
+    if (!vehicleKey) {
+      return;
+    }
+
+    this.router.navigate(['/vehicles', vehicleKey]);
+  }
+
+  openVehicleDetailFromPerformance(row: VehiclePerformance): void {
+    this.openVehicleDetail(row.fleetNo || row.registration);
+  }
+
+  openVehicleDetailFromChart(event: { name?: string }): void {
+    this.openVehicleDetail(event?.name);
+  }
+
   openInspections(): void {
     this.menuVisible = false;
     this.router.navigate(['/inspections']);
@@ -276,13 +288,16 @@ export class AnalyticsComponent implements OnInit {
 
   private applyAnalyticsSummary(response: AnalyticsSummaryResponse): void {
     this.metricTiles.set(
-      (response.metric_tiles ?? []).map((tile) => ({
-        title: tile.title,
-        icon: tile.icon,
-        color: tile.color,
-        primary: tile.primary,
-        secondary: tile.secondary ?? undefined,
-      })),
+      (response.metric_tiles ?? [])
+        // Temporarily hidden until the product owner confirms how they want excess idle shown.
+        .filter((tile) => tile.title !== 'Excess idle duration')
+        .map((tile) => ({
+          title: tile.title,
+          icon: tile.icon,
+          color: tile.color,
+          primary: tile.primary,
+          secondary: tile.secondary ?? undefined,
+        })),
     );
     this.gaugeScores.set(response.gauge_scores ?? []);
     this.lastEvents.set(

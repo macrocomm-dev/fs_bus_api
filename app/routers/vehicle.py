@@ -16,7 +16,7 @@ from fastapi import (
 )
 from fastapi.responses import JSONResponse, Response
 from firebase_admin import db
-from sqlalchemy import func, or_
+from sqlalchemy import func, or_, text
 from sqlalchemy.orm import Session
 
 from app.auth import TokenData, get_current_user, split_user_name
@@ -35,9 +35,17 @@ from app.schemas.operations import (
     ErrorResponse,
     MessageResponse,
     OperatorSummary,
+    VehicleCurrentStatusResponse,
+    VehicleDataQualityResponse,
+    VehicleDetailEnvelope,
+    VehicleDetailResponse,
+    VehicleEventDetailResponse,
     VehicleEnvelope,
+    VehicleInspectionHistoryResponse,
     VehicleListEnvelope,
     VehicleResponse,
+    VehicleScorePointResponse,
+    VehicleTripDetailResponse,
 )
 from app.services.smartfleet_service import (
     SmartFleetVehiclePosition,
@@ -128,6 +136,20 @@ def _vehicle_raw_identifiers(vehicle: Vehicle) -> set[str]:
         )
         if value and value.strip()
     }
+
+
+def _vehicle_sql_keys(*values: object) -> list[str]:
+    return sorted(vehicle_identifier_keys(*values))
+
+
+def _to_float(value, default: float = 0) -> float:
+    if value is None:
+        return default
+    return float(value)
+
+
+def _to_minutes(seconds) -> float:
+    return round(_to_float(seconds) / 60, 1)
 
 
 def _vehicle_lookup_keys(vehicle: Vehicle) -> set[str]:
@@ -246,6 +268,97 @@ def _build_vehicle_response(
     )
 
 
+def _event_type(event_id: int | None) -> str:
+    if event_id is None:
+        return "Event"
+    return f"Event {event_id}"
+
+
+def _event_measurement(row) -> str:
+    if row.max_speed is not None and row.speed_limit is not None:
+        return f"{row.max_speed} km/h in {row.speed_limit} km/h zone"
+    if row.max_speed is not None:
+        return f"Max speed {row.max_speed} km/h"
+    if row.speed is not None:
+        return f"Speed {row.speed} km/h"
+    if row.duration is not None:
+        return f"{row.duration} seconds"
+    return "-"
+
+
+def _failed_checks(inspection: BusInspection) -> list[str]:
+    checks: list[str] = []
+    if inspection.tyres_pass is False:
+        checks.append("Tyres")
+    if inspection.windows_pass is False:
+        checks.append("Windows")
+    if inspection.ext_other_pass is False:
+        checks.append("Exterior Other")
+    if inspection.fire_extinguisher_present is False:
+        checks.append("Fire Extinguisher")
+    if inspection.seats_pass is False:
+        checks.append("Seats")
+    if inspection.aisle_pass is False:
+        checks.append("Aisle")
+    if inspection.int_other_pass is False:
+        checks.append("Interior Other")
+    if inspection.license_disk_scan_succeeded is False:
+        checks.append("Licence Disk Scan")
+    if inspection.destination_displayed is False:
+        checks.append("Destination Display")
+    if inspection.prdp_scan_succeeded is False:
+        checks.append("PRDP Scan")
+    if inspection.driver_identified is False:
+        checks.append("Driver Identified")
+    if inspection.pass_ is False and not checks:
+        checks.append("Inspection Failed")
+    return checks
+
+
+def _inspection_gps(inspection: BusInspection) -> str | None:
+    if inspection.inspection_lat is None or inspection.inspection_lon is None:
+        return None
+    return f"{inspection.inspection_lat}, {inspection.inspection_lon}"
+
+
+def _matching_text_condition(column_name: str) -> str:
+    return (
+        "exists (select 1 from unnest(cast(:keys as text[])) as vehicle_key "
+        f"where lower(regexp_replace(coalesce({column_name}, ''), '[^A-Za-z0-9]', '', 'g')) "
+        "like '%' || vehicle_key || '%')"
+    )
+
+
+def _resolve_vehicle_by_key(
+    vehicle_key: str,
+    query,
+) -> tuple[Vehicle, Operator | None] | None:
+    keys = _vehicle_sql_keys(vehicle_key)
+    if not keys:
+        return None
+    return query.filter(
+        or_(
+            func.lower(func.regexp_replace(Vehicle.vin, "[^A-Za-z0-9]", "", "g")).in_(keys),
+            func.lower(
+                func.regexp_replace(
+                    func.coalesce(Vehicle.registration_number, ""),
+                    "[^A-Za-z0-9]",
+                    "",
+                    "g",
+                )
+            ).in_(keys),
+            func.lower(
+                func.regexp_replace(
+                    func.coalesce(Vehicle.fleet_number, ""),
+                    "[^A-Za-z0-9]",
+                    "",
+                    "g",
+                )
+            ).in_(keys),
+        )
+    ).first()
+
+
 @vehicle_router.get(
     "/vehicles/",
     response_model=VehicleListEnvelope,
@@ -312,6 +425,259 @@ async def get_vehicles(
             content={
                 "message": MessageResponse.fail,
                 "detail": f"Error retrieving vehicles: {exc}",
+            },
+        )
+
+
+@vehicle_router.get(
+    "/vehicle-detail/{vehicle_key}",
+    response_model=VehicleDetailEnvelope,
+    responses={**_401, **_404, **_500},
+)
+async def get_vehicle_detail(
+    vehicle_key: str,
+    current_user: TokenData = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    settings: Settings = Depends(get_settings),
+):
+    """Return a complete vehicle drilldown using VIN, registration, fleet or chart label."""
+    try:
+        app_user, operator = await _resolve_app_user(current_user, db)
+
+        query = db.query(Vehicle, Operator).outerjoin(
+            Operator, Vehicle.operator_id == Operator.operator_id
+        )
+
+        if not _is_internal(operator):
+            query = query.filter(Vehicle.operator_id == app_user.operator_id)
+
+        row = _resolve_vehicle_by_key(vehicle_key, query)
+        if row is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Vehicle not found",
+            )
+
+        vehicle, op = row
+        keys = _vehicle_sql_keys(
+            vehicle.vin,
+            vehicle.registration_number,
+            vehicle.fleet_number,
+            vehicle_key,
+        )
+        raw_identifiers = list(_vehicle_raw_identifiers(vehicle))
+
+        smart_fleet_positions = get_latest_vehicle_positions(settings)
+        latest_inspections = _get_latest_inspections_by_vehicle_key([vehicle], db)
+        smart_fleet_position = _first_matching_position(vehicle, smart_fleet_positions)
+        latest_inspection = _first_matching_inspection(vehicle, latest_inspections)
+        vehicle_response = _build_vehicle_response(
+            vehicle,
+            op,
+            smart_fleet_positions=smart_fleet_positions,
+            latest_inspections=latest_inspections,
+        )
+
+        trip_rows = db.execute(
+            text(
+                f"""
+                select
+                    vehiclereg,
+                    vehiclealias,
+                    vehiclegroup,
+                    tripstart,
+                    tripend,
+                    tripdur,
+                    distance,
+                    speeddur,
+                    startloc,
+                    endloc,
+                    routescore,
+                    stylescore,
+                    riskfactor,
+                    driver
+                from analytics.trip_data
+                where {_matching_text_condition("vehiclereg")}
+                order by tripstart desc nulls last
+                limit 200
+                """
+            ),
+            {"keys": keys},
+        ).mappings().all()
+
+        event_rows = db.execute(
+            text(
+                f"""
+                select
+                    vehiclereg,
+                    event_date,
+                    vehiclealias,
+                    vehiclegroup,
+                    driver,
+                    location_name,
+                    event_id,
+                    duration,
+                    speed,
+                    max_speed,
+                    speed_limit
+                from analytics.events
+                where {_matching_text_condition("vehiclereg")}
+                order by event_date desc nulls last
+                limit 200
+                """
+            ),
+            {"keys": keys},
+        ).mappings().all()
+
+        bi_score_count = db.execute(
+            text(
+                f"""
+                select count(*) as score_count
+                from analytics.bi_data
+                where {_matching_text_condition("vehiclereg")}
+                """
+            ),
+            {"keys": keys},
+        ).mappings().one()
+
+        inspection_query = (
+            db.query(BusInspection, AppUser)
+            .outerjoin(AppUser, AppUser.firebase_uid == BusInspection.user_id)
+            .filter(
+                or_(
+                    func.lower(BusInspection.bus_id).in_(raw_identifiers),
+                    func.lower(BusInspection.fleet_number).in_(raw_identifiers),
+                )
+            )
+            .order_by(BusInspection.inspection_time.desc())
+            .limit(200)
+        )
+        inspection_rows = inspection_query.all()
+
+        trips = [
+            VehicleTripDetailResponse(
+                trip_start=trip.tripstart,
+                trip_end=trip.tripend,
+                driver=trip.driver,
+                start_location=trip.startloc,
+                end_location=trip.endloc,
+                distance_km=round(_to_float(trip.distance), 2),
+                duration_minutes=_to_minutes(trip.tripdur),
+                speed_duration_minutes=_to_minutes(trip.speeddur),
+                route_score=round(_to_float(trip.routescore), 1)
+                if trip.routescore is not None
+                else None,
+                style_score=round(_to_float(trip.stylescore), 1)
+                if trip.stylescore is not None
+                else None,
+                risk_factor=round(_to_float(trip.riskfactor), 2)
+                if trip.riskfactor is not None
+                else None,
+                high_risk=_to_float(trip.riskfactor) > 0,
+            )
+            for trip in trip_rows
+        ]
+
+        score_points = [
+            VehicleScorePointResponse(
+                label=(
+                    trip.tripstart.strftime("%d/%m %H:%M")
+                    if trip.tripstart is not None
+                    else f"Trip {index + 1}"
+                ),
+                trip_start=trip.tripstart,
+                style_score=round(_to_float(trip.stylescore), 1)
+                if trip.stylescore is not None
+                else None,
+                route_score=round(_to_float(trip.routescore), 1)
+                if trip.routescore is not None and _to_float(trip.routescore) > 0
+                else None,
+            )
+            for index, trip in enumerate(reversed(trip_rows[:50]))
+        ]
+
+        events = [
+            VehicleEventDetailResponse(
+                event_time=event.event_date,
+                event_type=_event_type(event.event_id),
+                location=event.location_name,
+                measurement=_event_measurement(event),
+                driver=event.driver,
+            )
+            for event in event_rows
+        ]
+
+        inspection_history = [
+            VehicleInspectionHistoryResponse(
+                inspection_time=inspection.inspection_time,
+                inspection_type=inspection.inspection_type,
+                passed=inspection.pass_,
+                inspector=user.full_name if user else inspection.user_id,
+                notes=inspection.notes,
+                failed_checks=_failed_checks(inspection),
+                gps=_inspection_gps(inspection),
+            )
+            for inspection, user in inspection_rows
+        ]
+
+        current_status = VehicleCurrentStatusResponse(
+            smart_fleet_device_id=(
+                smart_fleet_position.smart_fleet_device_id
+                if smart_fleet_position
+                else None
+            ),
+            current_location=(
+                smart_fleet_position.last_address if smart_fleet_position else None
+            ),
+            last_ping_time=(
+                smart_fleet_position.last_response_time
+                if smart_fleet_position
+                else None
+            ),
+            latest_inspection_at=(
+                latest_inspection.inspection_time if latest_inspection else None
+            ),
+            latest_inspection_type=(
+                latest_inspection.inspection_type if latest_inspection else None
+            ),
+            latest_inspection_passed=(
+                latest_inspection.pass_ if latest_inspection else None
+            ),
+        )
+
+        data_quality = VehicleDataQualityResponse(
+            matched_vehicle_master=True,
+            matched_smart_fleet=smart_fleet_position is not None,
+            matched_trip_data=len(trip_rows) > 0,
+            matched_bi_data=bi_score_count.score_count > 0,
+            matched_events=len(event_rows) > 0,
+            matched_inspections=len(inspection_rows) > 0,
+            trip_count=len(trip_rows),
+            event_count=len(event_rows),
+            inspection_count=len(inspection_rows),
+            bi_score_count=bi_score_count.score_count,
+        )
+
+        return {
+            "message": MessageResponse.success,
+            "detail": VehicleDetailResponse(
+                vehicle=vehicle_response,
+                current_status=current_status,
+                trips=trips,
+                events=events,
+                score_points=score_points,
+                inspection_history=inspection_history,
+                data_quality=data_quality,
+            ),
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                "message": MessageResponse.fail,
+                "detail": f"Error retrieving vehicle detail: {exc}",
             },
         )
 

@@ -1,0 +1,347 @@
+.vehicle-detail-wrapper {
+  --toolbar-height: 96px;
+  --drawer-width: min(13.5rem, 78vw);
+
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f3f4f6;
+}
+
+:host ::ng-deep .top-bar {
+  background: #050505;
+  border: none;
+  border-radius: 0;
+  height: var(--toolbar-height);
+  min-height: var(--toolbar-height);
+  overflow: hidden;
+  padding: 5px 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 1102;
+}
+
+:host ::ng-deep .nav-drawer {
+  width: var(--drawer-width);
+  top: var(--toolbar-height);
+  height: calc(100vh - var(--toolbar-height));
+  max-height: calc(100vh - var(--toolbar-height));
+}
+
+:host ::ng-deep .nav-drawer__menu {
+  border: none;
+  width: 100%;
+}
+
+:host ::ng-deep .nav-drawer .p-drawer-content {
+  padding: 0.75rem 0 0;
+}
+
+:host ::ng-deep .top-bar .p-toolbar-group-start,
+:host ::ng-deep .top-bar .p-toolbar-group-end {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  color: #ffffff;
+}
+
+.menu-toggle {
+  color: #ffffff !important;
+  margin-right: 0.15rem;
+}
+
+:host ::ng-deep .menu-toggle.p-button,
+:host ::ng-deep .signout-btn.p-button {
+  color: #ffffff !important;
+}
+
+:host ::ng-deep .signout-btn.p-button {
+  border-color: #ffffff !important;
+}
+
+.toolbar-logo {
+  height: 86px;
+  max-height: calc(var(--toolbar-height) - 10px);
+  width: auto;
+  display: block;
+  margin-top: 0;
+  margin-bottom: 0;
+  margin-right: 0.35rem;
+}
+
+.app-name {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.03em;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.user-name {
+  font-size: 0.875rem;
+  color: #ffffff;
+}
+
+.mr-2 {
+  margin-right: 0.5rem;
+}
+
+.mr-3 {
+  margin-right: 0.75rem;
+}
+
+.vehicle-detail-body {
+  flex: 1;
+  min-width: 0;
+  transition: padding-left 0.2s ease;
+}
+
+.vehicle-detail-body--drawer-open {
+  padding-left: var(--drawer-width);
+}
+
+.vehicle-detail-content {
+  padding: 1.5rem 1.5rem 3rem;
+  width: 100%;
+}
+
+.page-actions {
+  margin-bottom: 1rem;
+}
+
+.loading-panel,
+.error-banner,
+.empty-state {
+  padding: 0.85rem 1rem;
+  border-radius: 8px;
+  font-weight: 700;
+}
+
+.loading-panel,
+.empty-state {
+  color: #374151;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+}
+
+.error-banner {
+  margin-bottom: 1rem;
+  color: #991b1b;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+}
+
+.identity-panel {
+  padding: 1.25rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: minmax(18rem, 0.65fr) minmax(0, 1.35fr);
+  gap: 1.25rem;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.identity-main {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.eyebrow {
+  color: #6b7280;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.identity-main h1 {
+  margin: 0.3rem 0 0.85rem;
+  color: #111827;
+  font-size: 2.1rem;
+  line-height: 1.1;
+}
+
+.identity-tags {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.identity-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.identity-grid div,
+.status-card,
+.quality-item {
+  padding: 0.85rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.identity-grid span,
+.status-card span,
+.quality-item span {
+  display: block;
+  color: #6b7280;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.identity-grid strong,
+.status-card strong,
+.quality-item strong {
+  display: block;
+  margin-top: 0.25rem;
+  color: #111827;
+  font-size: 0.95rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.status-grid {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.status-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+}
+
+.status-card__icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  background: #1d4ed8;
+  flex: 0 0 auto;
+}
+
+.status-card__icon .pi {
+  font-size: 1.15rem;
+}
+
+.detail-section {
+  margin-top: 1.5rem;
+}
+
+.section-header {
+  margin-bottom: 0.85rem;
+}
+
+.section-header h2 {
+  margin: 0 0 0.2rem;
+  color: #111827;
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.section-header p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.score-chart-card {
+  min-height: 28rem;
+  padding: 1rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.score-chart {
+  width: 100%;
+  height: 26rem;
+}
+
+:host ::ng-deep .detail-table {
+  background: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+:host ::ng-deep .detail-table table {
+  min-width: 82rem;
+}
+
+:host ::ng-deep .detail-table .p-datatable-thead > tr > th {
+  white-space: nowrap;
+  background: #f9fafb;
+  color: #374151;
+  font-size: 0.78rem;
+}
+
+:host ::ng-deep .detail-table .p-datatable-tbody > tr > td {
+  font-size: 0.85rem;
+  color: #111827;
+}
+
+.wide-cell {
+  max-width: 24rem;
+  overflow-wrap: anywhere;
+}
+
+.quality-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.quality-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: #ffffff;
+}
+
+@media (max-width: 1200px) {
+  .identity-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .identity-grid,
+  .status-grid,
+  .quality-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 960px) {
+  .vehicle-detail-body--drawer-open {
+    padding-left: 0;
+  }
+
+  .vehicle-detail-content {
+    padding: 1rem 1rem 2rem;
+  }
+
+  .identity-grid,
+  .status-grid,
+  .quality-grid {
+    grid-template-columns: 1fr;
+  }
+}
