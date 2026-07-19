@@ -77,7 +77,36 @@ Reason:
 - It does not currently derive a meaningful `pass = false` value from that interval.
 - The pass/fail meaning for route starts is therefore interval-based.
 
-For inspection-quality cards, `pass = false` is still used where the inspection type actually reports a pass/fail result.
+For inspection-quality cards, failures are derived from the parent `pass` field and the type-specific check fields.
+
+Failed-inspection denominator:
+
+- external inspections
+- internal inspections
+- driver inspections
+- passenger counts
+- technical inspections
+
+Excluded from failed-inspection denominator:
+
+- `behind_schedule` route-start rows, because they feed the on-time performance KPI.
+
+Derived failed-inspection rules:
+
+- Parent `pass = false` is a failure.
+- Any failed subclass check is a failure:
+  - tyres
+  - windows
+  - exterior other
+  - fire extinguisher
+  - seats
+  - aisle
+  - interior other
+  - PRDP scan
+  - driver identified
+- Passenger count rows with `number_standing > 0` are treated as overloaded passenger-count failures until capacity data is available.
+
+Do not rely only on `pass = false` for reporting failed inspections. Some source rows can carry the failure on the subclass field while the parent field is missing or not meaningful for that inspection type.
 
 ## Driver And Bus Compliance Methodology
 

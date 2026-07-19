@@ -35,6 +35,14 @@ logger = logging.getLogger(__name__)
 ROUTE_START_INTERVALS = ("0-5 mins", "5-10 mins", "10-15 mins", "15+ mins")
 ON_TIME_ROUTE_START_INTERVALS = {"0-5 mins"}
 MAJOR_DELAY_INTERVALS = {"10-15 mins", "15+ mins"}
+COMPLETED_INSPECTION_TYPES = ("external", "internal", "driver", "count", "technical")
+FAILED_INSPECTION_LABELS = {
+    "external": "External Inspections",
+    "internal": "Internal Inspections",
+    "driver": "Driver Inspections",
+    "count": "Passenger Counts",
+    "technical": "Technical Inspections",
+}
 
 
 def _to_float(value: Any, default: float = 0) -> float:
@@ -171,6 +179,24 @@ def _bus_label_from_parts(
     return registration or bus_id or "-", fleet_number or "-"
 
 
+def _inspection_has_failed_checks(row) -> bool:
+    if row.inspection_type == "count":
+        return _to_int(row.number_standing) > 0
+    check_values = [
+        row.pass_,
+        row.tyres_pass,
+        row.windows_pass,
+        row.ext_other_pass,
+        row.fire_extinguisher_present,
+        row.seats_pass,
+        row.aisle_pass,
+        row.int_other_pass,
+        row.prdp_scan_succeeded,
+        row.driver_identified,
+    ]
+    return any(value is False for value in check_values)
+
+
 def _inspection_row(row) -> dict[str, Any]:
     registration, fleet_no = _bus_label_from_parts(
         row.registration_number, row.fleet_number, row.bus_id
@@ -191,7 +217,7 @@ def _inspection_row(row) -> dict[str, Any]:
             if row.inspection_lat is not None and row.inspection_lon is not None
             else ""
         ),
-        "status": "Pass" if row.pass_ else "Fail",
+        "status": "Fail" if _inspection_has_failed_checks(row) else "Pass",
         "inspectionType": row.inspection_type,
     }
 
@@ -287,6 +313,7 @@ def get_reporting_summary(
                     i.bus_id,
                     i.fleet_number,
                     i.duty_number,
+                    i.replacement_bus,
                     i.inspection_type,
                     i.inspection_time,
                     i.inspection_lat,
@@ -1061,8 +1088,25 @@ def get_analytics_summary(
             text(
                 """
                 select
-                    count(*) as total_inspections,
-                    count(*) filter (where pass is false) as failed_inspections
+                    count(*) filter (
+                        where inspection_type in ('external', 'internal', 'driver', 'count', 'technical')
+                    ) as total_inspections,
+                    count(*) filter (
+                        where inspection_type in ('external', 'internal', 'driver', 'count', 'technical')
+                          and (
+                            pass is false
+                            or tyres_pass is false
+                            or windows_pass is false
+                            or ext_other_pass is false
+                            or fire_extinguisher_present is false
+                            or seats_pass is false
+                            or aisle_pass is false
+                            or int_other_pass is false
+                            or prdp_scan_succeeded is false
+                            or driver_identified is false
+                            or (inspection_type = 'count' and coalesce(number_standing, 0) > 0)
+                          )
+                    ) as failed_inspections
                 from inspections.inspections
                 where (cast(:start_date as date) is null or inspection_time::date >= cast(:start_date as date))
                   and (cast(:end_date as date) is null or inspection_time::date <= cast(:end_date as date))
@@ -1070,6 +1114,34 @@ def get_analytics_summary(
             ),
             params,
         ).mappings().one()
+
+        failed_inspection_type_rows = db.execute(
+            text(
+                """
+                select
+                    inspection_type,
+                    count(*) filter (
+                        where pass is false
+                           or tyres_pass is false
+                           or windows_pass is false
+                           or ext_other_pass is false
+                           or fire_extinguisher_present is false
+                           or seats_pass is false
+                           or aisle_pass is false
+                           or int_other_pass is false
+                           or prdp_scan_succeeded is false
+                           or driver_identified is false
+                           or (inspection_type = 'count' and coalesce(number_standing, 0) > 0)
+                    ) as failed_count
+                from inspections.inspections
+                where inspection_type in ('external', 'internal', 'driver', 'count', 'technical')
+                  and (cast(:start_date as date) is null or inspection_time::date >= cast(:start_date as date))
+                  and (cast(:end_date as date) is null or inspection_time::date <= cast(:end_date as date))
+                group by inspection_type
+                """
+            ),
+            params,
+        ).mappings().all()
 
         delayed_interval_rows = db.execute(
             text(
@@ -1254,6 +1326,25 @@ def get_analytics_summary(
     total_inspections = _to_int(top_inspection_row.total_inspections)
     failed_inspections = _to_int(top_inspection_row.failed_inspections)
     failed_value = _format_percent(failed_inspections, total_inspections)
+    failed_counts_by_type = {
+        row.inspection_type: _to_int(row.failed_count)
+        for row in failed_inspection_type_rows
+    }
+    failed_summary_items = [
+        AnalyticsSummaryItemResponse(
+            label=FAILED_INSPECTION_LABELS[inspection_type],
+            value=failed_counts_by_type.get(inspection_type, 0),
+            drill_key=f"failed-{FAILED_INSPECTION_LABELS[inspection_type].lower().replace(' ', '-')}",
+        )
+        for inspection_type in COMPLETED_INSPECTION_TYPES
+    ]
+    failed_summary_items.append(
+        AnalyticsSummaryItemResponse(
+            label="Total Failed Inspections",
+            value=failed_inspections,
+            drill_key=None,
+        )
+    )
 
     fleet_vehicle_count = _to_int(top_fleet_row.vehicle_count)
     fleet_health_value = (
@@ -1346,6 +1437,7 @@ def get_analytics_summary(
             value=failed_value,
             secondary_text=f"{failed_inspections:,}/{total_inspections:,}",
             status=_status_for_percent(failed_value, inverse=True),
+            summary_items=failed_summary_items,
         ),
         AnalyticsTopKpiResponse(
             id="fleet-health",

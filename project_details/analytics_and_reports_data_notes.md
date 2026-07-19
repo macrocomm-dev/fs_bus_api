@@ -81,9 +81,15 @@ Current backend sources:
   - Route Compliance:
     - Source checked: `analytics.trip_data.routescore` and `analytics.trip_data.routevar`
     - Current display: `N/A` because both fields are currently `0.00` for all inspected rows, so a percentage would be misleading.
-  - Failed Inspections:
-    - Source: `inspections.inspections`
-    - Current calculation: `pass = false` divided by total inspections in the selected date range.
+- Failed Inspections:
+  - Source: `inspections.inspections`
+  - Denominator: completed inspection rows only: external, internal, driver, passenger count, and technical.
+  - Current calculation: derived failed inspections divided by completed inspection rows in the selected date range.
+  - Derived failed inspections include:
+    - `pass = false`
+    - any failed subclass check such as tyres, windows, seats, aisle, fire extinguisher, other, PRDP scan, or driver identified
+    - passenger count rows where `number_standing > 0`, which are treated as overloaded passenger-count failures
+  - Route-start rows are excluded from this denominator because they feed the on-time performance KPI.
   - Fleet Health:
     - Source: latest `analytics.bi_data.bi_total` per vehicle in the selected date range.
 - Daily Bus Monitoring
@@ -93,7 +99,8 @@ Current backend sources:
   - Inspection type over time uses real daily inspection counts.
 - Failed Inspections
   - Source: `inspections.inspections`
-  - Group failed rows by `inspection_type`.
+  - Group derived failed rows by `inspection_type`.
+  - The raw parent `pass` column is not the only failure source because some failures live in type-specific subclass fields.
   - Passenger count failures currently use `number_standing > 0` as a provisional overloaded-trip proxy.
 - Defects / Bus Defects
   - Source: `inspections.inspections`
