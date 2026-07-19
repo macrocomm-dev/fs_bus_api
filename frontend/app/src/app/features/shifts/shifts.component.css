@@ -162,6 +162,96 @@
   color: #111827;
 }
 
+.expander-column {
+  width: 3.25rem;
+}
+
+:host ::ng-deep .row-expander-button.p-button {
+  width: 2rem;
+  height: 2rem;
+}
+
+.inspection-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+.shift-detail-cell {
+  padding: 0 !important;
+  background: #f8fafc;
+}
+
+.shift-detail-panel {
+  padding: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.shift-inspection-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.shift-inspection-item,
+.shift-empty-inspections {
+  padding: 0.85rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.shift-inspection-item__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.shift-inspection-item__heading span,
+.shift-inspection-item dt {
+  display: block;
+  color: #6b7280;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.shift-inspection-item__heading strong {
+  display: block;
+  margin-top: 0.2rem;
+  color: #111827;
+  font-size: 1rem;
+}
+
+.shift-inspection-item dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.shift-inspection-item dd {
+  margin: 0.2rem 0 0;
+  color: #111827;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.shift-inspection-item p {
+  margin: 0.85rem 0 0;
+  color: #374151;
+  line-height: 1.35;
+}
+
+.shift-empty-inspections {
+  color: #6b7280;
+  font-weight: 700;
+}
+
 .mono-cell {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
     'Courier New', monospace;
@@ -181,5 +271,10 @@
 
   .shifts-content {
     padding: 1.25rem 1rem 2rem;
+  }
+
+  .shift-inspection-list,
+  .shift-inspection-item dl {
+    grid-template-columns: 1fr;
   }
 }

@@ -16,15 +16,32 @@ import { TagModule } from 'primeng/tag';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
+import { InspectionService } from '../../core/api/api/inspection.service';
+import type { GroupedBusInspectionResponse } from '../../core/api/model/groupedBusInspectionResponse';
 import { ShiftsService } from '../../core/api/api/shifts.service';
 import type { ShiftResponse } from '../../core/api/model/shiftResponse';
 import { AuthService } from '../../core/services/auth.service';
+
+type ShiftInspectionItem = {
+  inspectionId: number;
+  busId: string;
+  fleetNumber: string;
+  dutyNumber: string;
+  type: string;
+  inspectionTime: string;
+  gps: string;
+  pass: boolean | null | undefined;
+  summary: string;
+};
 
 type ShiftRow = ShiftResponse & {
   loggedBy: string;
   duration: string;
   startGps: string;
   endGps: string;
+  inspections: ShiftInspectionItem[];
+  inspectionCount: number;
+  failedInspectionCount: number;
 };
 
 @Component({
@@ -52,6 +69,7 @@ export class ShiftsComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly shiftsApi = inject(ShiftsService);
+  private readonly inspectionApi = inject(InspectionService);
 
   readonly session = this.auth.session;
   readonly shifts = signal<ShiftRow[]>([]);
@@ -114,6 +132,18 @@ export class ShiftsComponent implements OnInit {
     this.auth.logout();
   }
 
+  statusSeverity(pass: boolean | null | undefined): 'success' | 'danger' | 'warn' {
+    if (pass === true) return 'success';
+    if (pass === false) return 'danger';
+    return 'warn';
+  }
+
+  statusLabel(pass: boolean | null | undefined): string {
+    if (pass === true) return 'Pass';
+    if (pass === false) return 'Fail';
+    return 'Not set';
+  }
+
   private loadShifts(): void {
     this.loading.set(true);
     this.error.set(null);
@@ -127,24 +157,162 @@ export class ShiftsComponent implements OnInit {
       )
       .subscribe({
         next: (response) => {
-          this.shifts.set(
-            (response ?? [])
-              .map((shift) => ({
-                ...shift,
-                loggedBy: this.loggedBy(shift),
-                duration: this.duration(shift.start_time, shift.end_time),
-                startGps: this.gps(shift.start_lat, shift.start_lon),
-                endGps: this.gps(shift.end_lat, shift.end_lon),
-              }))
-              .sort((a, b) => Date.parse(b.start_time) - Date.parse(a.start_time)),
-          );
-          this.loading.set(false);
+          const shifts = response ?? [];
+          const shiftIds = shifts.map((shift) => shift.id);
+
+          if (shiftIds.length === 0) {
+            this.shifts.set([]);
+            this.loading.set(false);
+            return;
+          }
+
+          this.inspectionApi
+            .getBusInspectionsByShiftInspectionBusInspectionsByShiftIdsGet(
+              { shiftIds },
+              'body',
+              false,
+              { transferCache: false },
+            )
+            .subscribe({
+              next: (inspectionGroups) => {
+                this.shifts.set(this.buildShiftRows(shifts, inspectionGroups ?? []));
+                this.loading.set(false);
+              },
+              error: (err) => {
+                if (err?.status === 404) {
+                  this.shifts.set(this.buildShiftRows(shifts, []));
+                  this.loading.set(false);
+                  return;
+                }
+
+                this.loading.set(false);
+                this.error.set(err?.error?.detail ?? 'Could not load shift inspections.');
+              },
+            });
         },
         error: (err) => {
           this.loading.set(false);
           this.error.set(err?.error?.detail ?? 'Could not load shifts.');
         },
       });
+  }
+
+  private buildShiftRows(
+    shifts: ShiftResponse[],
+    inspectionGroups: GroupedBusInspectionResponse[],
+  ): ShiftRow[] {
+    const inspectionsByShift = new Map<number, ShiftInspectionItem[]>();
+    for (const group of inspectionGroups) {
+      const items = this.flattenShiftInspectionGroup(group);
+      const existing = inspectionsByShift.get(group.shift_id) ?? [];
+      inspectionsByShift.set(group.shift_id, [...existing, ...items]);
+    }
+
+    return shifts
+      .map((shift) => {
+        const inspections = (inspectionsByShift.get(shift.id) ?? []).sort(
+          (a, b) => Date.parse(b.inspectionTime) - Date.parse(a.inspectionTime),
+        );
+        return {
+          ...shift,
+          loggedBy: this.loggedBy(shift),
+          duration: this.duration(shift.start_time, shift.end_time),
+          startGps: this.gps(shift.start_lat, shift.start_lon),
+          endGps: this.gps(shift.end_lat, shift.end_lon),
+          inspections,
+          inspectionCount: inspections.length,
+          failedInspectionCount: inspections.filter((inspection) => inspection.pass === false).length,
+        };
+      })
+      .sort((a, b) => Date.parse(b.start_time) - Date.parse(a.start_time));
+  }
+
+  private flattenShiftInspectionGroup(group: GroupedBusInspectionResponse): ShiftInspectionItem[] {
+    const rows: ShiftInspectionItem[] = [];
+    const base = {
+      busId: group.bus_id,
+      fleetNumber: group.fleet_number ?? '',
+      dutyNumber: group.duty_number ?? '',
+    };
+    const inspections = group.inspections;
+
+    if (inspections.external) {
+      const ext = inspections.external;
+      rows.push({
+        ...base,
+        inspectionId: ext.inspection_id,
+        type: 'External',
+        inspectionTime: ext.inspection_time,
+        gps: this.gps(ext.inspection_lat, ext.inspection_lon),
+        pass: ext.pass_,
+        summary: [
+          `Tyres: ${this.itemLabel(ext.tyres.pass_)}`,
+          `Windows: ${this.itemLabel(ext.windows.pass_)}`,
+          `Other: ${this.itemLabel(ext.other.pass_)}`,
+        ].join(' | '),
+      });
+    }
+
+    if (inspections.internal) {
+      const internal = inspections.internal;
+      rows.push({
+        ...base,
+        inspectionId: internal.inspection_id,
+        type: 'Internal',
+        inspectionTime: internal.inspection_time,
+        gps: this.gps(internal.inspection_lat, internal.inspection_lon),
+        pass: internal.pass_,
+        summary: [
+          `Fire extinguisher: ${internal.fire_extinguisher_present ? 'Present' : 'Missing'}`,
+          `Seats: ${this.itemLabel(internal.seats.pass_)}`,
+          `Aisle: ${this.itemLabel(internal.aisle.pass_)}`,
+          `Other: ${this.itemLabel(internal.other.pass_)}`,
+        ].join(' | '),
+      });
+    }
+
+    if (inspections.driver) {
+      const driver = inspections.driver;
+      rows.push({
+        ...base,
+        inspectionId: driver.inspection_id,
+        type: 'Driver',
+        inspectionTime: driver.inspection_time,
+        gps: this.gps(driver.inspection_lat, driver.inspection_lon),
+        pass: driver.pass_,
+        summary: [
+          `Driver: ${driver.driver_name ?? 'Unknown'}`,
+          `PRDP scan: ${this.itemLabel(driver.prdp_scan_succeeded)}`,
+          `Driver identified: ${this.itemLabel(driver.driver_identified)}`,
+        ].join(' | '),
+      });
+    }
+
+    for (const passenger of inspections.passenger_counts ?? []) {
+      rows.push({
+        ...base,
+        inspectionId: passenger.inspection_id,
+        type: 'Passenger Count',
+        inspectionTime: passenger.inspection_time,
+        gps: this.gps(passenger.inspection_lat, passenger.inspection_lon),
+        pass: passenger.pass_,
+        summary: `Seated: ${passenger.number_seated ?? 0} | Standing: ${passenger.number_standing ?? 0} | Total: ${passenger.count ?? 0}`,
+      });
+    }
+
+    for (const report of inspections.behind_schedule_reports ?? []) {
+      rows.push({
+        ...base,
+        inspectionId: report.inspection_id,
+        type: 'Behind Schedule',
+        inspectionTime: report.inspection_time,
+        gps: this.gps(report.inspection_lat, report.inspection_lon),
+        pass: report.pass_,
+        summary: `Interval: ${report.behind_schedule_interval ?? 'Not set'}`,
+      });
+    }
+
+    return rows;
   }
 
   private gps(lat: number, lon: number): string {
@@ -162,5 +330,11 @@ export class ShiftsComponent implements OnInit {
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
     return `${hours}h ${minutes}m`;
+  }
+
+  private itemLabel(value: boolean | null | undefined): string {
+    if (value === true) return 'Pass';
+    if (value === false) return 'Fail';
+    return 'Not set';
   }
 }

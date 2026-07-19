@@ -113,14 +113,17 @@
           'dutyNumber',
           'type',
           'gps',
+          'notes',
           'summary'
         ]"
         sortMode="multiple"
         styleClass="records-table"
         stripedRows
+        dataKey="inspectionId"
       >
         <ng-template pTemplate="header">
           <tr>
+            <th class="expander-column"></th>
             <th pSortableColumn="inspectionId">Inspection <p-sortIcon field="inspectionId" /></th>
             <th pSortableColumn="shiftId">Shift <p-sortIcon field="shiftId" /></th>
             <th pSortableColumn="busId">Bus / VIN <p-sortIcon field="busId" /></th>
@@ -128,14 +131,25 @@
             <th pSortableColumn="dutyNumber">Duty <p-sortIcon field="dutyNumber" /></th>
             <th pSortableColumn="type">Type <p-sortIcon field="type" /></th>
             <th pSortableColumn="inspectionTime">Time <p-sortIcon field="inspectionTime" /></th>
-            <th>GPS</th>
             <th>Status</th>
             <th>Collected Data</th>
           </tr>
         </ng-template>
 
-        <ng-template pTemplate="body" let-row>
+        <ng-template pTemplate="body" let-row let-expanded="expanded">
           <tr>
+            <td>
+              <p-button
+                type="button"
+                [pRowToggler]="row"
+                [text]="true"
+                severity="secondary"
+                [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
+                styleClass="row-expander-button"
+                pTooltip="Show inspection details"
+                tooltipPosition="right"
+              />
+            </td>
             <td class="mono-cell">{{ row.inspectionId }}</td>
             <td class="mono-cell">{{ row.shiftId }}</td>
             <td class="mono-cell">{{ row.busId }}</td>
@@ -143,11 +157,54 @@
             <td>{{ row.dutyNumber || '—' }}</td>
             <td>{{ row.type }}</td>
             <td>{{ row.inspectionTime | date: 'yyyy-MM-dd HH:mm' }}</td>
-            <td class="mono-cell">{{ row.gps }}</td>
             <td>
               <p-tag [value]="statusLabel(row.pass)" [severity]="statusSeverity(row.pass)" />
             </td>
             <td class="summary-cell">{{ row.summary }}</td>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="rowexpansion" let-row>
+          <tr>
+            <td colspan="10" class="inspection-detail-cell">
+              <div class="inspection-detail-panel">
+                <div class="inspection-detail-meta">
+                  <div>
+                    <span>GPS</span>
+                    <strong class="mono-cell">{{ row.gps }}</strong>
+                  </div>
+                  <div>
+                    <span>Notes</span>
+                    <strong>{{ row.notes || 'No notes captured' }}</strong>
+                  </div>
+                </div>
+
+                <div class="inspection-detail-grid">
+                  @for (item of row.details; track item.label) {
+                    <article class="inspection-detail-item">
+                      <div class="inspection-detail-item__header">
+                        <span>{{ item.label }}</span>
+                        @if (item.status !== undefined) {
+                          <p-tag
+                            [value]="detailValue(item)"
+                            [severity]="statusSeverity(item.status)"
+                          />
+                        }
+                      </div>
+                      @if (item.status === undefined) {
+                        <strong>{{ item.value }}</strong>
+                      }
+                      @if (item.note) {
+                        <p>{{ item.note }}</p>
+                      }
+                      @if (item.photoCount !== undefined) {
+                        <small>{{ item.photoCount }} photos</small>
+                      }
+                    </article>
+                  }
+                </div>
+              </div>
+            </td>
           </tr>
         </ng-template>
 

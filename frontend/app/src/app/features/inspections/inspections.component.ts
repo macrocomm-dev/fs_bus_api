@@ -30,7 +30,17 @@ type InspectionRow = {
   inspectionTime: string;
   gps: string;
   pass: boolean | null | undefined;
+  notes: string | null | undefined;
   summary: string;
+  details: InspectionDetailItem[];
+};
+
+type InspectionDetailItem = {
+  label: string;
+  value: string;
+  status?: boolean | null | undefined;
+  note?: string | null | undefined;
+  photoCount?: number;
 };
 
 type InspectionMetricTile = {
@@ -171,6 +181,13 @@ export class InspectionsComponent implements OnInit {
     return 'Not set';
   }
 
+  detailValue(item: InspectionDetailItem): string {
+    if (item.status !== undefined) {
+      return this.itemLabel(item.status);
+    }
+    return item.value;
+  }
+
   filterFailedType(type: string): void {
     this.selectedFailedType.set(this.selectedFailedType() === type ? null : type);
   }
@@ -218,11 +235,17 @@ export class InspectionsComponent implements OnInit {
           inspectionTime: ext.inspection_time,
           gps: this.gps(ext.inspection_lat, ext.inspection_lon),
           pass: ext.pass_,
+          notes: ext.notes,
           summary: [
             `Tyres: ${this.itemLabel(ext.tyres.pass_)}`,
             `Windows: ${this.itemLabel(ext.windows.pass_)}`,
             `Other: ${this.itemLabel(ext.other.pass_)}`,
           ].join(' | '),
+          details: [
+            this.checkDetail('Tyres', ext.tyres.pass_, ext.tyres.reason, ext.tyres.photos?.length),
+            this.checkDetail('Windows', ext.windows.pass_, ext.windows.reason, ext.windows.photos?.length),
+            this.checkDetail('Other', ext.other.pass_, ext.other.reason, ext.other.photos?.length),
+          ],
         });
       }
 
@@ -235,12 +258,24 @@ export class InspectionsComponent implements OnInit {
           inspectionTime: internal.inspection_time,
           gps: this.gps(internal.inspection_lat, internal.inspection_lon),
           pass: internal.pass_,
+          notes: internal.notes,
           summary: [
             `Fire extinguisher: ${internal.fire_extinguisher_present ? 'Present' : 'Missing'}`,
             `Seats: ${this.itemLabel(internal.seats.pass_)}`,
             `Aisle: ${this.itemLabel(internal.aisle.pass_)}`,
             `Other: ${this.itemLabel(internal.other.pass_)}`,
           ].join(' | '),
+          details: [
+            {
+              label: 'Fire extinguisher',
+              value: internal.fire_extinguisher_present ? 'Present' : 'Missing',
+              status: internal.fire_extinguisher_present,
+              note: internal.fire_extinguisher_present ? null : 'Fire extinguisher missing',
+            },
+            this.checkDetail('Seats', internal.seats.pass_, internal.seats.reason, internal.seats.photos?.length),
+            this.checkDetail('Aisle', internal.aisle.pass_, internal.aisle.reason, internal.aisle.photos?.length),
+            this.checkDetail('Other', internal.other.pass_, internal.other.reason, internal.other.photos?.length),
+          ],
         });
       }
 
@@ -253,6 +288,7 @@ export class InspectionsComponent implements OnInit {
           inspectionTime: driver.inspection_time,
           gps: this.gps(driver.inspection_lat, driver.inspection_lon),
           pass: driver.pass_,
+          notes: driver.notes,
           summary: [
             `Driver: ${driver.driver_name ?? 'Unknown'}`,
             `PRDP scan: ${this.itemLabel(driver.prdp_scan_succeeded)}`,
@@ -261,6 +297,12 @@ export class InspectionsComponent implements OnInit {
           ]
             .filter(Boolean)
             .join(' | '),
+          details: [
+            { label: 'Driver', value: driver.driver_name ?? 'Unknown' },
+            this.checkDetail('PRDP scan', driver.prdp_scan_succeeded, null, driver.photos?.length),
+            { label: 'PRDP expiry', value: driver.prdp_expiry_date ? new Date(driver.prdp_expiry_date).toLocaleDateString('en-ZA') : 'Not set' },
+            this.checkDetail('Driver identified', driver.driver_identified, driver.driver_fail_reason),
+          ],
         });
       }
 
@@ -272,7 +314,13 @@ export class InspectionsComponent implements OnInit {
           inspectionTime: passenger.inspection_time,
           gps: this.gps(passenger.inspection_lat, passenger.inspection_lon),
           pass: passenger.pass_,
+          notes: passenger.notes,
           summary: `Seated: ${passenger.number_seated ?? 0} | Standing: ${passenger.number_standing ?? 0} | Total: ${passenger.count ?? 0}`,
+          details: [
+            { label: 'Seated passengers', value: String(passenger.number_seated ?? 0) },
+            { label: 'Standing passengers', value: String(passenger.number_standing ?? 0) },
+            { label: 'Total passengers', value: String(passenger.count ?? 0) },
+          ],
         });
       }
 
@@ -284,7 +332,11 @@ export class InspectionsComponent implements OnInit {
           inspectionTime: report.inspection_time,
           gps: this.gps(report.inspection_lat, report.inspection_lon),
           pass: report.pass_,
+          notes: report.notes,
           summary: `Interval: ${report.behind_schedule_interval ?? 'Not set'}`,
+          details: [
+            { label: 'Delayed start interval', value: report.behind_schedule_interval ?? 'Not set' },
+          ],
         });
       }
     }
@@ -300,5 +352,20 @@ export class InspectionsComponent implements OnInit {
     if (value === true) return 'Pass';
     if (value === false) return 'Fail';
     return 'Not set';
+  }
+
+  private checkDetail(
+    label: string,
+    status: boolean | null | undefined,
+    note?: string | null,
+    photoCount?: number,
+  ): InspectionDetailItem {
+    return {
+      label,
+      value: this.itemLabel(status),
+      status,
+      note,
+      photoCount,
+    };
   }
 }

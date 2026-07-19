@@ -91,13 +91,17 @@
           'endGps',
           'start_time',
           'end_time',
+          'inspectionCount',
+          'failedInspectionCount',
         ]"
         sortMode="multiple"
         styleClass="records-table"
         stripedRows
+        dataKey="id"
       >
         <ng-template pTemplate="header">
           <tr>
+            <th class="expander-column"></th>
             <th pSortableColumn="id">Shift <p-sortIcon field="id" /></th>
             <th pSortableColumn="loggedBy">Logged By <p-sortIcon field="loggedBy" /></th>
             <th pSortableColumn="start_time">Start <p-sortIcon field="start_time" /></th>
@@ -105,13 +109,28 @@
             <th pSortableColumn="duration">Duration <p-sortIcon field="duration" /></th>
             <th>Start GPS</th>
             <th>End GPS</th>
+            <th pSortableColumn="inspectionCount">
+              Inspections <p-sortIcon field="inspectionCount" />
+            </th>
             <th pSortableColumn="device_id">Device <p-sortIcon field="device_id" /></th>
             <th pSortableColumn="created_at">Created <p-sortIcon field="created_at" /></th>
           </tr>
         </ng-template>
 
-        <ng-template pTemplate="body" let-row>
+        <ng-template pTemplate="body" let-row let-expanded="expanded">
           <tr>
+            <td>
+              <p-button
+                type="button"
+                [pRowToggler]="row"
+                [text]="true"
+                severity="secondary"
+                [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
+                styleClass="row-expander-button"
+                pTooltip="Show shift inspections"
+                tooltipPosition="right"
+              />
+            </td>
             <td class="mono-cell">{{ row.id }}</td>
             <td>{{ row.loggedBy }}</td>
             <td>{{ row.start_time | date: 'yyyy-MM-dd HH:mm' }}</td>
@@ -119,14 +138,74 @@
             <td>{{ row.duration }}</td>
             <td class="mono-cell">{{ row.startGps }}</td>
             <td class="mono-cell">{{ row.endGps }}</td>
+            <td>
+              <span class="inspection-count">
+                {{ row.inspectionCount }}
+                @if (row.failedInspectionCount > 0) {
+                  <p-tag [value]="row.failedInspectionCount + ' failed'" severity="danger" />
+                }
+              </span>
+            </td>
             <td class="mono-cell">{{ row.device_id }}</td>
             <td>{{ row.created_at | date: 'yyyy-MM-dd HH:mm' }}</td>
           </tr>
         </ng-template>
 
+        <ng-template pTemplate="rowexpansion" let-row>
+          <tr>
+            <td colspan="10" class="shift-detail-cell">
+              <div class="shift-detail-panel">
+                @if (row.inspections.length > 0) {
+                  <div class="shift-inspection-list">
+                    @for (inspection of row.inspections; track inspection.inspectionId) {
+                      <article class="shift-inspection-item">
+                        <div class="shift-inspection-item__heading">
+                          <div>
+                            <span>{{ inspection.type }}</span>
+                            <strong>#{{ inspection.inspectionId }}</strong>
+                          </div>
+                          <p-tag
+                            [value]="statusLabel(inspection.pass)"
+                            [severity]="statusSeverity(inspection.pass)"
+                          />
+                        </div>
+                        <dl>
+                          <div>
+                            <dt>Bus / VIN</dt>
+                            <dd class="mono-cell">{{ inspection.busId }}</dd>
+                          </div>
+                          <div>
+                            <dt>Fleet</dt>
+                            <dd>{{ inspection.fleetNumber || '—' }}</dd>
+                          </div>
+                          <div>
+                            <dt>Duty</dt>
+                            <dd>{{ inspection.dutyNumber || '—' }}</dd>
+                          </div>
+                          <div>
+                            <dt>Time</dt>
+                            <dd>{{ inspection.inspectionTime | date: 'yyyy-MM-dd HH:mm' }}</dd>
+                          </div>
+                          <div>
+                            <dt>GPS</dt>
+                            <dd class="mono-cell">{{ inspection.gps }}</dd>
+                          </div>
+                        </dl>
+                        <p>{{ inspection.summary }}</p>
+                      </article>
+                    }
+                  </div>
+                } @else {
+                  <div class="shift-empty-inspections">No inspections are linked to this shift.</div>
+                }
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+
         <ng-template pTemplate="emptymessage">
           <tr>
-            <td colspan="9" class="empty-message">No shift records found.</td>
+            <td colspan="10" class="empty-message">No shift records found.</td>
           </tr>
         </ng-template>
       </p-table>
