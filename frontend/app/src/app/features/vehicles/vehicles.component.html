@@ -130,15 +130,15 @@
             <td>{{ vehicle.year || '—' }}</td>
             <td class="vehicle-map-cell">
               @if (vehicle.smart_fleet_device_id) {
-                <p-button
-                  icon="pi pi-map-marker"
-                  [text]="true"
-                  severity="secondary"
-                  styleClass="vehicle-map-btn"
-                  [pTooltip]="mapTooltip(vehicle)"
-                  tooltipPosition="left"
-                  (onClick)="openLiveMapForVehicle(vehicle)"
-                />
+                <span [pTooltip]="mapTooltip(vehicle)" tooltipPosition="left">
+                  <p-button
+                    icon="pi pi-map-marker"
+                    [text]="true"
+                    severity="secondary"
+                    styleClass="vehicle-map-btn"
+                    [disabled]="true"
+                  />
+                </span>
               } @else {
                 <span class="vehicle-map-empty">—</span>
               }

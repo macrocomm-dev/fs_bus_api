@@ -114,20 +114,6 @@ export class VehiclesComponent implements OnInit {
     this.router.navigate(['/smart-fleet']);
   }
 
-  openLiveMapForVehicle(vehicle: VehicleResponse): void {
-    if (!vehicle.smart_fleet_device_id) {
-      return;
-    }
-
-    this.menuVisible = false;
-    this.router.navigate(['/smart-fleet'], {
-      queryParams: {
-        deviceId: vehicle.smart_fleet_device_id,
-        vehicle: vehicle.registration_number ?? vehicle.fleet_number ?? vehicle.vin,
-      },
-    });
-  }
-
   openAnalytics(): void {
     this.menuVisible = false;
     this.router.navigate(['/analytics']);

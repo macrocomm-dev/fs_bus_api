@@ -1,4 +1,4 @@
-import { Component, signal, computed, inject } from '@angular/core';
+import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -7,6 +7,11 @@ import type { EChartsOption } from 'echarts';
 import { NgxEchartsDirective } from 'ngx-echarts';
 
 import { AuthService } from '../../core/services/auth.service';
+import { AnalyticsService } from '../../core/api/api/analytics.service';
+import type { AnalyticsDrilldownResponse } from '../../core/api/model/analyticsDrilldownResponse';
+import type { AnalyticsReportingSummaryResponse } from '../../core/api/model/analyticsReportingSummaryResponse';
+import type { AnalyticsReportingTileResponse } from '../../core/api/model/analyticsReportingTileResponse';
+import type { AnalyticsTopKpiResponse } from '../../core/api/model/analyticsTopKpiResponse';
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -46,6 +51,10 @@ export interface KpiTile {
   status: TileStatus;
   icon: string;
   summaryItems: SummaryItem[];
+  trendData?: {
+    dates: string[];
+    series: { name: string; data: number[] }[];
+  };
 }
 
 export interface TableColumn {
@@ -58,6 +67,17 @@ export interface DrillConfig {
   columns: TableColumn[];
   data: Record<string, string | number>[];
 }
+
+type TopKpiApiValue = {
+  value: string;
+  secondaryText?: string;
+  status?: TileStatus;
+  summaryItems?: SummaryItem[];
+  trendData?: {
+    dates: string[];
+    series: { name: string; data: number[] }[];
+  };
+};
 
 // ─── Filter enrichment ───────────────────────────────────────────────────────
 
@@ -2407,12 +2427,18 @@ const TILES: KpiTile[] = [
   templateUrl: './reporting.component.html',
   styleUrl: './reporting.component.css',
 })
-export class ReportingComponent {
+export class ReportingComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly sanitizer = inject(DomSanitizer);
+  private readonly analyticsApi = inject(AnalyticsService);
 
   readonly session = this.auth.session;
+  readonly reportTiles = signal<KpiTile[]>([]);
+  readonly reportDrilldowns = signal<Record<string, DrillConfig>>({});
+  readonly reportError = signal<string | null>(null);
+  readonly topKpiApiValues = signal<Record<string, TopKpiApiValue>>({});
+  readonly topKpiError = signal<string | null>(null);
   menuVisible = true;
   readonly navigationItems: MenuItem[] = [
     {
@@ -2450,62 +2476,14 @@ export class ReportingComponent {
 
   // ── Tiles grouped by dashboard row (reactive to applied filters) ──────────
   readonly filteredTiles = computed(() => {
-    const f = this.appliedFilters();
+    const apiTiles = this.reportTiles();
+    if (apiTiles.length > 0) return apiTiles;
 
-    return TILES.map((tile): KpiTile => {
-      if (tile.id === 'operator-compliance') {
-        const totalInspections = OPERATOR_COMPLIANCE_TOTALS.inspections;
-        const passRate =
-          totalInspections > 0
-            ? `${((OPERATOR_COMPLIANCE_TOTALS.passed / totalInspections) * 100).toFixed(1)}%`
-            : 'N/A';
-
-        return {
-          ...tile,
-          value: passRate,
-          summaryItems: OPERATOR_COMPLIANCE_SUMMARY_ITEMS,
-        };
-      }
-
-      if (tile.id === 'photo-evidence') {
-        const totalFailed = FAILED_INSPECTION_SUMMARY_ITEMS.reduce(
-          (total, item) =>
-            item.drillKey && typeof item.value === 'number' ? total + item.value : total,
-          0,
-        );
-
-        return {
-          ...tile,
-          value: totalFailed,
-          summaryItems: FAILED_INSPECTION_SUMMARY_ITEMS,
-        };
-      }
-
-      // Recount each drillable summary item
-      let newItems: SummaryItem[] = tile.summaryItems.map((item) => {
-        if (!item.drillKey) return item;
-        return { ...item, value: filterRecordsForKey(item.drillKey, f).length };
-      });
-
-      // Recompute the "Total" rows (drillKey === null) as sum of drillable items
-      const drillableSum = newItems
-        .filter((i) => i.drillKey !== null)
-        .reduce((s, i) => s + (typeof i.value === 'number' ? i.value : 0), 0);
-      newItems = newItems.map((i) => (i.drillKey === null ? { ...i, value: drillableSum } : i));
-
-      // Default tile face value = drillable sum
-      let tileValue: number | string = drillableSum;
-
-      // Service Reliability: recalculate on-time %
-      if (tile.id === 'service-reliability') {
-        const rows = filterRecordsForKey('on-time', f);
-        const totalSvcs = rows.reduce((s: number, r) => s + Number(r['total'] ?? 0), 0);
-        const onTimeSvcs = rows.reduce((s: number, r) => s + Number(r['onTime'] ?? 0), 0);
-        tileValue = totalSvcs > 0 ? `${((onTimeSvcs / totalSvcs) * 100).toFixed(1)}%` : 'N/A';
-      }
-
-      return { ...tile, value: tileValue, summaryItems: newItems };
-    });
+    return TILES.map((tile): KpiTile => ({
+      ...tile,
+      value: 'Loading',
+      summaryItems: tile.summaryItems.map((item) => ({ ...item, value: 0 })),
+    }));
   });
 
   readonly filteredRow1 = computed(() => this.filteredTiles().slice(6, 10));
@@ -2522,38 +2500,52 @@ export class ReportingComponent {
 
   readonly topKpiRow = computed<KpiTile[]>(() => {
     const [onTimeTile, routeComplianceTile, failedTile, fleetHealthTile] = this.filteredRow1();
-    const counts = this.topKpiCounts();
+    const apiValues = this.topKpiApiValues();
+    const onTimeApi = apiValues[onTimeTile.id];
+    const routeComplianceApi = apiValues[routeComplianceTile.id];
+    const failedApi = apiValues[failedTile.id];
+    const fleetHealthApi = apiValues[fleetHealthTile.id];
+
     return [
       {
         ...onTimeTile,
         title: 'On Time Performance',
         metric: 'On Time Performance',
-        value: TOP_KPI_DUMMY_VALUES[onTimeTile.id],
-        secondaryText: counts.onTime,
+        value: onTimeApi?.value ?? 'Loading',
+        secondaryText: onTimeApi?.secondaryText,
+        status: onTimeApi?.status ?? onTimeTile.status,
         icon: 'pi pi-stopwatch',
+        summaryItems: onTimeApi?.summaryItems ?? onTimeTile.summaryItems,
       },
       {
         ...routeComplianceTile,
         title: 'Route Compliance',
         metric: 'Route Compliance',
-        value: TOP_KPI_DUMMY_VALUES[routeComplianceTile.id],
-        secondaryText: counts.routeCompliance,
+        value: routeComplianceApi?.value ?? 'Loading',
+        secondaryText: routeComplianceApi?.secondaryText,
+        status: routeComplianceApi?.status ?? routeComplianceTile.status,
         icon: 'pi pi-map',
+        summaryItems: routeComplianceApi?.summaryItems ?? routeComplianceTile.summaryItems,
       },
       {
         ...failedTile,
         title: 'Failed Inspections',
         metric: 'Failed Inspections',
-        value: TOP_KPI_DUMMY_VALUES[failedTile.id],
-        secondaryText: counts.failedInspections,
+        value: failedApi?.value ?? 'Loading',
+        secondaryText: failedApi?.secondaryText,
+        status: failedApi?.status ?? failedTile.status,
         icon: 'pi pi-clipboard',
+        summaryItems: failedApi?.summaryItems ?? failedTile.summaryItems,
       },
       {
         ...fleetHealthTile,
         title: 'Fleet Health',
         metric: 'Fleet Health',
-        value: TOP_KPI_DUMMY_VALUES[fleetHealthTile.id],
+        value: fleetHealthApi?.value ?? 'Loading',
+        secondaryText: fleetHealthApi?.secondaryText,
+        status: fleetHealthApi?.status ?? fleetHealthTile.status,
         icon: 'pi pi-wave-pulse',
+        summaryItems: fleetHealthApi?.summaryItems ?? fleetHealthTile.summaryItems,
       },
     ];
   });
@@ -2656,6 +2648,8 @@ export class ReportingComponent {
   readonly activeTile = computed<KpiTile | null>(() => {
     const id = this.activeTileId();
     if (!id) return null;
+    const topKpiTile = this.topKpiRow().find((tile) => tile.id === id);
+    if (topKpiTile) return topKpiTile;
     return this.filteredTiles().find((t) => t.id === id) ?? null;
   });
 
@@ -2669,116 +2663,21 @@ export class ReportingComponent {
     return null;
   });
 
+  ngOnInit(): void {
+    this.loadTopKpis();
+    this.loadReportingSummary();
+  }
+
   readonly tileBarChartOptions = computed<EChartsOption | null>(() => {
     const tile = this.activeTile();
     if (!tile) return null;
 
-    if (tile.id === 'fleet-health') {
-      return {
-        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-        legend: {
-          top: 0,
-          left: 0,
-          textStyle: { fontSize: 10 },
-        },
-        grid: { left: 8, right: 46, bottom: 12, top: 34, containLabel: true },
-        xAxis: {
-          type: 'value',
-          minInterval: 1,
-          axisLabel: { fontSize: 11 },
-        },
-        yAxis: {
-          type: 'category',
-          data: FLEET_HEALTH_SCORE_BUCKETS.map((bucket) => bucket.label),
-          inverse: true,
-          axisLabel: {
-            fontSize: 11,
-            interval: 0,
-            width: 135,
-            overflow: 'break',
-            lineHeight: 14,
-          },
-        },
-        series: [
-          {
-            name: CHART_OPERATORS[0],
-            type: 'bar',
-            stack: 'operator',
-            data: FLEET_HEALTH_SCORE_BUCKETS.map((bucket) => bucket.interstate),
-            itemStyle: { color: '#1d4ed8' },
-            label: { show: true, position: 'insideRight', fontSize: 10, color: '#ffffff' },
-            barMaxWidth: 28,
-          },
-          {
-            name: CHART_OPERATORS[1],
-            type: 'bar',
-            stack: 'operator',
-            data: FLEET_HEALTH_SCORE_BUCKETS.map((bucket) => bucket.bophelong),
-            itemStyle: { color: '#f97316', borderRadius: [0, 4, 4, 0] },
-            label: { show: true, position: 'right', fontSize: 12, fontWeight: 'bold' },
-            barMaxWidth: 28,
-          },
-        ],
-      };
-    }
-
-    if (tile.id === 'operator-compliance') {
-      const categories = ['Shifts', 'Inspections', 'Passed Inspections', 'Failed Inspections'];
-
-      return {
-        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-        legend: {
-          top: 0,
-          left: 0,
-          textStyle: { fontSize: 10 },
-        },
-        grid: { left: 8, right: 52, bottom: 12, top: 34, containLabel: true },
-        xAxis: {
-          type: 'value',
-          minInterval: 1,
-          axisLabel: { fontSize: 11 },
-        },
-        yAxis: {
-          type: 'category',
-          data: categories,
-          inverse: true,
-          axisLabel: {
-            fontSize: 11,
-            interval: 0,
-            width: 135,
-            overflow: 'break',
-            lineHeight: 14,
-          },
-        },
-        series: OPERATOR_COMPLIANCE_ROWS.map((row, idx) => ({
-          name: row.operator,
-          type: 'bar',
-          stack: 'operator',
-          data: [row.shifts, row.inspections, row.passed, row.failed],
-          itemStyle: {
-            color: idx === 0 ? '#1d4ed8' : '#f97316',
-            borderRadius: idx === OPERATOR_COMPLIANCE_ROWS.length - 1 ? [0, 4, 4, 0] : 0,
-          },
-          label: {
-            show: true,
-            position: idx === 0 ? 'insideRight' : 'right',
-            fontSize: idx === 0 ? 10 : 12,
-            fontWeight: idx === 0 ? 'normal' : 'bold',
-            color: idx === 0 ? '#ffffff' : '#333333',
-          },
-          barMaxWidth: 28,
-        })),
-      };
-    }
-
-    const sourceTile = TILES.find((item) => item.id === tile.id) ?? tile;
-    const drillable = sourceTile.summaryItems.filter((i) => i.drillKey !== null);
+    const drillable = tile.summaryItems.filter((i) => i.drillKey !== null);
     const categories = drillable.map((i) => i.label);
     const totals = drillable.map((i) =>
       typeof i.value === 'number' ? i.value : parseFloat(String(i.value)) || 0,
     );
-    const operatorOneValues = totals.map((value, idx) => Math.round(value * (idx % 2 ? 0.55 : 0.62)));
-    const operatorTwoValues = totals.map((value, idx) => Math.max(value - operatorOneValues[idx], 0));
+    if (categories.length === 0) return null;
 
     return {
       tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
@@ -2807,20 +2706,10 @@ export class ReportingComponent {
       },
       series: [
         {
-          name: CHART_OPERATORS[0],
+          name: 'Total',
           type: 'bar',
-          stack: 'operator',
-          data: operatorOneValues,
+          data: totals,
           itemStyle: { color: '#1d4ed8' },
-          label: { show: true, position: 'insideRight', fontSize: 10, color: '#ffffff' },
-          barMaxWidth: 28,
-        },
-        {
-          name: CHART_OPERATORS[1],
-          type: 'bar',
-          stack: 'operator',
-          data: operatorTwoValues,
-          itemStyle: { color: '#f97316', borderRadius: [0, 4, 4, 0] },
           label: { show: true, position: 'right', fontSize: 12, fontWeight: 'bold' },
           barMaxWidth: 28,
         },
@@ -2833,7 +2722,11 @@ export class ReportingComponent {
     if (tile?.id !== 'daily-monitoring' && tile?.id !== 'service-reliability') return null;
 
     const chartData =
-      tile.id === 'service-reliability' ? DELAYED_STARTS_DUMMY_DATA : INSPECTION_TREND_DUMMY_DATA;
+      tile.id === 'service-reliability'
+        ? this.topKpiApiValues()['service-reliability']?.trendData
+        : tile.trendData;
+
+    if (!chartData || chartData.dates.length === 0) return null;
 
     return {
       color:
@@ -2885,26 +2778,6 @@ export class ReportingComponent {
     const tile = this.activeTile();
     if (!tile) return null;
 
-    if (tile.id === 'operator-compliance') {
-      return {
-        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
-        legend: { orient: 'vertical', left: '52%', top: 'middle', textStyle: { fontSize: 11 } },
-        series: [
-          {
-            type: 'pie',
-            radius: ['40%', '68%'],
-            center: ['25%', '50%'],
-            data: OPERATOR_COMPLIANCE_ROWS.flatMap((row) => [
-              { name: `${row.operator} Passed`, value: row.passed },
-              { name: `${row.operator} Failed`, value: row.failed },
-            ]),
-            label: { show: false },
-            emphasis: { label: { show: true, fontSize: 13, fontWeight: 'bold' } },
-          },
-        ],
-      };
-    }
-
     const drillable = tile.summaryItems.filter(
       (i) =>
         i.drillKey !== null &&
@@ -2939,7 +2812,7 @@ export class ReportingComponent {
   readonly activeDetail = computed<DrillConfig | null>(() => {
     const key = this.activeDetailKey();
     if (!key) return null;
-    return DRILL_CONFIGS[key] ?? null;
+    return this.reportDrilldowns()[key] ?? this.emptyDrilldown(key);
   });
 
   readonly drillHasGps = computed(() => {
@@ -3093,6 +2966,8 @@ export class ReportingComponent {
       terminals: [...this.draftTerminals],
       routes: [...this.draftRoutes],
     });
+    this.loadTopKpis({ dateFrom, dateTo });
+    this.loadReportingSummary({ dateFrom, dateTo });
   }
 
   resetFilters(): void {
@@ -3109,6 +2984,158 @@ export class ReportingComponent {
       terminals: [],
       routes: [],
     });
+    this.loadTopKpis({ dateFrom: defaultFrom, dateTo: defaultTo });
+    this.loadReportingSummary({ dateFrom: defaultFrom, dateTo: defaultTo });
+  }
+
+  private loadReportingSummary(
+    range: Pick<AppliedFilters, 'dateFrom' | 'dateTo'> = this.appliedFilters(),
+  ): void {
+    this.reportError.set(null);
+    this.analyticsApi
+      .getReportingSummary(
+        {
+          startDate: this.formatApiDate(range.dateFrom),
+          endDate: this.formatApiDate(range.dateTo),
+        },
+        'body',
+        false,
+        { transferCache: false },
+      )
+      .subscribe({
+        next: (summary) => this.applyReportingSummary(summary),
+        error: (err) => {
+          this.reportError.set(err?.error?.detail ?? 'Could not load reporting summary.');
+          this.reportTiles.set([]);
+          this.reportDrilldowns.set({});
+        },
+      });
+  }
+
+  private loadTopKpis(range: Pick<AppliedFilters, 'dateFrom' | 'dateTo'> = this.appliedFilters()): void {
+    this.topKpiError.set(null);
+    this.analyticsApi
+      .getAnalyticsSummary(
+        {
+          startDate: this.formatApiDate(range.dateFrom),
+          endDate: this.formatApiDate(range.dateTo),
+        },
+        'body',
+        false,
+        { transferCache: false },
+      )
+      .subscribe({
+        next: (summary) => {
+          this.topKpiApiValues.set(this.mapTopKpis(summary.top_kpis ?? []));
+        },
+        error: (err) => {
+          this.topKpiError.set(err?.error?.detail ?? 'Could not load KPI summary.');
+        },
+      });
+  }
+
+  private mapTopKpis(kpis: AnalyticsTopKpiResponse[]): Record<string, TopKpiApiValue> {
+    return kpis.reduce<Record<string, TopKpiApiValue>>((mapped, kpi) => {
+      mapped[kpi.id] = {
+        value: kpi.value,
+        secondaryText: kpi.secondary_text ?? undefined,
+        status: this.asTileStatus(kpi.status),
+        summaryItems: (kpi.summary_items ?? []).map((item) => ({
+          label: item.label,
+          value: this.coerceSummaryValue(item.value),
+          drillKey: item.drill_key ?? null,
+        })),
+        trendData: kpi.trend
+          ? {
+              dates: kpi.trend.dates ?? [],
+              series: (kpi.trend.series ?? []).map((series) => ({
+                name: series.name,
+                data: series.data ?? [],
+              })),
+            }
+          : undefined,
+      };
+      return mapped;
+    }, {});
+  }
+
+  private applyReportingSummary(summary: AnalyticsReportingSummaryResponse): void {
+    this.reportTiles.set((summary.tiles ?? []).map((tile) => this.mapReportingTile(tile)));
+    this.reportDrilldowns.set(this.mapDrilldowns(summary.drilldowns ?? {}));
+  }
+
+  private mapReportingTile(tile: AnalyticsReportingTileResponse): KpiTile {
+    return {
+      id: tile.id,
+      title: tile.title,
+      metric: tile.metric,
+      value: this.coerceSummaryValue(tile.value),
+      status: this.asTileStatus(tile.status) ?? 'good',
+      icon: tile.icon,
+      summaryItems: (tile.summary_items ?? []).map((item) => ({
+        label: item.label,
+        value: this.coerceSummaryValue(item.value),
+        drillKey: item.drill_key ?? null,
+      })),
+      trendData: tile.trend
+        ? {
+            dates: tile.trend.dates ?? [],
+            series: (tile.trend.series ?? []).map((series) => ({
+              name: series.name,
+              data: series.data ?? [],
+            })),
+          }
+        : undefined,
+    };
+  }
+
+  private mapDrilldowns(
+    drilldowns: Record<string, AnalyticsDrilldownResponse>,
+  ): Record<string, DrillConfig> {
+    return Object.entries(drilldowns).reduce<Record<string, DrillConfig>>((mapped, [key, value]) => {
+      mapped[key] = {
+        title: value.title,
+        columns: (value.columns ?? []).map((column) => ({
+          field: column.field,
+          header: column.header,
+        })),
+        data: (value.data ?? []).map((row) => row as Record<string, string | number>),
+      };
+      return mapped;
+    }, {});
+  }
+
+  private emptyDrilldown(key: string): DrillConfig {
+    const title = key
+      .split('-')
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
+    return {
+      title,
+      columns: [{ field: 'message', header: 'Status' }],
+      data: [],
+    };
+  }
+
+  private asTileStatus(status: string | null | undefined): TileStatus | undefined {
+    if (status === 'good' || status === 'warning' || status === 'critical') {
+      return status;
+    }
+    return undefined;
+  }
+
+  private coerceSummaryValue(value: unknown): string | number {
+    if (typeof value === 'number' || typeof value === 'string') {
+      return value;
+    }
+    return 0;
+  }
+
+  private formatApiDate(date: Date): string {
+    const year = date.getFullYear();
+    const month = `${date.getMonth() + 1}`.padStart(2, '0');
+    const day = `${date.getDate()}`.padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   private defaultDateFrom(): Date {

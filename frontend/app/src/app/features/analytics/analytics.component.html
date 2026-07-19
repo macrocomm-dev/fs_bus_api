@@ -49,8 +49,14 @@
 
   <div class="analytics-body" [class.analytics-body--drawer-open]="menuVisible">
     <main class="analytics-content">
+      @if (error()) {
+        <div class="analytics-error">
+          {{ error() }}
+        </div>
+      }
+
       <section class="gauge-strip" aria-label="Driver behaviour score summary">
-        @for (gauge of gaugeScores; track gauge.label) {
+        @for (gauge of gaugeScores(); track gauge.label) {
           <article class="gauge-card" [style.--gauge-score]="gauge.score" [style.--gauge-color]="gauge.color">
             <div class="gauge-card__ring">
               <div class="gauge-card__value">{{ gauge.score }}%</div>
@@ -61,7 +67,7 @@
       </section>
 
       <section class="metric-strip" aria-label="Fleet analytics summary">
-        @for (tile of metricTiles; track tile.title) {
+        @for (tile of metricTiles(); track tile.title) {
           <article class="metric-tile" [style.--metric-color]="tile.color">
             <h3>{{ tile.title }}</h3>
             <div class="metric-tile__icon">
@@ -86,7 +92,7 @@
         </div>
 
         <p-table
-          [value]="lastEvents"
+          [value]="lastEvents()"
           [paginator]="true"
           [rows]="5"
           [rowsPerPageOptions]="[5, 10, 25]"
@@ -115,6 +121,12 @@
               <td class="measurement-cell">{{ row.measurement }}</td>
             </tr>
           </ng-template>
+
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="5">No analytics events are available yet.</td>
+            </tr>
+          </ng-template>
         </p-table>
       </section>
 
@@ -127,7 +139,7 @@
         </div>
 
         <p-table
-          [value]="vehiclePerformance"
+          [value]="vehiclePerformance()"
           [paginator]="true"
           [rows]="10"
           [rowsPerPageOptions]="[10, 25, 50]"
@@ -140,12 +152,11 @@
               <th pSortableColumn="fleetNo">Fleet <p-sortIcon field="fleetNo" /></th>
               <th pSortableColumn="registration">Registration <p-sortIcon field="registration" /></th>
               <th pSortableColumn="operator">Operator <p-sortIcon field="operator" /></th>
-              <th pSortableColumn="distanceCost">Distance / Cost <p-sortIcon field="distanceCost" /></th>
+              <th pSortableColumn="distance">Distance <p-sortIcon field="distance" /></th>
               <th pSortableColumn="tripDuration">Trip Duration <p-sortIcon field="tripDuration" /></th>
-              <th pSortableColumn="speedCost">Speed / Cost <p-sortIcon field="speedCost" /></th>
+              <th pSortableColumn="speedDuration">Speed Duration <p-sortIcon field="speedDuration" /></th>
               <th pSortableColumn="idleDuration">Excess Idle <p-sortIcon field="idleDuration" /></th>
               <th pSortableColumn="highRiskTrips">High Risk <p-sortIcon field="highRiskTrips" /></th>
-              <th pSortableColumn="afterHoursCost">After Hours / Cost <p-sortIcon field="afterHoursCost" /></th>
               <th pSortableColumn="score">Score <p-sortIcon field="score" /></th>
             </tr>
           </ng-template>
@@ -155,15 +166,20 @@
               <td class="fleet-cell">{{ row.fleetNo }}</td>
               <td>{{ row.registration }}</td>
               <td>{{ row.operator }}</td>
-              <td>{{ row.distanceCost }}</td>
+              <td>{{ row.distance }}</td>
               <td>{{ row.tripDuration }}</td>
-              <td>{{ row.speedCost }}</td>
+              <td>{{ row.speedDuration }}</td>
               <td>{{ row.idleDuration }}</td>
               <td>{{ row.highRiskTrips }}</td>
-              <td>{{ row.afterHoursCost }}</td>
               <td>
                 <p-tag [value]="row.score + '%'" [severity]="scoreSeverity(row.score)" />
               </td>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="9">No vehicle analytics records are available.</td>
             </tr>
           </ng-template>
         </p-table>
@@ -172,13 +188,13 @@
       <section class="performance-section">
         <div class="section-header">
           <div>
-            <h2>Vehicle Scores</h2>
-            <p>Scores sorted from worst to best, with bars coloured by operator.</p>
+            <h2>Driver Behaviour Scores</h2>
+            <p>Scores below 80% requires operator intervention.</p>
           </div>
         </div>
 
         <div class="score-chart-card">
-          <div echarts [options]="vehicleScoreChartOptions" class="score-chart"></div>
+          <div echarts [options]="vehicleScoreChartOptions()" class="score-chart"></div>
         </div>
       </section>
     </main>

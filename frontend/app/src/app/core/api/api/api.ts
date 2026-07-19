@@ -1,3 +1,6 @@
+export * from './analytics.service';
+import { AnalyticsService } from './analytics.service';
+export * from './analytics.serviceInterface';
 export * from './auth.service';
 import { AuthService } from './auth.service';
 export * from './auth.serviceInterface';
@@ -16,4 +19,4 @@ export * from './smartfleet.serviceInterface';
 export * from './vehicle.service';
 import { VehicleService } from './vehicle.service';
 export * from './vehicle.serviceInterface';
-export const APIS = [AuthService, ImageService, InspectionService, ShiftsService, SmartfleetService, VehicleService];
+export const APIS = [AnalyticsService, AuthService, ImageService, InspectionService, ShiftsService, SmartfleetService, VehicleService];

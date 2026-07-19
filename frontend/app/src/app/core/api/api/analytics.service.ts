@@ -17,128 +17,70 @@ import { Observable }                                        from 'rxjs';
 import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 
 // @ts-ignore
-import { AddGeofence } from '../model/addGeofence';
+import { AnalyticsReportingSummaryResponse } from '../model/analyticsReportingSummaryResponse';
+// @ts-ignore
+import { AnalyticsSummaryResponse } from '../model/analyticsSummaryResponse';
+// @ts-ignore
+import { AppSchemasOperationsErrorResponse } from '../model/appSchemasOperationsErrorResponse';
 // @ts-ignore
 import { HTTPValidationError } from '../model/hTTPValidationError';
-// @ts-ignore
-import { SmartFleetIframeUrlResponse } from '../model/smartFleetIframeUrlResponse';
 
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS }                     from '../variables';
 import { Configuration }                                     from '../configuration';
 import { BaseService } from '../api.base.service';
 import {
-    SmartfleetServiceInterface,
-    AddGeofenceSmartfleetCreateGeofencePostRequestParams
-} from './smartfleet.serviceInterface';
+    AnalyticsServiceInterface,
+    GetAnalyticsSummaryRequestParams,
+    GetReportingSummaryRequestParams
+} from './analytics.serviceInterface';
 
 
 
 @Injectable({
   providedIn: 'root'
 })
-export class SmartfleetService extends BaseService implements SmartfleetServiceInterface {
+export class AnalyticsService extends BaseService implements AnalyticsServiceInterface {
 
     constructor(protected httpClient: HttpClient, @Optional() @Inject(BASE_PATH) basePath: string|string[], @Optional() configuration?: Configuration) {
         super(basePath, configuration);
     }
 
     /**
-     * Add Geofence
-     * Add a geofence to the system.
-     * @endpoint post /smartfleet/create-geofence
+     * Get Analytics Summary
+     * Return the Analytics page summary from the loaded analytics schema.
+     * @endpoint get /analytics/summary
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public addGeofenceSmartfleetCreateGeofencePost(requestParameters: AddGeofenceSmartfleetCreateGeofencePostRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any>;
-    public addGeofenceSmartfleetCreateGeofencePost(requestParameters: AddGeofenceSmartfleetCreateGeofencePostRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<any>>;
-    public addGeofenceSmartfleetCreateGeofencePost(requestParameters: AddGeofenceSmartfleetCreateGeofencePostRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<any>>;
-    public addGeofenceSmartfleetCreateGeofencePost(requestParameters: AddGeofenceSmartfleetCreateGeofencePostRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
-        const userApiHash = requestParameters?.userApiHash;
-        if (userApiHash === null || userApiHash === undefined) {
-            throw new Error('Required parameter userApiHash was null or undefined when calling addGeofenceSmartfleetCreateGeofencePost.');
-        }
-        const addGeofence = requestParameters?.addGeofence;
-        if (addGeofence === null || addGeofence === undefined) {
-            throw new Error('Required parameter addGeofence was null or undefined when calling addGeofenceSmartfleetCreateGeofencePost.');
-        }
+    public getAnalyticsSummary(requestParameters?: GetAnalyticsSummaryRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<AnalyticsSummaryResponse>;
+    public getAnalyticsSummary(requestParameters?: GetAnalyticsSummaryRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<AnalyticsSummaryResponse>>;
+    public getAnalyticsSummary(requestParameters?: GetAnalyticsSummaryRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<AnalyticsSummaryResponse>>;
+    public getAnalyticsSummary(requestParameters?: GetAnalyticsSummaryRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const startDate = requestParameters?.startDate;
+        const endDate = requestParameters?.endDate;
 
         let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
 
         localVarQueryParameters = this.addToHttpParams(
             localVarQueryParameters,
-            'user_api_hash',
-            <any>userApiHash,
+            'start_date',
+            <any>startDate,
             QueryParamStyle.Form,
             true,
         );
 
 
-        let localVarHeaders = this.defaultHeaders;
-
-        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
-            'application/json'
-        ]);
-        if (localVarHttpHeaderAcceptSelected !== undefined) {
-            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
-        }
-
-        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
-
-        const localVarTransferCache: boolean = options?.transferCache ?? true;
-
-
-        // to determine the Content-Type header
-        const consumes: string[] = [
-            'application/json'
-        ];
-        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
-        if (httpContentTypeSelected !== undefined) {
-            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
-        }
-
-        let responseType_: 'text' | 'json' | 'blob' = 'json';
-        if (localVarHttpHeaderAcceptSelected) {
-            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
-                responseType_ = 'text';
-            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
-                responseType_ = 'json';
-            } else {
-                responseType_ = 'blob';
-            }
-        }
-
-        let localVarPath = `/smartfleet/create-geofence`;
-        const { basePath, withCredentials } = this.configuration;
-        return this.httpClient.request<any>('post', `${basePath}${localVarPath}`,
-            {
-                context: localVarHttpContext,
-                body: addGeofence,
-                params: localVarQueryParameters.toHttpParams(),
-                responseType: <any>responseType_,
-                ...(withCredentials ? { withCredentials } : {}),
-                headers: localVarHeaders,
-                observe: observe,
-                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
-                reportProgress: reportProgress
-            }
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'end_date',
+            <any>endDate,
+            QueryParamStyle.Form,
+            true,
         );
-    }
 
-    /**
-     * Get Iframe Login Url
-     * Return a Smart Fleet iframe login URL built from a server-side OTT exchange.
-     * @endpoint get /smartfleet/iframe-login-url
-     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
-     * @param reportProgress flag to report request and response progress.
-     * @param options additional options
-     */
-    public getIframeLoginUrlSmartfleetIframeLoginUrlGet(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<SmartFleetIframeUrlResponse>;
-    public getIframeLoginUrlSmartfleetIframeLoginUrlGet(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<SmartFleetIframeUrlResponse>>;
-    public getIframeLoginUrlSmartfleetIframeLoginUrlGet(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<SmartFleetIframeUrlResponse>>;
-    public getIframeLoginUrlSmartfleetIframeLoginUrlGet(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
 
         let localVarHeaders = this.defaultHeaders;
 
@@ -168,11 +110,92 @@ export class SmartfleetService extends BaseService implements SmartfleetServiceI
             }
         }
 
-        let localVarPath = `/smartfleet/iframe-login-url`;
+        let localVarPath = `/analytics/summary`;
         const { basePath, withCredentials } = this.configuration;
-        return this.httpClient.request<SmartFleetIframeUrlResponse>('get', `${basePath}${localVarPath}`,
+        return this.httpClient.request<AnalyticsSummaryResponse>('get', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
+                params: localVarQueryParameters.toHttpParams(),
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Get Reporting Summary
+     * Return the Reporting dashboard tiles and drilldowns from real stored data.
+     * @endpoint get /analytics/reporting-summary
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public getReportingSummary(requestParameters?: GetReportingSummaryRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<AnalyticsReportingSummaryResponse>;
+    public getReportingSummary(requestParameters?: GetReportingSummaryRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<AnalyticsReportingSummaryResponse>>;
+    public getReportingSummary(requestParameters?: GetReportingSummaryRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<AnalyticsReportingSummaryResponse>>;
+    public getReportingSummary(requestParameters?: GetReportingSummaryRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const startDate = requestParameters?.startDate;
+        const endDate = requestParameters?.endDate;
+
+        let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'start_date',
+            <any>startDate,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'end_date',
+            <any>endDate,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (HTTPBearer) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('HTTPBearer', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/analytics/reporting-summary`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<AnalyticsReportingSummaryResponse>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                params: localVarQueryParameters.toHttpParams(),
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

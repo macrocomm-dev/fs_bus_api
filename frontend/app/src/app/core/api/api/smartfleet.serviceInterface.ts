@@ -13,6 +13,7 @@ import { Observable }                                        from 'rxjs';
 
 import { AddGeofence } from '../model/models';
 import { HTTPValidationError } from '../model/models';
+import { SmartFleetIframeUrlResponse } from '../model/models';
 
 
 import { Configuration }                                     from '../configuration';
@@ -35,5 +36,12 @@ export interface SmartfleetServiceInterface {
 * @param requestParameters
      */
     addGeofenceSmartfleetCreateGeofencePost(requestParameters: AddGeofenceSmartfleetCreateGeofencePostRequestParams, extraHttpRequestParams?: any): Observable<any>;
+
+    /**
+     * Get Iframe Login Url
+     * Return a Smart Fleet iframe login URL built from a server-side OTT exchange.
+     * @endpoint get /smartfleet/iframe-login-url
+*/
+    getIframeLoginUrlSmartfleetIframeLoginUrlGet(extraHttpRequestParams?: any): Observable<SmartFleetIframeUrlResponse>;
 
 }

@@ -34,3 +34,4 @@ export interface VehicleResponse {
     last_inspection_at?: string | null;
     last_inspection_passed?: boolean | null;
 }
+

@@ -1,4 +1,5 @@
 from app.routers.operationworkflow import operation_router
+from app.routers.analytics import analytics_router
 from app.routers.vehicle import vehicle_router
 from app.routers.image import image_router
 from app.routers.inspection import inspection_router
@@ -16,6 +17,7 @@ def register_routers(app):
     )
 
     app.include_router(vehicle_router, prefix="/vehicle", tags=["vehicle"])
+    app.include_router(analytics_router, prefix="/analytics", tags=["analytics"])
     app.include_router(monitor_router, prefix="/shift", tags=["shifts"])
     app.include_router(image_router, prefix="/image", tags=["image"])
     app.include_router(inspection_router, prefix="/inspection", tags=["inspection"])

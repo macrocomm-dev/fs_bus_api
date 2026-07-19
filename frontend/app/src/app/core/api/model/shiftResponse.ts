@@ -25,3 +25,4 @@ export interface ShiftResponse {
     device_id: string;
     created_at: string;
 }
+

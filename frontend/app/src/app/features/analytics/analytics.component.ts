@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import type { EChartsOption } from 'echarts';
@@ -14,6 +14,9 @@ import { TagModule } from 'primeng/tag';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
+import { AnalyticsService } from '../../core/api/api/analytics.service';
+import type { AnalyticsSummaryResponse } from '../../core/api/model/analyticsSummaryResponse';
+import type { AnalyticsVehicleScoreResponse } from '../../core/api/model/analyticsVehicleScoreResponse';
 import { AuthService } from '../../core/services/auth.service';
 
 type MetricTile = {
@@ -34,12 +37,11 @@ type VehiclePerformance = {
   fleetNo: string;
   registration: string;
   operator: string;
-  distanceCost: string;
+  distance: string;
   tripDuration: string;
-  speedCost: string;
+  speedDuration: string;
   idleDuration: string;
   highRiskTrips: number;
-  afterHoursCost: string;
   score: number;
 };
 
@@ -73,8 +75,16 @@ type LastEvent = {
 export class AnalyticsComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly analyticsApi = inject(AnalyticsService);
 
   readonly session = this.auth.session;
+  readonly metricTiles = signal<MetricTile[]>([]);
+  readonly gaugeScores = signal<GaugeScore[]>([]);
+  readonly vehiclePerformance = signal<VehiclePerformance[]>([]);
+  readonly lastEvents = signal<LastEvent[]>([]);
+  readonly vehicleScoreChartOptions = signal<EChartsOption>(this.buildVehicleScoreChartOptions([]));
+  readonly loading = signal(false);
+  readonly error = signal<string | null>(null);
   menuVisible = true;
 
   readonly navigationItems: MenuItem[] = [
@@ -111,184 +121,11 @@ export class AnalyticsComponent implements OnInit {
     },
   ];
 
-  readonly metricTiles: MetricTile[] = [
-    {
-      title: 'Distance traveled/cost',
-      icon: 'pi pi-arrow-right',
-      color: '#1d4ed8',
-      primary: '28,705.34 km',
-      secondary: 'R 44,888.00',
-    },
-    {
-      title: 'Trip duration',
-      icon: 'pi pi-stopwatch',
-      color: '#16a34a',
-      primary: '699 hrs 43 mins',
-    },
-    {
-      title: 'Speed duration/cost',
-      icon: 'pi pi-gauge',
-      color: '#d97706',
-      primary: '00 hrs 00 mins',
-      secondary: 'R 0.00',
-    },
-    {
-      title: 'Excess idle duration',
-      icon: 'pi pi-clock',
-      color: '#7c3aed',
-      primary: '00 hrs 00 mins',
-      secondary: 'R 0.00',
-    },
-    {
-      title: 'High risk trips',
-      icon: 'pi pi-exclamation-circle',
-      color: '#dc2626',
-      primary: '13',
-    },
-    {
-      title: 'After hours distance/cost',
-      icon: 'pi pi-moon',
-      color: '#0891b2',
-      primary: '842.97 km',
-      secondary: 'R 1,325.04',
-    },
-  ];
+  private buildVehicleScoreChartOptions(scores: AnalyticsVehicleScoreResponse[]): EChartsOption {
+    const sortedScores = [...scores].sort((a, b) => a.score - b.score);
+    const operators = [...new Set(sortedScores.map((vehicle) => vehicle.operator))];
 
-  readonly gaugeScores: GaugeScore[] = [
-    {
-      label: 'Speeding',
-      score: 92,
-      color: '#1d4ed8',
-    },
-    {
-      label: 'Cornering',
-      score: 88,
-      color: '#16a34a',
-    },
-    {
-      label: 'Acceleration',
-      score: 84,
-      color: '#d97706',
-    },
-    {
-      label: 'After Hours',
-      score: 79,
-      color: '#0891b2',
-    },
-    {
-      label: 'Braking',
-      score: 91,
-      color: '#dc2626',
-    },
-  ];
-
-  readonly vehiclePerformance: VehiclePerformance[] = [
-    {
-      fleetNo: '1024',
-      registration: 'FSB123FS',
-      operator: 'Interstate Bus Lines',
-      distanceCost: '4,922.18 km / R 7,610.00',
-      tripDuration: '112 hrs 18 mins',
-      speedCost: '00 hrs 00 mins / R 0.00',
-      idleDuration: '00 hrs 00 mins',
-      highRiskTrips: 2,
-      afterHoursCost: '123.40 km / R 185.10',
-      score: 94,
-    },
-    {
-      fleetNo: '1045',
-      registration: 'FSB456FS',
-      operator: 'Bophelong Transport',
-      distanceCost: '3,744.08 km / R 5,880.00',
-      tripDuration: '96 hrs 02 mins',
-      speedCost: '00 hrs 00 mins / R 0.00',
-      idleDuration: '00 hrs 00 mins',
-      highRiskTrips: 1,
-      afterHoursCost: '88.75 km / R 132.64',
-      score: 97,
-    },
-    {
-      fleetNo: '1056',
-      registration: 'FSB321FS',
-      operator: 'Interstate Bus Lines',
-      distanceCost: '5,108.55 km / R 8,050.00',
-      tripDuration: '121 hrs 45 mins',
-      speedCost: '00 hrs 00 mins / R 0.00',
-      idleDuration: '00 hrs 00 mins',
-      highRiskTrips: 4,
-      afterHoursCost: '181.90 km / R 290.25',
-      score: 88,
-    },
-    {
-      fleetNo: '1078',
-      registration: 'FSB654FS',
-      operator: 'Bophelong Transport',
-      distanceCost: '3,996.21 km / R 6,180.00',
-      tripDuration: '101 hrs 12 mins',
-      speedCost: '00 hrs 00 mins / R 0.00',
-      idleDuration: '00 hrs 00 mins',
-      highRiskTrips: 3,
-      afterHoursCost: '142.12 km / R 224.88',
-      score: 91,
-    },
-    {
-      fleetNo: '1090',
-      registration: 'FSB987FS',
-      operator: 'Interstate Bus Lines',
-      distanceCost: '6,934.32 km / R 11,328.00',
-      tripDuration: '168 hrs 26 mins',
-      speedCost: '00 hrs 00 mins / R 0.00',
-      idleDuration: '00 hrs 00 mins',
-      highRiskTrips: 3,
-      afterHoursCost: '306.80 km / R 492.17',
-      score: 90,
-    },
-  ];
-
-  readonly lastEvents: LastEvent[] = [
-    {
-      bus: '1024 / FSB123FS',
-      location: 'Nelson Mandela Drive, Bloemfontein',
-      time: '2026-07-12 08:42',
-      eventType: 'Speeding',
-      measurement: '86 km/h in 60 km/h zone',
-      operator: 'Interstate Bus Lines',
-    },
-    {
-      bus: '1078 / FSB654FS',
-      location: 'N8 near Botshabelo',
-      time: '2026-07-12 08:18',
-      eventType: 'Harsh Braking',
-      measurement: '-0.42 g',
-      operator: 'Bophelong Transport',
-    },
-    {
-      bus: '1056 / FSB321FS',
-      location: 'Dr Belcher Road, Bloemfontein',
-      time: '2026-07-12 07:56',
-      eventType: 'Cornering',
-      measurement: '0.36 g',
-      operator: 'Interstate Bus Lines',
-    },
-    {
-      bus: '1045 / FSB456FS',
-      location: 'M10, Thaba Nchu',
-      time: '2026-07-12 07:31',
-      eventType: 'After Hours',
-      measurement: '18.4 km after schedule',
-      operator: 'Bophelong Transport',
-    },
-    {
-      bus: '1090 / FSB987FS',
-      location: 'R702 toward Dewetsdorp',
-      time: '2026-07-12 06:48',
-      eventType: 'Acceleration',
-      measurement: '0.31 g',
-      operator: 'Interstate Bus Lines',
-    },
-  ];
-
-  readonly vehicleScoreChartOptions: EChartsOption = {
+    return {
     color: ['#1d4ed8', '#f97316'],
     tooltip: {
       trigger: 'axis',
@@ -302,7 +139,7 @@ export class AnalyticsComponent implements OnInit {
     },
     legend: {
       top: 0,
-      data: ['Interstate Bus Lines', 'Bophelong Transport'],
+        data: operators,
       textStyle: {
         color: '#374151',
         fontWeight: 600,
@@ -316,7 +153,7 @@ export class AnalyticsComponent implements OnInit {
     },
     xAxis: {
       type: 'category',
-      data: this.sortedVehicleScores.map((vehicle) => vehicle.fleetNo),
+        data: sortedScores.map((vehicle) => vehicle.fleet_no),
       axisLabel: {
         color: '#4b5563',
         fontWeight: 600,
@@ -337,12 +174,11 @@ export class AnalyticsComponent implements OnInit {
         },
       },
     },
-    series: [
-      {
-        name: 'Interstate Bus Lines',
+      series: operators.map((operator, index) => ({
+        name: operator,
         type: 'bar',
         barMaxWidth: 42,
-        data: this.vehicleScoreSeriesData('Interstate Bus Lines'),
+        data: sortedScores.map((vehicle) => (vehicle.operator === operator ? vehicle.score : null)),
         label: {
           show: true,
           position: 'top',
@@ -351,42 +187,36 @@ export class AnalyticsComponent implements OnInit {
           fontWeight: 800,
         },
         itemStyle: {
-          color: this.operatorColor('Interstate Bus Lines'),
+          color: this.operatorColor(operator),
           borderRadius: [6, 6, 0, 0],
         },
-      },
-      {
-        name: 'Bophelong Transport',
-        type: 'bar',
-        barMaxWidth: 42,
-        data: this.vehicleScoreSeriesData('Bophelong Transport'),
-        label: {
-          show: true,
-          position: 'top',
-          formatter: '{c}%',
-          color: '#111827',
-          fontWeight: 800,
-        },
-        itemStyle: {
-          color: this.operatorColor('Bophelong Transport'),
-          borderRadius: [6, 6, 0, 0],
-        },
-      },
-    ],
-  };
-
-  private get sortedVehicleScores(): VehiclePerformance[] {
-    return [...this.vehiclePerformance].sort((a, b) => a.score - b.score);
-  }
-
-  private vehicleScoreSeriesData(operator: string): Array<number | null> {
-    return this.sortedVehicleScores.map((vehicle) => (vehicle.operator === operator ? vehicle.score : null));
+        markLine: index === 0 ? {
+          silent: true,
+          symbol: 'none',
+          lineStyle: {
+            color: '#dc2626',
+            width: 2,
+            type: 'solid',
+          },
+          label: {
+            color: '#dc2626',
+            fontWeight: 800,
+            formatter: '80% intervention line',
+            position: 'end',
+          },
+          data: [{ yAxis: 80 }],
+        } : undefined,
+      })),
+    };
   }
 
   ngOnInit(): void {
     if (!this.auth.isLoggedIn()) {
       this.router.navigate(['/login']);
+      return;
     }
+
+    this.loadAnalytics();
   }
 
   toggleMenu(): void {
@@ -426,6 +256,61 @@ export class AnalyticsComponent implements OnInit {
     this.auth.logout();
   }
 
+  private loadAnalytics(): void {
+    this.loading.set(true);
+    this.error.set(null);
+
+    this.analyticsApi
+      .getAnalyticsSummary(undefined, 'body', false, { transferCache: false })
+      .subscribe({
+        next: (response) => {
+          this.applyAnalyticsSummary(response);
+          this.loading.set(false);
+        },
+        error: (err) => {
+          this.loading.set(false);
+          this.error.set(err?.error?.detail ?? 'Could not load analytics.');
+        },
+      });
+  }
+
+  private applyAnalyticsSummary(response: AnalyticsSummaryResponse): void {
+    this.metricTiles.set(
+      (response.metric_tiles ?? []).map((tile) => ({
+        title: tile.title,
+        icon: tile.icon,
+        color: tile.color,
+        primary: tile.primary,
+        secondary: tile.secondary ?? undefined,
+      })),
+    );
+    this.gaugeScores.set(response.gauge_scores ?? []);
+    this.lastEvents.set(
+      (response.last_events ?? []).map((event) => ({
+        bus: event.bus,
+        location: event.location,
+        time: event.time,
+        eventType: event.event_type,
+        measurement: event.measurement,
+        operator: event.operator,
+      })),
+    );
+    this.vehiclePerformance.set(
+      (response.vehicle_performance ?? []).map((vehicle) => ({
+        fleetNo: vehicle.fleet_no,
+        registration: vehicle.registration,
+        operator: vehicle.operator,
+        distance: vehicle.distance,
+        tripDuration: vehicle.trip_duration,
+        speedDuration: vehicle.speed_duration,
+        idleDuration: vehicle.idle_duration,
+        highRiskTrips: vehicle.high_risk_trips,
+        score: vehicle.score,
+      })),
+    );
+    this.vehicleScoreChartOptions.set(this.buildVehicleScoreChartOptions(response.vehicle_scores ?? []));
+  }
+
   scoreSeverity(score: number): 'success' | 'warn' | 'danger' {
     if (score >= 94) return 'success';
     if (score >= 88) return 'warn';
@@ -433,13 +318,14 @@ export class AnalyticsComponent implements OnInit {
   }
 
   eventSeverity(eventType: string): 'success' | 'info' | 'warn' | 'danger' {
-    if (eventType === 'Speeding' || eventType === 'Harsh Braking') return 'danger';
+    if (eventType === 'Speeding' || eventType === 'Harsh Braking' || eventType === 'Accident') return 'danger';
     if (eventType === 'Cornering' || eventType === 'Acceleration') return 'warn';
-    if (eventType === 'After Hours') return 'info';
     return 'success';
   }
 
   operatorColor(operator: string): string {
-    return operator === 'Bophelong Transport' ? '#f97316' : '#1d4ed8';
+    if (operator === 'Maluti Bus Services') return '#f97316';
+    if (operator === 'Interstate Bus Lines') return '#1d4ed8';
+    return '#64748b';
   }
 }
