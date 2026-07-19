@@ -17,7 +17,9 @@ import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { InspectionService } from '../../core/api/api/inspection.service';
+import { VehicleService } from '../../core/api/api/vehicle.service';
 import type { GroupedBusInspectionResponse } from '../../core/api/model/groupedBusInspectionResponse';
+import type { VehicleResponse } from '../../core/api/model/vehicleResponse';
 import { AuthService } from '../../core/services/auth.service';
 
 type InspectionRow = {
@@ -25,6 +27,7 @@ type InspectionRow = {
   shiftId: number;
   busId: string;
   fleetNumber: string;
+  registrationNumber: string;
   dutyNumber: string;
   type: string;
   inspectionTime: string;
@@ -86,6 +89,8 @@ export class InspectionsComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly inspectionApi = inject(InspectionService);
+  private readonly vehicleApi = inject(VehicleService);
+  private readonly vehicleRegistrationByKey = new Map<string, string>();
 
   readonly session = this.auth.session;
   readonly inspections = signal<InspectionRow[]>([]);
@@ -196,6 +201,26 @@ export class InspectionsComponent implements OnInit {
     this.loading.set(true);
     this.error.set(null);
 
+    this.vehicleApi
+      .getVehiclesVehicleVehiclesGet(
+        { page: 1, pageSize: 500 },
+        'body',
+        false,
+        { transferCache: false },
+      )
+      .subscribe({
+        next: (response) => {
+          this.indexVehicleRegistrations(response?.vehicles ?? []);
+          this.fetchInspections();
+        },
+        error: () => {
+          this.vehicleRegistrationByKey.clear();
+          this.fetchInspections();
+        },
+      });
+  }
+
+  private fetchInspections(): void {
     this.inspectionApi
       .getAllBusInspectionsInspectionBusInspectionsGet(
         { limit: 500 },
@@ -222,6 +247,7 @@ export class InspectionsComponent implements OnInit {
         shiftId: group.shift_id,
         busId: group.bus_id,
         fleetNumber: group.fleet_number ?? '',
+        registrationNumber: this.registrationFor(group.bus_id, group.fleet_number),
         dutyNumber: group.duty_number ?? '',
       };
       const inspections = group.inspections;
@@ -346,6 +372,57 @@ export class InspectionsComponent implements OnInit {
 
   private gps(lat: number, lon: number): string {
     return `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+  }
+
+  private indexVehicleRegistrations(vehicles: VehicleResponse[]): void {
+    this.vehicleRegistrationByKey.clear();
+
+    for (const vehicle of vehicles) {
+      const registration = vehicle.registration_number;
+      if (!registration) {
+        continue;
+      }
+
+      for (const key of this.vehicleKeys(vehicle.vin, vehicle.fleet_number, vehicle.registration_number)) {
+        this.vehicleRegistrationByKey.set(key, registration);
+      }
+    }
+  }
+
+  private registrationFor(...values: Array<string | null | undefined>): string {
+    for (const key of this.vehicleKeys(...values)) {
+      const registration = this.vehicleRegistrationByKey.get(key);
+      if (registration) {
+        return registration;
+      }
+    }
+    return '';
+  }
+
+  private vehicleKeys(...values: Array<string | null | undefined>): string[] {
+    const keys = new Set<string>();
+    for (const value of values) {
+      if (!value) {
+        continue;
+      }
+
+      const normalized = this.normalizeVehicleKey(value);
+      if (normalized) {
+        keys.add(normalized);
+      }
+
+      for (const token of value.match(/[A-Za-z0-9]+/g) ?? []) {
+        const tokenKey = this.normalizeVehicleKey(token);
+        if (tokenKey && tokenKey.length >= 3) {
+          keys.add(tokenKey);
+        }
+      }
+    }
+    return [...keys];
+  }
+
+  private normalizeVehicleKey(value: string): string {
+    return value.replace(/[^A-Za-z0-9]/g, '').toLowerCase();
   }
 
   private itemLabel(value: boolean | null | undefined): string {

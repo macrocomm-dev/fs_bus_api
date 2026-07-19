@@ -110,6 +110,7 @@
           'shiftId',
           'busId',
           'fleetNumber',
+          'registrationNumber',
           'dutyNumber',
           'type',
           'gps',
@@ -124,10 +125,9 @@
         <ng-template pTemplate="header">
           <tr>
             <th class="expander-column"></th>
-            <th pSortableColumn="inspectionId">Inspection <p-sortIcon field="inspectionId" /></th>
-            <th pSortableColumn="shiftId">Shift <p-sortIcon field="shiftId" /></th>
-            <th pSortableColumn="busId">Bus / VIN <p-sortIcon field="busId" /></th>
-            <th pSortableColumn="fleetNumber">Fleet <p-sortIcon field="fleetNumber" /></th>
+            <th pSortableColumn="registrationNumber">
+              Registration <p-sortIcon field="registrationNumber" />
+            </th>
             <th pSortableColumn="dutyNumber">Duty <p-sortIcon field="dutyNumber" /></th>
             <th pSortableColumn="type">Type <p-sortIcon field="type" /></th>
             <th pSortableColumn="inspectionTime">Time <p-sortIcon field="inspectionTime" /></th>
@@ -150,10 +150,7 @@
                 tooltipPosition="right"
               />
             </td>
-            <td class="mono-cell">{{ row.inspectionId }}</td>
-            <td class="mono-cell">{{ row.shiftId }}</td>
-            <td class="mono-cell">{{ row.busId }}</td>
-            <td>{{ row.fleetNumber || '—' }}</td>
+            <td>{{ row.registrationNumber || '—' }}</td>
             <td>{{ row.dutyNumber || '—' }}</td>
             <td>{{ row.type }}</td>
             <td>{{ row.inspectionTime | date: 'yyyy-MM-dd HH:mm' }}</td>
@@ -164,11 +161,27 @@
           </tr>
         </ng-template>
 
-        <ng-template pTemplate="rowexpansion" let-row>
+        <ng-template pTemplate="expandedrow" let-row>
           <tr>
-            <td colspan="10" class="inspection-detail-cell">
+            <td colspan="7" class="inspection-detail-cell">
               <div class="inspection-detail-panel">
                 <div class="inspection-detail-meta">
+                  <div>
+                    <span>Inspection</span>
+                    <strong class="mono-cell">{{ row.inspectionId }}</strong>
+                  </div>
+                  <div>
+                    <span>Shift</span>
+                    <strong class="mono-cell">{{ row.shiftId }}</strong>
+                  </div>
+                  <div>
+                    <span>Bus / VIN</span>
+                    <strong class="mono-cell">{{ row.busId || '—' }}</strong>
+                  </div>
+                  <div>
+                    <span>Fleet</span>
+                    <strong>{{ row.fleetNumber || '—' }}</strong>
+                  </div>
                   <div>
                     <span>GPS</span>
                     <strong class="mono-cell">{{ row.gps }}</strong>
@@ -210,7 +223,7 @@
 
         <ng-template pTemplate="emptymessage">
           <tr>
-            <td colspan="10" class="empty-message">No inspection records found.</td>
+            <td colspan="7" class="empty-message">No inspection records found.</td>
           </tr>
         </ng-template>
       </p-table>
