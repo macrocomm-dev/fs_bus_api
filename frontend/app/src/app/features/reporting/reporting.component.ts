@@ -202,7 +202,7 @@ const INSPECTION_TREND_DUMMY_DATA = {
 const DELAYED_STARTS_DUMMY_DATA = {
   dates: ['2026-06-03', '2026-06-06', '2026-06-09', '2026-06-12', '2026-06-15'],
   series: [
-    { name: 'Delayed Route Starts', data: [2, 4, 3, 5, 4] },
+    { name: 'Late Route Starts', data: [2, 4, 3, 5, 4] },
     { name: 'Major Delays', data: [1, 1, 2, 2, 1] },
   ],
 };
@@ -2345,11 +2345,11 @@ const TILES: KpiTile[] = [
     status: 'warning',
     icon: 'pi pi-clock',
     summaryItems: [
-      { label: 'Behind Schedule (0–5 mins)', value: 0, drillKey: 'behind-schedule-0-5' },
+      { label: 'Route Starts (0–5 mins)', value: 0, drillKey: 'behind-schedule-0-5' },
       { label: 'Behind Schedule (5–10 mins)', value: 3, drillKey: 'behind-schedule-5-10' },
       { label: 'Behind Schedule (10–15 mins)', value: 4, drillKey: 'behind-schedule-10-15' },
       { label: 'Behind Schedule (15+ mins)', value: 5, drillKey: 'behind-schedule-15-plus' },
-      { label: 'Total Delayed', value: 12, drillKey: null },
+      { label: 'Total Late Route Starts', value: 12, drillKey: null },
     ],
   },
   {
@@ -2360,11 +2360,11 @@ const TILES: KpiTile[] = [
     status: 'good',
     icon: 'pi pi-chart-line',
     summaryItems: [
-      { label: 'Delayed Starts (0-5 mins)', value: 0, drillKey: 'behind-schedule-0-5' },
+      { label: 'Route Starts (0-5 mins)', value: 0, drillKey: 'behind-schedule-0-5' },
       { label: 'Delayed Starts (5-10 mins)', value: 1, drillKey: 'behind-schedule-5-10' },
       { label: 'Delayed Starts (10-15 mins)', value: 1, drillKey: 'behind-schedule-10-15' },
       { label: 'Delayed Starts (15+ mins)', value: 1, drillKey: 'behind-schedule-15-plus' },
-      { label: 'Total Delayed Route Starts', value: 3, drillKey: null },
+      { label: 'Total Late Route Starts', value: 3, drillKey: null },
     ],
   },
   {
@@ -2770,7 +2770,7 @@ export class ReportingComponent implements OnInit {
 
   readonly secondaryLineChartLabel = computed(() =>
     this.activeTile()?.id === 'service-reliability'
-      ? 'Delayed Route Starts Over Time'
+      ? 'Late Route Starts Over Time'
       : 'Inspection Type Over Time',
   );
 

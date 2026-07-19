@@ -32,6 +32,10 @@ from app.schemas.shift import ErrorResponse
 analytics_router = APIRouter()
 logger = logging.getLogger(__name__)
 
+ROUTE_START_INTERVALS = ("0-5 mins", "5-10 mins", "10-15 mins", "15+ mins")
+ON_TIME_ROUTE_START_INTERVALS = {"0-5 mins"}
+MAJOR_DELAY_INTERVALS = {"10-15 mins", "15+ mins"}
+
 
 def _to_float(value: Any, default: float = 0) -> float:
     if value is None:
@@ -66,6 +70,17 @@ def _format_percent(numerator: int | float, denominator: int | float) -> str:
     if denominator <= 0:
         return "N/A"
     return f"{(numerator / denominator * 100):.1f}%"
+
+
+def _route_start_interval_counts(
+    counts_by_interval: dict[str, int],
+) -> tuple[int, int, int]:
+    total = sum(counts_by_interval.get(interval, 0) for interval in ROUTE_START_INTERVALS)
+    on_time = sum(
+        counts_by_interval.get(interval, 0) for interval in ON_TIME_ROUTE_START_INTERVALS
+    )
+    late = max(total - on_time, 0)
+    return on_time, late, total
 
 
 def _status_for_percent(value: str, inverse: bool = False) -> str:
@@ -183,6 +198,16 @@ def _inspection_row(row) -> dict[str, Any]:
 
 def _inspection_filter(rows: list[Any], inspection_type: str) -> list[Any]:
     return [row for row in rows if row.inspection_type == inspection_type]
+
+
+def _bus_attempt_key(row) -> tuple[str, str, str, str, str]:
+    return (
+        str(row.shift_id or ""),
+        str(row.bus_id or "").strip().lower(),
+        str(row.fleet_number or "").strip().lower(),
+        str(row.duty_number or "").strip().lower(),
+        str(row.replacement_bus or False).lower(),
+    )
 
 
 def _defect_rows(rows: list[Any], category: str | None = None) -> list[dict[str, Any]]:
@@ -609,12 +634,16 @@ def get_reporting_summary(
 
     license_disk_fail_rows = []
     pdp_fail_rows = []
+    seen_license_disk_failures: set[tuple[str, str, str, str, str]] = set()
     for row in inspection_rows:
         base = _inspection_row(row)
         if row.license_disk_scan_succeeded is False:
-            license_disk_fail_rows.append(
-                {**base, "diskStatus": "Scan failed", "daysOverdue": "-"}
-            )
+            bus_key = _bus_attempt_key(row)
+            if bus_key not in seen_license_disk_failures:
+                seen_license_disk_failures.add(bus_key)
+                license_disk_fail_rows.append(
+                    {**base, "diskStatus": "Scan failed", "daysOverdue": "-"}
+                )
         if row.prdp_scan_succeeded is False or (
             row.prdp_expiry_date and row.prdp_expiry_date.date() < datetime.now(timezone.utc).date()
         ):
@@ -688,14 +717,18 @@ def get_reporting_summary(
     total_completed = sum(len(inspections_by_type[key]) for key in type_labels)
     total_failed = sum(len(rows) for rows in failed_inspection_groups.values())
     total_defects = len(all_defects)
-    total_delays = sum(len(rows) for rows in delayed_rows_by_interval.values())
+    delayed_counts_by_interval = {
+        interval: len(rows) for interval, rows in delayed_rows_by_interval.items()
+    }
+    (
+        on_time_route_start_checks,
+        late_route_start_checks,
+        total_route_start_checks,
+    ) = _route_start_interval_counts(delayed_counts_by_interval)
     total_route_exceptions = len(route_deviation_data)
     total_violations = len(pdp_fail_rows) + len(license_disk_fail_rows)
     total_overloaded = len(failed_inspection_groups["Passenger Counts"])
-    total_shifts = len(shift_rows)
-    delayed_shift_ids = {row.shift_id for row in inspections_by_type["behind_schedule"]}
-    on_time_shifts = max(total_shifts - len(delayed_shift_ids), 0)
-    on_time_value = _format_percent(on_time_shifts, total_shifts)
+    on_time_value = _format_percent(on_time_route_start_checks, total_route_start_checks)
     fleet_health_value = (
         f"{_score(fleet_bucket_rows.avg_score)}%" if _to_int(fleet_bucket_rows.total) else "N/A"
     )
@@ -707,7 +740,7 @@ def get_reporting_summary(
         "driver-inspections": _drilldown("Driver Inspections", driver_columns, driver_rows),
         "passenger-counts-drill": _drilldown("Passenger Counts", passenger_columns, passenger_rows),
         "technical-inspections": _drilldown("Technical Inspections", inspection_columns, technical_rows),
-        "behind-schedule-0-5": _drilldown("Behind Schedule (0-5 mins)", delay_columns, delayed_rows_by_interval["0-5 mins"]),
+        "behind-schedule-0-5": _drilldown("Route Starts (0-5 mins)", delay_columns, delayed_rows_by_interval["0-5 mins"]),
         "behind-schedule-5-10": _drilldown("Behind Schedule (5-10 mins)", delay_columns, delayed_rows_by_interval["5-10 mins"]),
         "behind-schedule-10-15": _drilldown("Behind Schedule (10-15 mins)", delay_columns, delayed_rows_by_interval["10-15 mins"]),
         "behind-schedule-15-plus": _drilldown("Behind Schedule (15+ mins)", delay_columns, delayed_rows_by_interval["15+ mins"]),
@@ -862,15 +895,15 @@ def get_reporting_summary(
             id="delayed-departures",
             title="Schedule Adherence",
             metric="Delayed Departures",
-            value=total_delays,
-            status=_status_for_count(total_delays),
+            value=late_route_start_checks,
+            status=_status_for_count(late_route_start_checks),
             icon="pi pi-clock",
             summary_items=[
-                AnalyticsSummaryItemResponse(label="Behind Schedule (0-5 mins)", value=len(delayed_rows_by_interval["0-5 mins"]), drill_key="behind-schedule-0-5"),
+                AnalyticsSummaryItemResponse(label="Route Starts (0-5 mins)", value=len(delayed_rows_by_interval["0-5 mins"]), drill_key="behind-schedule-0-5"),
                 AnalyticsSummaryItemResponse(label="Behind Schedule (5-10 mins)", value=len(delayed_rows_by_interval["5-10 mins"]), drill_key="behind-schedule-5-10"),
                 AnalyticsSummaryItemResponse(label="Behind Schedule (10-15 mins)", value=len(delayed_rows_by_interval["10-15 mins"]), drill_key="behind-schedule-10-15"),
                 AnalyticsSummaryItemResponse(label="Behind Schedule (15+ mins)", value=len(delayed_rows_by_interval["15+ mins"]), drill_key="behind-schedule-15-plus"),
-                AnalyticsSummaryItemResponse(label="Total Delayed", value=total_delays, drill_key=None),
+                AnalyticsSummaryItemResponse(label="Total Late Route Starts", value=late_route_start_checks, drill_key=None),
             ],
         ),
         AnalyticsReportingTileResponse(
@@ -881,11 +914,11 @@ def get_reporting_summary(
             status=_status_for_percent(on_time_value),
             icon="pi pi-chart-line",
             summary_items=[
-                AnalyticsSummaryItemResponse(label="Delayed Starts (0-5 mins)", value=len(delayed_rows_by_interval["0-5 mins"]), drill_key="behind-schedule-0-5"),
+                AnalyticsSummaryItemResponse(label="Route Starts (0-5 mins)", value=len(delayed_rows_by_interval["0-5 mins"]), drill_key="behind-schedule-0-5"),
                 AnalyticsSummaryItemResponse(label="Delayed Starts (5-10 mins)", value=len(delayed_rows_by_interval["5-10 mins"]), drill_key="behind-schedule-5-10"),
                 AnalyticsSummaryItemResponse(label="Delayed Starts (10-15 mins)", value=len(delayed_rows_by_interval["10-15 mins"]), drill_key="behind-schedule-10-15"),
                 AnalyticsSummaryItemResponse(label="Delayed Starts (15+ mins)", value=len(delayed_rows_by_interval["15+ mins"]), drill_key="behind-schedule-15-plus"),
-                AnalyticsSummaryItemResponse(label="Total Delayed Route Starts", value=total_delays, drill_key=None),
+                AnalyticsSummaryItemResponse(label="Total Late Route Starts", value=late_route_start_checks, drill_key=None),
             ],
         ),
         AnalyticsReportingTileResponse(
@@ -1024,25 +1057,12 @@ def get_analytics_summary(
             params,
         ).mappings().one()
 
-        top_shift_row = db.execute(
-            text(
-                """
-                select count(*) as total_shifts
-                from shifts.shifts
-                where (cast(:start_date as date) is null or start_time::date >= cast(:start_date as date))
-                  and (cast(:end_date as date) is null or start_time::date <= cast(:end_date as date))
-                """
-            ),
-            params,
-        ).mappings().one()
-
         top_inspection_row = db.execute(
             text(
                 """
                 select
                     count(*) as total_inspections,
-                    count(*) filter (where pass is false) as failed_inspections,
-                    count(distinct shift_id) filter (where inspection_type = 'behind_schedule') as delayed_shift_count
+                    count(*) filter (where pass is false) as failed_inspections
                 from inspections.inspections
                 where (cast(:start_date as date) is null or inspection_time::date >= cast(:start_date as date))
                   and (cast(:end_date as date) is null or inspection_time::date <= cast(:end_date as date))
@@ -1072,7 +1092,9 @@ def get_analytics_summary(
                 """
                 select
                     inspection_time::date as delay_date,
-                    count(*) as delayed_count,
+                    count(*) filter (
+                        where behind_schedule_interval in ('5-10 mins', '10-15 mins', '15+ mins')
+                    ) as delayed_count,
                     count(*) filter (
                         where behind_schedule_interval in ('10-15 mins', '15+ mins')
                     ) as major_delay_count
@@ -1229,11 +1251,6 @@ def get_analytics_summary(
         AnalyticsGaugeScoreResponse(label="Braking", score=_score(gauge_row.braking), color="#dc2626"),
     ]
 
-    total_shifts = _to_int(top_shift_row.total_shifts)
-    delayed_shift_count = _to_int(top_inspection_row.delayed_shift_count)
-    on_time_count = max(total_shifts - delayed_shift_count, 0)
-    on_time_value = _format_percent(on_time_count, total_shifts)
-
     total_inspections = _to_int(top_inspection_row.total_inspections)
     failed_inspections = _to_int(top_inspection_row.failed_inspections)
     failed_value = _format_percent(failed_inspections, total_inspections)
@@ -1264,9 +1281,13 @@ def get_analytics_summary(
     delayed_5_10 = delayed_counts.get("5-10 mins", 0)
     delayed_10_15 = delayed_counts.get("10-15 mins", 0)
     delayed_15_plus = delayed_counts.get("15+ mins", 0)
+    on_time_count, late_route_start_count, total_route_start_count = (
+        _route_start_interval_counts(delayed_counts)
+    )
+    on_time_value = _format_percent(on_time_count, total_route_start_count)
     service_reliability_items = [
         AnalyticsSummaryItemResponse(
-            label="Delayed Starts (0-5 mins)",
+            label="Route Starts (0-5 mins)",
             value=delayed_0_5,
             drill_key="behind-schedule-0-5",
         ),
@@ -1286,8 +1307,8 @@ def get_analytics_summary(
             drill_key="behind-schedule-15-plus",
         ),
         AnalyticsSummaryItemResponse(
-            label="Total Delayed Route Starts",
-            value=delayed_0_5 + delayed_5_10 + delayed_10_15 + delayed_15_plus,
+            label="Total Late Route Starts",
+            value=late_route_start_count,
             drill_key=None,
         ),
     ]
@@ -1295,7 +1316,7 @@ def get_analytics_summary(
         dates=[str(row.delay_date) for row in delayed_trend_rows],
         series=[
             AnalyticsTrendSeriesResponse(
-                name="Delayed Route Starts",
+                name="Late Route Starts",
                 data=[_to_int(row.delayed_count) for row in delayed_trend_rows],
             ),
             AnalyticsTrendSeriesResponse(
@@ -1309,7 +1330,7 @@ def get_analytics_summary(
         AnalyticsTopKpiResponse(
             id="service-reliability",
             value=on_time_value,
-            secondary_text=f"{on_time_count:,}/{total_shifts:,}",
+            secondary_text=f"{on_time_count:,}/{total_route_start_count:,}",
             status=_status_for_percent(on_time_value),
             summary_items=service_reliability_items,
             trend=service_reliability_trend,

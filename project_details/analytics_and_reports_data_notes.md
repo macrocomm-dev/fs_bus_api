@@ -73,8 +73,11 @@ Current backend sources:
 
 - Top row: Overall Operator Compliance
   - On Time Performance:
-    - Source: `shifts.shifts` plus `inspections.inspections`
-    - Current calculation: shifts with no `behind_schedule` inspection report divided by total shifts in the selected date range.
+    - Source: `inspections.inspections`
+    - Grain: one `behind_schedule` inspection row represents one inspected bus route-start check.
+    - Current calculation: route-start checks in the `0-5 mins` interval divided by all route-start checks in the selected date range.
+    - Late route starts are the `5-10 mins`, `10-15 mins`, and `15+ mins` intervals.
+    - Important: `shifts.shifts` is not used as the denominator because a shift is the monitor's inspection session and can contain inspection rows for many buses.
   - Route Compliance:
     - Source checked: `analytics.trip_data.routescore` and `analytics.trip_data.routevar`
     - Current display: `N/A` because both fields are currently `0.00` for all inspected rows, so a percentage would be misleading.
@@ -110,6 +113,8 @@ Current backend sources:
 - Delayed departures / route starts
   - Source: `inspections.inspections`
   - Use `inspection_type = 'behind_schedule'` and group by `behind_schedule_interval`.
+  - The `0-5 mins` bucket is treated as the on-time/acceptable bucket for the top KPI.
+  - The delayed-departures card value uses the `5+ mins` buckets only.
   - Drilldowns return the real rows per delay bucket:
     - `0-5 mins`
     - `5-10 mins`
@@ -130,13 +135,15 @@ Current backend sources:
   - Current query returns trips with `routevar > 0`, including `routescore`, start location, and vehicle/operator details.
 - Bus licence disk scan count
   - Source: `inspections.inspections.license_disk_scan_succeeded`.
-  - Current implementation counts rows where this field is `false` as failed bus licence disk scans.
+  - Grain: one bus within one monitor shift, keyed by `shift_id`, `bus_id`, `fleet_number`, `duty_number`, and `replacement_bus`.
+  - Current implementation deduplicates inspection rows before counting failed bus licence disk scans because `license_disk_scan_succeeded` is copied onto every inspection row created for the same bus.
 
 ## Reports Data Still Blocked Or Needs Confirmation
 
 - On-time performance
-  - Hooked with the provisional definition above.
-  - Need confirmation: should the denominator be all monitor shifts, scheduled route starts, actual departures, or inspected buses?
+  - Hooked at inspected-bus route-start grain.
+  - Need confirmation from the product owner that `0-5 mins` should remain the accepted/on-time threshold.
+  - Need scheduled route-start data if the business later wants to include buses that were scheduled but not inspected by the monitor.
 - Route compliance
   - Partially hooked for route deviations from `analytics.trip_data.routevar`.
   - Blocked for missed stops because no actual stop-arrival / stop-missed table exists.
@@ -147,7 +154,7 @@ Current backend sources:
   - Current provisional rule: rows with standing passengers are treated as overloaded.
   - Need bus seating/standing capacity per vehicle or route to calculate true overload percentage.
 - Bus license disk count
-  - Partially hooked from `license_disk_scan_succeeded`.
+  - Hooked from `license_disk_scan_succeeded` at bus-within-shift grain.
   - Need definition: should the card show successful scans, failed scans, missing disks, or total licence disk checks?
 - Operator compliance score
   - Drilldown counts are hooked.
