@@ -150,6 +150,20 @@ The reporting component loads real data from generated Angular API services back
 
 Static frontend tile definitions are used only as loading/order shells while the API response is in flight. The displayed KPI methodology must come from the backend response.
 
+Daily Bus Monitoring comparison chart:
+
+- Categories are inspection types.
+- Bars are split by operator when the backend provides `chart_series`.
+- Operator resolution comes from the inspection-to-vehicle join.
+- Rows that cannot resolve to a vehicle operator are grouped under `Unassigned`.
+
+Expanded card bar charts:
+
+- Each metric category maps to its drilldown rows through `drill_key`.
+- The frontend groups those drilldown rows by the `operator` field.
+- When operator-bearing rows exist, the bar chart uses stacked colored series per operator.
+- When no operator-bearing rows exist, the chart falls back to a single `Total` series.
+
 The top KPI row uses:
 
 - `value`: backend percentage string.

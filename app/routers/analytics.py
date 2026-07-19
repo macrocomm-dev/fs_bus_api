@@ -524,7 +524,6 @@ def get_reporting_summary(
         ("seated", "Seated"),
         ("standing", "Standing"),
         ("total", "Total Pax"),
-        ("overloadedCount", "Standing Pax"),
     )
     delay_columns = _report_columns(
         ("busReg", "Bus Reg"),
@@ -740,6 +739,34 @@ def get_reporting_summary(
             for label in type_labels.values()
         ],
     )
+    inspection_type_display_labels = {
+        "external": "External Inspections",
+        "internal": "Internal Inspections",
+        "driver": "Driver Inspections",
+        "count": "Passenger Counts",
+        "technical": "Technical Inspections",
+    }
+    inspection_chart_categories = [
+        inspection_type_display_labels[key] for key in type_labels
+    ]
+    inspection_operator_counts: dict[str, dict[str, int]] = {}
+    for row in inspection_rows:
+        if row.inspection_type not in type_labels:
+            continue
+        operator = row.operator_name or "Unassigned"
+        inspection_operator_counts.setdefault(
+            operator, {label: 0 for label in inspection_chart_categories}
+        )
+        inspection_operator_counts[operator][
+            inspection_type_display_labels[row.inspection_type]
+        ] += 1
+    inspection_chart_series = [
+        AnalyticsTrendSeriesResponse(
+            name=operator,
+            data=[counts[label] for label in inspection_chart_categories],
+        )
+        for operator, counts in sorted(inspection_operator_counts.items())
+    ]
 
     total_completed = sum(len(inspections_by_type[key]) for key in type_labels)
     total_failed = sum(len(rows) for rows in failed_inspection_groups.values())
@@ -846,6 +873,7 @@ def get_reporting_summary(
             status=_status_for_count(total_completed),
             icon="pi pi-check-circle",
             trend=inspection_trend,
+            chart_series=inspection_chart_series,
             summary_items=[
                 AnalyticsSummaryItemResponse(label="External Inspections", value=len(external_rows), drill_key="external-inspections"),
                 AnalyticsSummaryItemResponse(label="Internal Inspections", value=len(internal_rows), drill_key="internal-inspections"),

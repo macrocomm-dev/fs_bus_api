@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import type { EChartsOption } from 'echarts';
+import type { EChartsOption, SeriesOption } from 'echarts';
 import { NgxEchartsDirective } from 'ngx-echarts';
 
 import { AuthService } from '../../core/services/auth.service';
@@ -51,6 +51,7 @@ export interface KpiTile {
   status: TileStatus;
   icon: string;
   summaryItems: SummaryItem[];
+  chartSeries?: { name: string; data: number[] }[];
   trendData?: {
     dates: string[];
     series: { name: string; data: number[] }[];
@@ -187,6 +188,9 @@ const INSPECTION_TREND_CONFIG = [
 ];
 
 const CHART_OPERATORS = ['Interstate Bus Lines', 'Bophelong Transport'];
+const REPORT_OPERATOR_COLOURS = ['#1d4ed8', '#f97316', '#64748b', '#16a34a'];
+
+type BarSeries = SeriesOption[];
 
 const INSPECTION_TREND_DUMMY_DATA = {
   dates: ['2026-06-03', '2026-06-06', '2026-06-09', '2026-06-12', '2026-06-15'],
@@ -2677,6 +2681,7 @@ export class ReportingComponent implements OnInit {
     const totals = drillable.map((i) =>
       typeof i.value === 'number' ? i.value : parseFloat(String(i.value)) || 0,
     );
+    const seriesData = this.barSeriesForTile(tile, drillable, totals);
     if (categories.length === 0) return null;
 
     return {
@@ -2704,18 +2709,72 @@ export class ReportingComponent implements OnInit {
           lineHeight: 14,
         },
       },
-      series: [
-        {
-          name: 'Total',
-          type: 'bar',
-          data: totals,
-          itemStyle: { color: '#1d4ed8' },
-          label: { show: true, position: 'right', fontSize: 12, fontWeight: 'bold' },
-          barMaxWidth: 28,
-        },
-      ],
+      series: seriesData,
     };
   });
+
+  private barSeriesForTile(tile: KpiTile, drillable: SummaryItem[], totals: number[]): BarSeries {
+    const operatorSeries = this.operatorBarSeriesFromDrilldowns(drillable);
+    if (operatorSeries.length > 0) return operatorSeries;
+
+    if (tile.chartSeries && tile.chartSeries.length > 0) {
+      return this.operatorBarSeriesFromApi(tile.chartSeries);
+    }
+
+    return [
+      {
+        name: 'Total',
+        type: 'bar',
+        data: totals,
+        itemStyle: { color: '#1d4ed8' },
+        label: { show: true, position: 'right', fontSize: 12, fontWeight: 700 },
+        barMaxWidth: 28,
+      },
+    ];
+  }
+
+  private operatorBarSeriesFromDrilldowns(drillable: SummaryItem[]): BarSeries {
+    const operators = new Set<string>();
+    const countsByOperator = drillable.map((item) => {
+      const rows = item.drillKey ? this.reportDrilldowns()[item.drillKey]?.data ?? [] : [];
+      const counts = new Map<string, number>();
+
+      for (const row of rows) {
+        const operator = String(row['operator'] ?? '').trim();
+        if (!operator) continue;
+        operators.add(operator);
+        counts.set(operator, (counts.get(operator) ?? 0) + 1);
+      }
+
+      return counts;
+    });
+
+    if (operators.size === 0) return [];
+
+    return Array.from(operators)
+      .sort()
+      .map((operator, index) => ({
+        name: operator,
+        type: 'bar',
+        stack: 'operator',
+        data: countsByOperator.map((counts) => counts.get(operator) ?? 0),
+        itemStyle: { color: REPORT_OPERATOR_COLOURS[index % REPORT_OPERATOR_COLOURS.length] },
+        label: { show: false },
+        barMaxWidth: 28,
+      }));
+  }
+
+  private operatorBarSeriesFromApi(chartSeries: NonNullable<KpiTile['chartSeries']>): BarSeries {
+    return chartSeries.map((series, index) => ({
+      name: series.name,
+      type: 'bar',
+      stack: 'operator',
+      data: series.data,
+      itemStyle: { color: REPORT_OPERATOR_COLOURS[index % REPORT_OPERATOR_COLOURS.length] },
+      label: { show: false },
+      barMaxWidth: 28,
+    }));
+  }
 
   readonly inspectionTrendChartOptions = computed<EChartsOption | null>(() => {
     const tile = this.activeTile();
@@ -3076,6 +3135,10 @@ export class ReportingComponent implements OnInit {
         label: item.label,
         value: this.coerceSummaryValue(item.value),
         drillKey: item.drill_key ?? null,
+      })),
+      chartSeries: (tile.chart_series ?? []).map((series) => ({
+        name: series.name,
+        data: series.data ?? [],
       })),
       trendData: tile.trend
         ? {

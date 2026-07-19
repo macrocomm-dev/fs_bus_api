@@ -95,6 +95,11 @@ Current backend sources:
 - Daily Bus Monitoring
   - Source: `inspections.inspections`
   - Group by `inspection_type`.
+  - The comparison chart is split by resolved operator using the vehicle join.
+  - Current local data distribution:
+    - `Interstate Bus Lines`: 380 completed inspections
+    - `Maluti Bus Services`: 1 completed inspection
+    - `Unassigned`: 16 completed inspections that did not resolve to an operator
   - Drilldowns return real inspection rows for external, internal, driver, passenger count, and technical inspections.
   - Inspection type over time uses real daily inspection counts.
 - Failed Inspections

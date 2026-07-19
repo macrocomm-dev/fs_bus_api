@@ -9,6 +9,7 @@
  */
 import { AnalyticsSummaryItemResponse } from './analyticsSummaryItemResponse';
 import { AnalyticsTrendResponse } from './analyticsTrendResponse';
+import { AnalyticsTrendSeriesResponse } from './analyticsTrendSeriesResponse';
 import { Value } from './value';
 
 
@@ -21,5 +22,5 @@ export interface AnalyticsReportingTileResponse {
     icon: string;
     summary_items?: Array<AnalyticsSummaryItemResponse>;
     trend?: AnalyticsTrendResponse | null;
+    chart_series?: Array<AnalyticsTrendSeriesResponse>;
 }
-

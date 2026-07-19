@@ -93,6 +93,7 @@ class AnalyticsReportingTileResponse(BaseModel):
     icon: str
     summary_items: list[AnalyticsSummaryItemResponse] = []
     trend: AnalyticsTrendResponse | None = None
+    chart_series: list[AnalyticsTrendSeriesResponse] = []
 
 
 class AnalyticsSummaryResponse(BaseModel):
