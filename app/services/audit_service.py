@@ -139,10 +139,12 @@ async def log_api_success(
     success_category: str,
     success_message: str,
     success_code: Optional[str] = None,
+    request_body: Optional[dict] = None,
 ) -> None:
     """Persist one successful API request payload without affecting the response."""
     try:
-        request_body = await _read_json_request_body(request, max_body_bytes=None)
+        if request_body is None:
+            request_body = await _read_json_request_body(request, max_body_bytes=None)
 
         raw_rid = request.headers.get("x-request-id")
         try:

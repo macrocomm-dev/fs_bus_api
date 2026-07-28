@@ -414,6 +414,7 @@ async def create_shift(
                 success_category="SUCCESS",
                 success_code="SHIFT_CREATED",
                 success_message=f"Shift created successfully: shift_id={create_shif.id}",
+                request_body=shift_data.model_dump(mode="json"),
             )
 
     except HTTPException as e:

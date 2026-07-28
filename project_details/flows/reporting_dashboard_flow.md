@@ -212,6 +212,8 @@ AUDIT_SUCCESS_PAYLOADS_ENABLED=true|false
 
 When the flag is `true`, the shift endpoint schedules the success audit write as a FastAPI background task after the shift, selfie, and inspection records have been created. This keeps the monitor request from waiting on the audit insert.
 
+The success audit task receives the already-validated `ShiftCreate` payload via `model_dump(mode="json")`. Do not rely on reading `request.body()` inside the background task for this endpoint, because the ASGI request stream may no longer be available after the response has been prepared.
+
 Success rows use:
 
 ```text

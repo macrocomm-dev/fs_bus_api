@@ -86,6 +86,28 @@ class AuditServiceTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(audit_row.request_body, payload)
         self.assertIsNone(audit_row.validation_errors)
 
+    async def test_log_api_success_uses_supplied_payload(self):
+        db = FakeSession()
+        original_payload = {"ignored": True}
+        supplied_payload = {
+            "user_id": "monitor-uid",
+            "busses": [{"bus_number": "7025"}],
+        }
+
+        with patch("app.services.audit_service.SessionLocal", return_value=db):
+            await log_api_success(
+                FakeRequest(original_payload),
+                status_code=201,
+                success_category="SUCCESS",
+                success_code="SHIFT_CREATED",
+                success_message="Shift created successfully: shift_id=124",
+                request_body=supplied_payload,
+            )
+
+        self.assertTrue(db.committed)
+        self.assertEqual(len(db.added), 1)
+        self.assertEqual(db.added[0].request_body, supplied_payload)
+
 
 if __name__ == "__main__":
     unittest.main()
