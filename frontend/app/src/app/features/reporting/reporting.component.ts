@@ -1,6 +1,5 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import type { EChartsOption, SeriesOption } from 'echarts';
@@ -12,20 +11,22 @@ import type { AnalyticsDrilldownResponse } from '../../core/api/model/analyticsD
 import type { AnalyticsReportingSummaryResponse } from '../../core/api/model/analyticsReportingSummaryResponse';
 import type { AnalyticsReportingTileResponse } from '../../core/api/model/analyticsReportingTileResponse';
 import type { AnalyticsTopKpiResponse } from '../../core/api/model/analyticsTopKpiResponse';
+import { DashboardFiltersComponent } from '../../core/components/dashboard-filters/dashboard-filters.component';
+import {
+  DashboardFilterService,
+  type DashboardFilters,
+} from '../../core/services/dashboard-filter.service';
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
-import { DatePickerModule } from 'primeng/datepicker';
 import { DialogModule } from 'primeng/dialog';
 import { DividerModule } from 'primeng/divider';
 import { FloatLabelModule } from 'primeng/floatlabel';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
-import { MultiSelectModule } from 'primeng/multiselect';
 import { DrawerModule } from 'primeng/drawer';
 import { MenuModule } from 'primeng/menu';
-import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToolbarModule } from 'primeng/toolbar';
@@ -118,6 +119,7 @@ const TERMINAL_TO_OPERATOR: Record<string, string> = {
 const OPERATOR_NAME_TO_CODE: Record<string, string> = {
   'Interstate Bus Lines': 'interstate',
   'Free State Express': 'fse',
+  'Maluti Bus Services': 'maluti',
   'Bophelong Transport': 'bophelong',
   'Mangaung City Bus': 'mangaung',
   'Motheo Bus Service': 'motheo',
@@ -144,17 +146,9 @@ function enrichRecord(row: Record<string, string | number>): Record<string, stri
   };
 }
 
-type AppliedFilters = {
-  operators: string[];
-  terminals: string[];
-  routes: string[];
-  dateFrom: Date;
-  dateTo: Date;
-};
-
 function filterRecordsForKey(
   drillKey: string,
-  f: AppliedFilters,
+  f: DashboardFilters,
 ): Record<string, string | number>[] {
   const config = DRILL_CONFIGS[drillKey];
   if (!config) return [];
@@ -2407,22 +2401,19 @@ const TILES: KpiTile[] = [
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule,
     AvatarModule,
     ButtonModule,
     CardModule,
-    DatePickerModule,
+    DashboardFiltersComponent,
     DialogModule,
     DividerModule,
-    FloatLabelModule,
     DrawerModule,
+    FloatLabelModule,
     IconFieldModule,
     InputIconModule,
     InputTextModule,
     MenuModule,
-    MultiSelectModule,
     NgxEchartsDirective,
-    SelectModule,
     TableModule,
     TagModule,
     ToolbarModule,
@@ -2436,6 +2427,7 @@ export class ReportingComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly sanitizer = inject(DomSanitizer);
   private readonly analyticsApi = inject(AnalyticsService);
+  private readonly filterService = inject(DashboardFilterService);
 
   readonly session = this.auth.session;
   readonly reportTiles = signal<KpiTile[]>([]);
@@ -2575,76 +2567,7 @@ export class ReportingComponent implements OnInit {
     };
   });
 
-  // ── Global filters – draft (bound to form controls) ──────────────────────
-  draftDateRange: Date[] = [this.defaultDateFrom(), new Date()];
-  draftOperator = 'all';
-  draftTerminals: string[] = [];
-  draftRoutes: string[] = [];
-
-  // ── Applied filters (committed on Apply click) ────────────────────────────
-  readonly appliedFilters = signal<AppliedFilters>({
-    dateFrom: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-    dateTo: new Date(),
-    operators: [],
-    terminals: [],
-    routes: [],
-  });
-
-  readonly activeFilterCount = computed(() => {
-    const f = this.appliedFilters();
-    return (
-      (f.operators.length > 0 ? 1 : 0) +
-      (f.terminals.length > 0 ? 1 : 0) +
-      (f.routes.length > 0 ? 1 : 0)
-    );
-  });
-
-  readonly operatorOptions = [
-    { label: 'All Operators', value: 'all' },
-    { label: 'Interstate Bus Lines', value: 'interstate' },
-    { label: 'Free State Express', value: 'fse' },
-    { label: 'Bophelong Transport', value: 'bophelong' },
-    { label: 'Mangaung City Bus', value: 'mangaung' },
-    { label: 'Motheo Bus Service', value: 'motheo' },
-    { label: 'Welkom Transport Co', value: 'welkom' },
-    { label: 'SA Roadlink FS', value: 'saroadlink' },
-  ];
-
-  readonly operators = [
-    { label: 'Interstate Bus Lines', value: 'interstate' },
-    { label: 'Free State Express', value: 'fse' },
-    { label: 'Bophelong Transport', value: 'bophelong' },
-    { label: 'Mangaung City Bus', value: 'mangaung' },
-    { label: 'Motheo Bus Service', value: 'motheo' },
-    { label: 'Welkom Transport Co', value: 'welkom' },
-    { label: 'SA Roadlink FS', value: 'saroadlink' },
-  ];
-
-  readonly terminals = [
-    { label: 'Bloemfontein', value: 'bfn' },
-    { label: 'Welkom', value: 'welkom' },
-    { label: 'Botshabelo', value: 'botshabelo' },
-    { label: 'Thaba Nchu', value: 'thabaNchu' },
-  ];
-
-  readonly routes = [
-    { label: 'R03', value: 'r03' },
-    { label: 'R04', value: 'r04' },
-    { label: 'R05', value: 'r05' },
-    { label: 'R07', value: 'r07' },
-    { label: 'R08', value: 'r08' },
-    { label: 'R11', value: 'r11' },
-    { label: 'R12', value: 'r12' },
-    { label: 'R14', value: 'r14' },
-    { label: 'R15', value: 'r15' },
-    { label: 'R16', value: 'r16' },
-    { label: 'R18', value: 'r18' },
-    { label: 'R19', value: 'r19' },
-    { label: 'R22', value: 'r22' },
-    { label: 'R23', value: 'r23' },
-    { label: 'R26', value: 'r26' },
-    { label: 'R30', value: 'r30' },
-  ];
+  readonly appliedFilters = this.filterService.appliedFilters;
 
   // ── Inline tile panel state ──────────────────────────────────────────────
   readonly activeTileId = signal<string | null>(null);
@@ -3016,47 +2939,18 @@ export class ReportingComponent implements OnInit {
   }
 
   // ── Filters ────────────────────────────────────────────────────────────────
-  applyFilters(): void {
-    const [dateFrom, dateTo] = this.normalizedDraftDateRange();
-    this.appliedFilters.set({
-      dateFrom,
-      dateTo,
-      operators: this.draftOperator === 'all' ? [] : [this.draftOperator],
-      terminals: [...this.draftTerminals],
-      routes: [...this.draftRoutes],
-    });
-    this.loadTopKpis({ dateFrom, dateTo });
-    this.loadReportingSummary({ dateFrom, dateTo });
-  }
-
-  resetFilters(): void {
-    const defaultFrom = this.defaultDateFrom();
-    const defaultTo = new Date();
-    this.draftDateRange = [defaultFrom, defaultTo];
-    this.draftOperator = 'all';
-    this.draftTerminals = [];
-    this.draftRoutes = [];
-    this.appliedFilters.set({
-      dateFrom: defaultFrom,
-      dateTo: defaultTo,
-      operators: [],
-      terminals: [],
-      routes: [],
-    });
-    this.loadTopKpis({ dateFrom: defaultFrom, dateTo: defaultTo });
-    this.loadReportingSummary({ dateFrom: defaultFrom, dateTo: defaultTo });
+  onFiltersApplied(filters: DashboardFilters): void {
+    this.loadTopKpis(filters);
+    this.loadReportingSummary(filters);
   }
 
   private loadReportingSummary(
-    range: Pick<AppliedFilters, 'dateFrom' | 'dateTo'> = this.appliedFilters(),
+    range: Pick<DashboardFilters, 'dateFrom' | 'dateTo'> = this.appliedFilters(),
   ): void {
     this.reportError.set(null);
     this.analyticsApi
       .getReportingSummary(
-        {
-          startDate: this.formatApiDate(range.dateFrom),
-          endDate: this.formatApiDate(range.dateTo),
-        },
+        this.filterService.toReportingSummaryRequestParams(range),
         'body',
         false,
         { transferCache: false },
@@ -3071,14 +2965,11 @@ export class ReportingComponent implements OnInit {
       });
   }
 
-  private loadTopKpis(range: Pick<AppliedFilters, 'dateFrom' | 'dateTo'> = this.appliedFilters()): void {
+  private loadTopKpis(range: Pick<DashboardFilters, 'dateFrom' | 'dateTo'> = this.appliedFilters()): void {
     this.topKpiError.set(null);
     this.analyticsApi
       .getAnalyticsSummary(
-        {
-          startDate: this.formatApiDate(range.dateFrom),
-          endDate: this.formatApiDate(range.dateTo),
-        },
+        this.filterService.toAnalyticsSummaryRequestParams(range),
         'body',
         false,
         { transferCache: false },
@@ -3192,25 +3083,6 @@ export class ReportingComponent implements OnInit {
       return value;
     }
     return 0;
-  }
-
-  private formatApiDate(date: Date): string {
-    const year = date.getFullYear();
-    const month = `${date.getMonth() + 1}`.padStart(2, '0');
-    const day = `${date.getDate()}`.padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }
-
-  private defaultDateFrom(): Date {
-    const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth(), 1);
-  }
-
-  private normalizedDraftDateRange(): [Date, Date] {
-    const [from, to] = this.draftDateRange ?? [];
-    const dateFrom = from ? new Date(from) : this.defaultDateFrom();
-    const dateTo = to ? new Date(to) : new Date(dateFrom);
-    return dateFrom <= dateTo ? [dateFrom, dateTo] : [dateTo, dateFrom];
   }
 
   // ── Auth ───────────────────────────────────────────────────────────────────

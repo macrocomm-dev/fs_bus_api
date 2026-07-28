@@ -163,7 +163,12 @@
 }
 
 :host ::ng-deep .vehicle-table table {
-  min-width: 98rem;
+  min-width: 91rem;
+}
+
+.operator-column {
+  width: 7rem;
+  text-align: center;
 }
 
 .vehicle-vin {

@@ -55,6 +55,8 @@
         </div>
       }
 
+      <app-dashboard-filters idPrefix="analytics" (filtersApplied)="onFiltersApplied($event)" />
+
       <section class="gauge-strip" aria-label="Driver behaviour score summary">
         @for (gauge of gaugeScores(); track gauge.label) {
           <article class="gauge-card" [style.--gauge-score]="gauge.score" [style.--gauge-color]="gauge.color">
@@ -151,7 +153,9 @@
             <tr>
               <th pSortableColumn="fleetNo">Fleet <p-sortIcon field="fleetNo" /></th>
               <th pSortableColumn="registration">Registration <p-sortIcon field="registration" /></th>
-              <th pSortableColumn="operator">Operator <p-sortIcon field="operator" /></th>
+              <th pSortableColumn="operator" class="operator-column">
+                Operator <p-sortIcon field="operator" />
+              </th>
               <th pSortableColumn="distance">Distance <p-sortIcon field="distance" /></th>
               <th pSortableColumn="tripDuration">Trip Duration <p-sortIcon field="tripDuration" /></th>
               <th pSortableColumn="speedDuration">Speed Duration <p-sortIcon field="speedDuration" /></th>
@@ -170,7 +174,24 @@
             >
               <td class="fleet-cell">{{ row.fleetNo }}</td>
               <td>{{ row.registration }}</td>
-              <td>{{ row.operator }}</td>
+              <td class="operator-column">
+                @if (operatorBadge(row.operator); as badge) {
+                  <span
+                    class="operator-badge"
+                    [style.--operator-color]="badge.color"
+                    [style.--operator-bg]="badge.background"
+                    [style.--operator-border]="badge.borderColor"
+                    [pTooltip]="badge.label"
+                    tooltipPosition="top"
+                    [attr.aria-label]="badge.label"
+                  >
+                    <i [class]="badge.icon"></i>
+                    <span class="operator-badge__code">{{ badge.code }}</span>
+                  </span>
+                } @else {
+                  —
+                }
+              </td>
               <td>{{ row.distance }}</td>
               <td>{{ row.tripDuration }}</td>
               <td>{{ row.speedDuration }}</td>

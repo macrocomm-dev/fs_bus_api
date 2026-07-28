@@ -1,0 +1,58 @@
+<div class="filters-panel">
+  <div class="filters-panel__header">
+    <span class="filters-panel__title"> <i class="pi pi-filter"></i> Filters </span>
+    @if (activeFilterCount() > 0) {
+      <span class="filters-badge">{{ activeFilterCount() }} active</span>
+    }
+  </div>
+
+  <div class="filters-grid">
+    <div class="filter-item filter-item--date-range">
+      <p-floatlabel variant="on" class="app-float-label">
+        <p-datepicker
+          [inputId]="idPrefix + '-date-range'"
+          [ngModel]="draftDateRange"
+          (ngModelChange)="onDateRangeChange($event)"
+          selectionMode="range"
+          dateFormat="dd/mm/yy"
+          [showIcon]="true"
+          [readonlyInput]="true"
+          styleClass="filter-input"
+        />
+        <label [for]="idPrefix + '-date-range'">Date Range</label>
+      </p-floatlabel>
+    </div>
+
+    <div class="filter-item">
+      <p-floatlabel variant="on" class="app-float-label">
+        <p-select
+          [inputId]="idPrefix + '-operator-filter'"
+          [options]="operatorOptions"
+          [ngModel]="draftOperator"
+          (ngModelChange)="onOperatorChange($event)"
+          optionLabel="label"
+          optionValue="value"
+          styleClass="filter-input"
+        />
+        <label [for]="idPrefix + '-operator-filter'">Operator</label>
+      </p-floatlabel>
+    </div>
+
+    <div class="filter-item filter-actions">
+      <p-button
+        label="Apply Filters"
+        icon="pi pi-check"
+        styleClass="filter-action-btn"
+        (onClick)="applyFilters()"
+      />
+      <p-button
+        label="Reset"
+        icon="pi pi-times"
+        severity="secondary"
+        [outlined]="true"
+        styleClass="filter-action-btn"
+        (onClick)="resetFilters()"
+      />
+    </div>
+  </div>
+</div>

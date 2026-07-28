@@ -148,6 +148,15 @@ The reporting component loads real data from generated Angular API services back
 - `GET /analytics/reporting-summary` for dashboard cards and drilldown rows.
 - `GET /analytics/summary` for the top KPI row and analytics-backed summaries.
 
+Reports uses the shared dashboard filter component:
+
+```text
+frontend/app/src/app/core/components/dashboard-filters/
+frontend/app/src/app/core/services/dashboard-filter.service.ts
+```
+
+The shared filter service stores both draft and applied values, so date/operator selections persist when the user navigates between Reports and Analytics.
+
 Static frontend tile definitions are used only as loading/order shells while the API response is in flight. The displayed KPI methodology must come from the backend response.
 
 Daily Bus Monitoring comparison chart:

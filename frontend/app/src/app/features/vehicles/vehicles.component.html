@@ -103,7 +103,9 @@
               Registration <p-sortIcon field="registration_number" />
             </th>
             <th pSortableColumn="vin">VIN <p-sortIcon field="vin" /></th>
-            <th pSortableColumn="operator_name">Operator <p-sortIcon field="operator_name" /></th>
+            <th pSortableColumn="operator_name" class="operator-column">
+              Operator <p-sortIcon field="operator_name" />
+            </th>
             <th pSortableColumn="make">Make <p-sortIcon field="make" /></th>
             <th pSortableColumn="year">Year <p-sortIcon field="year" /></th>
             <th pSortableColumn="smart_fleet_last_address">Map <p-sortIcon field="smart_fleet_last_address" /></th>
@@ -131,7 +133,24 @@
             <td>{{ vehicle.fleet_number || '—' }}</td>
             <td>{{ vehicle.registration_number || '—' }}</td>
             <td class="vehicle-vin">{{ vehicle.vin }}</td>
-            <td>{{ vehicle.operator_name || '—' }}</td>
+            <td class="operator-column">
+              @if (operatorBadge(vehicle.operator_name); as badge) {
+                <span
+                  class="operator-badge"
+                  [style.--operator-color]="badge.color"
+                  [style.--operator-bg]="badge.background"
+                  [style.--operator-border]="badge.borderColor"
+                  [pTooltip]="badge.label"
+                  tooltipPosition="top"
+                  [attr.aria-label]="badge.label"
+                >
+                  <i [class]="badge.icon"></i>
+                  <span class="operator-badge__code">{{ badge.code }}</span>
+                </span>
+              } @else {
+                <span class="vehicle-map-empty">—</span>
+              }
+            </td>
             <td>{{ vehicle.make || '—' }}</td>
             <td>{{ vehicle.year || '—' }}</td>
             <td class="vehicle-map-cell">

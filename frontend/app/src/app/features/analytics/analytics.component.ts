@@ -17,7 +17,13 @@ import { TooltipModule } from 'primeng/tooltip';
 import { AnalyticsService } from '../../core/api/api/analytics.service';
 import type { AnalyticsSummaryResponse } from '../../core/api/model/analyticsSummaryResponse';
 import type { AnalyticsVehicleScoreResponse } from '../../core/api/model/analyticsVehicleScoreResponse';
+import { DashboardFiltersComponent } from '../../core/components/dashboard-filters/dashboard-filters.component';
+import {
+  DashboardFilterService,
+  type DashboardFilters,
+} from '../../core/services/dashboard-filter.service';
 import { AuthService } from '../../core/services/auth.service';
+import { operatorBadgeFor, type OperatorBadge } from '../../core/utils/operator-badge';
 
 type MetricTile = {
   title: string;
@@ -61,6 +67,7 @@ type LastEvent = {
     CommonModule,
     AvatarModule,
     ButtonModule,
+    DashboardFiltersComponent,
     DrawerModule,
     MenuModule,
     NgxEchartsDirective,
@@ -76,8 +83,10 @@ export class AnalyticsComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly analyticsApi = inject(AnalyticsService);
+  private readonly filterService = inject(DashboardFilterService);
 
   readonly session = this.auth.session;
+  readonly appliedFilters = this.filterService.appliedFilters;
   readonly metricTiles = signal<MetricTile[]>([]);
   readonly gaugeScores = signal<GaugeScore[]>([]);
   readonly vehiclePerformance = signal<VehiclePerformance[]>([]);
@@ -212,7 +221,7 @@ export class AnalyticsComponent implements OnInit {
       return;
     }
 
-    this.loadAnalytics();
+    this.loadAnalytics(this.appliedFilters());
   }
 
   toggleMenu(): void {
@@ -268,12 +277,21 @@ export class AnalyticsComponent implements OnInit {
     this.auth.logout();
   }
 
-  private loadAnalytics(): void {
+  onFiltersApplied(filters: DashboardFilters): void {
+    this.loadAnalytics(filters);
+  }
+
+  private loadAnalytics(range: Pick<DashboardFilters, 'dateFrom' | 'dateTo'> = this.appliedFilters()): void {
     this.loading.set(true);
     this.error.set(null);
 
     this.analyticsApi
-      .getAnalyticsSummary(undefined, 'body', false, { transferCache: false })
+      .getAnalyticsSummary(
+        this.filterService.toAnalyticsSummaryRequestParams(range),
+        'body',
+        false,
+        { transferCache: false },
+      )
       .subscribe({
         next: (response) => {
           this.applyAnalyticsSummary(response);
@@ -287,6 +305,11 @@ export class AnalyticsComponent implements OnInit {
   }
 
   private applyAnalyticsSummary(response: AnalyticsSummaryResponse): void {
+    const operatorMatches = (operator: string) => this.operatorMatchesFilter(operator);
+    const vehicleScores = (response.vehicle_scores ?? []).filter((vehicle) =>
+      operatorMatches(vehicle.operator),
+    );
+
     this.metricTiles.set(
       (response.metric_tiles ?? [])
         // Temporarily hidden until the product owner confirms how they want excess idle shown.
@@ -301,29 +324,33 @@ export class AnalyticsComponent implements OnInit {
     );
     this.gaugeScores.set(response.gauge_scores ?? []);
     this.lastEvents.set(
-      (response.last_events ?? []).map((event) => ({
-        bus: event.bus,
-        location: event.location,
-        time: event.time,
-        eventType: event.event_type,
-        measurement: event.measurement,
-        operator: event.operator,
-      })),
+      (response.last_events ?? [])
+        .filter((event) => operatorMatches(event.operator))
+        .map((event) => ({
+          bus: event.bus,
+          location: event.location,
+          time: event.time,
+          eventType: event.event_type,
+          measurement: event.measurement,
+          operator: event.operator,
+        })),
     );
     this.vehiclePerformance.set(
-      (response.vehicle_performance ?? []).map((vehicle) => ({
-        fleetNo: vehicle.fleet_no,
-        registration: vehicle.registration,
-        operator: vehicle.operator,
-        distance: vehicle.distance,
-        tripDuration: vehicle.trip_duration,
-        speedDuration: vehicle.speed_duration,
-        idleDuration: vehicle.idle_duration,
-        highRiskTrips: vehicle.high_risk_trips,
-        score: vehicle.score,
-      })),
+      (response.vehicle_performance ?? [])
+        .filter((vehicle) => operatorMatches(vehicle.operator))
+        .map((vehicle) => ({
+          fleetNo: vehicle.fleet_no,
+          registration: vehicle.registration,
+          operator: vehicle.operator,
+          distance: vehicle.distance,
+          tripDuration: vehicle.trip_duration,
+          speedDuration: vehicle.speed_duration,
+          idleDuration: vehicle.idle_duration,
+          highRiskTrips: vehicle.high_risk_trips,
+          score: vehicle.score,
+        })),
     );
-    this.vehicleScoreChartOptions.set(this.buildVehicleScoreChartOptions(response.vehicle_scores ?? []));
+    this.vehicleScoreChartOptions.set(this.buildVehicleScoreChartOptions(vehicleScores));
   }
 
   scoreSeverity(score: number): 'success' | 'warn' | 'danger' {
@@ -342,5 +369,28 @@ export class AnalyticsComponent implements OnInit {
     if (operator === 'Maluti Bus Services') return '#f97316';
     if (operator === 'Interstate Bus Lines') return '#1d4ed8';
     return '#64748b';
+  }
+
+  operatorBadge(operator: string | null | undefined): OperatorBadge | null {
+    return operatorBadgeFor(operator);
+  }
+
+  private operatorMatchesFilter(operator: string): boolean {
+    const selectedOperators = this.appliedFilters().operators;
+    if (selectedOperators.length === 0) return true;
+    return selectedOperators.includes(this.operatorCode(operator));
+  }
+
+  private operatorCode(operator: string): string {
+    const normalized = operator.trim().toLowerCase();
+    if (normalized === 'interstate bus lines') return 'interstate';
+    if (normalized === 'maluti bus services') return 'maluti';
+    if (normalized === 'bophelong transport') return 'bophelong';
+    if (normalized === 'free state express') return 'fse';
+    if (normalized === 'mangaung city bus') return 'mangaung';
+    if (normalized === 'motheo bus service') return 'motheo';
+    if (normalized === 'welkom transport co') return 'welkom';
+    if (normalized === 'sa roadlink fs') return 'saroadlink';
+    return normalized;
   }
 }

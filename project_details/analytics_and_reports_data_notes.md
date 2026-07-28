@@ -4,6 +4,23 @@
 
 The Analytics page now uses `GET /analytics/summary` instead of hardcoded dummy rows.
 
+Analytics uses the same shared dashboard filter component and service as Reports:
+
+```text
+frontend/app/src/app/core/components/dashboard-filters/
+frontend/app/src/app/core/services/dashboard-filter.service.ts
+```
+
+Current filter behaviour:
+
+- Date range is sent to `GET /analytics/summary` as `start_date` and `end_date`.
+- The frontend converts shared form state to generated OpenAPI request interfaces through `DashboardFilterService.toAnalyticsSummaryRequestParams(...)` and `DashboardFilterService.toReportingSummaryRequestParams(...)`.
+- Operator selection is applied client-side to Analytics datasets that already include an operator field:
+  - Last Events
+  - Vehicle Performance
+  - Driver Behaviour Scores chart
+- Gauge scores and second-row metric tiles are still aggregate endpoint values because `GET /analytics/summary` does not currently accept an operator parameter for backend-side aggregate recalculation.
+
 Current backend sources:
 
 - `analytics.bi_data`

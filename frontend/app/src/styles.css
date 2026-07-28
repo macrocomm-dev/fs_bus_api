@@ -76,3 +76,34 @@ body .nav-drawer__menu .nav-item-active .p-menu-item-label {
 .app-float-label:has(.p-iconfield) > label {
   margin-left: 1.9rem;
 }
+
+.operator-badge {
+  --operator-color: #64748b;
+  --operator-bg: #f1f5f9;
+  --operator-border: #cbd5e1;
+
+  width: fit-content;
+  min-width: 3.15rem;
+  min-height: 2rem;
+  padding: 0.25rem 0.45rem;
+  border: 1px solid var(--operator-border);
+  border-radius: 999px;
+  background: var(--operator-bg);
+  color: var(--operator-color);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.operator-badge .pi {
+  font-size: 0.8rem;
+}
+
+.operator-badge__code {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}

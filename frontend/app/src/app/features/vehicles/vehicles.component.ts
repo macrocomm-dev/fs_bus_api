@@ -19,6 +19,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { VehicleService } from '../../core/api/api/vehicle.service';
 import type { VehicleResponse } from '../../core/api/model/vehicleResponse';
 import { AuthService } from '../../core/services/auth.service';
+import { operatorBadgeFor, type OperatorBadge } from '../../core/utils/operator-badge';
 
 @Component({
   selector: 'app-vehicles',
@@ -159,6 +160,10 @@ export class VehiclesComponent implements OnInit {
 
   mapTooltip(vehicle: VehicleResponse): string {
     return vehicle.smart_fleet_last_address || 'No Smart Fleet address available';
+  }
+
+  operatorBadge(operator: string | null | undefined): OperatorBadge | null {
+    return operatorBadgeFor(operator);
   }
 
   openVehicleDetail(vehicle: VehicleResponse): void {

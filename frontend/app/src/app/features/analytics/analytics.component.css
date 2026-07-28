@@ -291,6 +291,11 @@
   color: #111827;
 }
 
+.operator-column {
+  width: 7rem;
+  text-align: center;
+}
+
 .location-cell {
   max-width: 24rem;
   color: #374151;
