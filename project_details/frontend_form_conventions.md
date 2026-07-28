@@ -26,7 +26,7 @@ Keep the shared width and label helpers in `frontend/app/src/styles.css`.
 
 ## Shared Dashboard Filters
 
-Reports and Analytics must use the shared dashboard filter implementation instead of owning separate local filter forms.
+Reports, Analytics, and Inspections must use the shared dashboard filter implementation instead of owning separate local filter forms.
 
 Shared service:
 
@@ -49,14 +49,16 @@ Usage pattern:
 Rules:
 
 - Keep date range and operator filter state in `DashboardFilterService`.
-- Pages should read `filterService.appliedFilters` on load so navigating between Reports and Analytics does not reset the selected values.
+- Pages should read `filterService.appliedFilters` on load so navigating between Reports, Analytics, and Inspections does not reset the selected values.
 - The shared component owns the PrimeNG float-label date range and `p-select` operator controls.
 - Pages should reload API data from the emitted `DashboardFilters` value after Apply or Reset.
 - Use the helper methods on `DashboardFilterService` when calling generated API services:
   - `toAnalyticsSummaryRequestParams(...)`
   - `toReportingSummaryRequestParams(...)`
+  - `toInspectionRequestParams(...)`
 - Date range should be sent to backend endpoints where supported.
 - Operator filtering can be applied client-side only for datasets that include an operator field unless the backend endpoint explicitly supports operator parameters.
 - The helper methods must return the OpenAPI-generated request interfaces, currently:
   - `GetAnalyticsSummaryRequestParams`
   - `GetReportingSummaryRequestParams`
+  - `GetAllBusInspectionsInspectionBusInspectionsGetRequestParams`

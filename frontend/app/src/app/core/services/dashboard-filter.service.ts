@@ -4,6 +4,7 @@ import type {
   GetAnalyticsSummaryRequestParams,
   GetReportingSummaryRequestParams,
 } from '../api/api/analytics.serviceInterface';
+import type { GetAllBusInspectionsInspectionBusInspectionsGetRequestParams } from '../api/api/inspection.serviceInterface';
 
 export type DashboardFilters = {
   operators: string[];
@@ -139,6 +140,17 @@ export class DashboardFilterService {
     return {
       startDate: this.formatApiDate(filters.dateFrom),
       endDate: this.formatApiDate(filters.dateTo),
+    };
+  }
+
+  toInspectionRequestParams(
+    filters: Pick<DashboardFilters, 'dateFrom' | 'dateTo'> = this.appliedFilters(),
+    limit = 5000,
+  ): GetAllBusInspectionsInspectionBusInspectionsGetRequestParams {
+    return {
+      startDate: this.formatApiDate(filters.dateFrom),
+      endDate: this.formatApiDate(filters.dateTo),
+      limit,
     };
   }
 

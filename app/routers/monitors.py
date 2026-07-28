@@ -10,14 +10,16 @@ from datetime import date, time
 from typing import Annotated, List, Optional
 
 import base64
-from fastapi import Depends, HTTPException, APIRouter, Query, Request, Form, status
+from fastapi import BackgroundTasks, Depends, HTTPException, APIRouter, Query, Request, Form, status
 from firebase_admin import db
 from sqlalchemy.exc import IntegrityError, DataError, OperationalError
 from sqlalchemy.orm import Session
 
 from app.auth import TokenData, get_current_user
+from app.config import get_settings
 from app.database import get_db
 from app.models.app_auth import AppUser
+from app.services.audit_service import log_api_success
 
 # from app.models.master_data import Vehicle  # re-enable if _resolve_bus_reference is un-commented
 from app.models.photo import Selfie, Photo
@@ -363,6 +365,8 @@ def _behind_schedule_record(db: Session, shift_id: int, user_id: str, bus, inspe
 )
 async def create_shift(
     shift_data: ShiftCreate,
+    request: Request,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: TokenData = Depends(get_current_user),
 ):
@@ -400,6 +404,16 @@ async def create_shift(
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="An error occurred while processing selfies or inspections",
+            )
+
+        if get_settings().audit_success_payloads_enabled:
+            background_tasks.add_task(
+                log_api_success,
+                request,
+                status_code=status.HTTP_201_CREATED,
+                success_category="SUCCESS",
+                success_code="SHIFT_CREATED",
+                success_message=f"Shift created successfully: shift_id={create_shif.id}",
             )
 
     except HTTPException as e:

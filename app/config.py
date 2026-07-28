@@ -98,6 +98,7 @@ class Settings(BaseSettings):
 
     # Error alert email
     alert_email_enabled: bool = True
+    audit_success_payloads_enabled: bool = False
     alert_email_to: list[str] = [
         "shedo.seabela@macrocomm.co.za",
         "erlo.conradie@macrocomm.co.za",

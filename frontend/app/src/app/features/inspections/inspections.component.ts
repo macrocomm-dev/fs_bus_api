@@ -20,7 +20,12 @@ import { InspectionService } from '../../core/api/api/inspection.service';
 import { VehicleService } from '../../core/api/api/vehicle.service';
 import type { GroupedBusInspectionResponse } from '../../core/api/model/groupedBusInspectionResponse';
 import type { VehicleResponse } from '../../core/api/model/vehicleResponse';
+import { DashboardFiltersComponent } from '../../core/components/dashboard-filters/dashboard-filters.component';
 import { AuthService } from '../../core/services/auth.service';
+import {
+  DashboardFilterService,
+  type DashboardFilters,
+} from '../../core/services/dashboard-filter.service';
 
 type InspectionRow = {
   inspectionId: number;
@@ -28,6 +33,7 @@ type InspectionRow = {
   busId: string;
   fleetNumber: string;
   registrationNumber: string;
+  operatorName: string;
   dutyNumber: string;
   type: string;
   inspectionTime: string;
@@ -71,6 +77,7 @@ const INSPECTION_METRIC_TYPES = [
     CommonModule,
     AvatarModule,
     ButtonModule,
+    DashboardFiltersComponent,
     DrawerModule,
     FloatLabelModule,
     IconFieldModule,
@@ -90,17 +97,25 @@ export class InspectionsComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly inspectionApi = inject(InspectionService);
   private readonly vehicleApi = inject(VehicleService);
+  private readonly filterService = inject(DashboardFilterService);
   private readonly vehicleRegistrationByKey = new Map<string, string>();
+  private readonly vehicleOperatorByKey = new Map<string, string>();
 
   readonly session = this.auth.session;
+  readonly appliedFilters = this.filterService.appliedFilters;
   readonly inspections = signal<InspectionRow[]>([]);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
   readonly selectedFailedType = signal<string | null>(null);
 
+  readonly dashboardFilteredInspections = computed(() => {
+    const filters = this.appliedFilters();
+    return this.inspections().filter((row) => this.operatorMatchesFilter(row.operatorName, filters));
+  });
+
   readonly inspectionMetricTiles = computed<InspectionMetricTile[]>(() =>
     INSPECTION_METRIC_TYPES.map((metric) => {
-      const rows = this.inspections().filter((row) => row.type === metric.type);
+      const rows = this.dashboardFilteredInspections().filter((row) => row.type === metric.type);
       const failedRows = rows.filter((row) => row.pass === false);
 
       return {
@@ -114,8 +129,9 @@ export class InspectionsComponent implements OnInit {
 
   readonly visibleInspections = computed(() => {
     const selectedType = this.selectedFailedType();
-    if (!selectedType) return this.inspections();
-    return this.inspections().filter((row) => row.type === selectedType && row.pass === false);
+    const rows = this.dashboardFilteredInspections();
+    if (!selectedType) return rows;
+    return rows.filter((row) => row.type === selectedType && row.pass === false);
   });
 
   menuVisible = true;
@@ -134,7 +150,7 @@ export class InspectionsComponent implements OnInit {
       return;
     }
 
-    this.loadInspections();
+    this.loadInspections(this.appliedFilters());
   }
 
   toggleMenu(): void {
@@ -197,7 +213,12 @@ export class InspectionsComponent implements OnInit {
     this.selectedFailedType.set(this.selectedFailedType() === type ? null : type);
   }
 
-  private loadInspections(): void {
+  onFiltersApplied(filters: DashboardFilters): void {
+    this.selectedFailedType.set(null);
+    this.loadInspections(filters);
+  }
+
+  private loadInspections(filters: Pick<DashboardFilters, 'dateFrom' | 'dateTo'> = this.appliedFilters()): void {
     this.loading.set(true);
     this.error.set(null);
 
@@ -211,19 +232,20 @@ export class InspectionsComponent implements OnInit {
       .subscribe({
         next: (response) => {
           this.indexVehicleRegistrations(response?.vehicles ?? []);
-          this.fetchInspections();
+          this.fetchInspections(filters);
         },
         error: () => {
           this.vehicleRegistrationByKey.clear();
-          this.fetchInspections();
+          this.vehicleOperatorByKey.clear();
+          this.fetchInspections(filters);
         },
       });
   }
 
-  private fetchInspections(): void {
+  private fetchInspections(filters: Pick<DashboardFilters, 'dateFrom' | 'dateTo'>): void {
     this.inspectionApi
       .getAllBusInspectionsInspectionBusInspectionsGet(
-        { limit: 500 },
+        this.filterService.toInspectionRequestParams(filters),
         'body',
         false,
         { transferCache: false },
@@ -248,6 +270,7 @@ export class InspectionsComponent implements OnInit {
         busId: group.bus_id,
         fleetNumber: group.fleet_number ?? '',
         registrationNumber: this.registrationFor(group.bus_id, group.fleet_number),
+        operatorName: this.operatorFor(group.bus_id, group.fleet_number),
         dutyNumber: group.duty_number ?? '',
       };
       const inspections = group.inspections;
@@ -376,15 +399,18 @@ export class InspectionsComponent implements OnInit {
 
   private indexVehicleRegistrations(vehicles: VehicleResponse[]): void {
     this.vehicleRegistrationByKey.clear();
+    this.vehicleOperatorByKey.clear();
 
     for (const vehicle of vehicles) {
       const registration = vehicle.registration_number;
-      if (!registration) {
-        continue;
-      }
 
       for (const key of this.vehicleKeys(vehicle.vin, vehicle.fleet_number, vehicle.registration_number)) {
-        this.vehicleRegistrationByKey.set(key, registration);
+        if (registration) {
+          this.vehicleRegistrationByKey.set(key, registration);
+        }
+        if (vehicle.operator_name) {
+          this.vehicleOperatorByKey.set(key, vehicle.operator_name);
+        }
       }
     }
   }
@@ -397,6 +423,35 @@ export class InspectionsComponent implements OnInit {
       }
     }
     return '';
+  }
+
+  private operatorFor(...values: Array<string | null | undefined>): string {
+    for (const key of this.vehicleKeys(...values)) {
+      const operator = this.vehicleOperatorByKey.get(key);
+      if (operator) {
+        return operator;
+      }
+    }
+    return '';
+  }
+
+  private operatorMatchesFilter(operator: string, filters: DashboardFilters): boolean {
+    if (filters.operators.length === 0) return true;
+    if (!operator) return false;
+    return filters.operators.includes(this.operatorCode(operator));
+  }
+
+  private operatorCode(operator: string): string {
+    const normalized = operator.trim().toLowerCase();
+    if (normalized === 'interstate bus lines') return 'interstate';
+    if (normalized === 'maluti bus services') return 'maluti';
+    if (normalized === 'bophelong transport') return 'bophelong';
+    if (normalized === 'free state express') return 'fse';
+    if (normalized === 'mangaung city bus') return 'mangaung';
+    if (normalized === 'motheo bus service') return 'motheo';
+    if (normalized === 'welkom transport co') return 'welkom';
+    if (normalized === 'sa roadlink fs') return 'saroadlink';
+    return normalized;
   }
 
   private vehicleKeys(...values: Array<string | null | undefined>): string[] {

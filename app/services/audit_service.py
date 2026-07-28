@@ -1,9 +1,9 @@
-"""
-Audit logging service.
+"""Audit logging service.
 
-Writes one row to audit.api_error_log for every exception that surfaces
-through the FastAPI exception handlers.  Uses its own short-lived DB session
-so a rolled-back request session never prevents the audit write.
+Writes audit rows to ``audit.api_error_log``. Historically this table only held
+errors surfaced through the FastAPI exception handlers. It is now also used for
+successful shift payload capture so success and failure request bodies can be
+compared in one place.
 """
 
 from __future__ import annotations
@@ -22,6 +22,24 @@ from app.models.app_auth import AppUser
 from app.models.audit import ApiErrorLog
 
 _MAX_BODY_BYTES = 10_240  # 10 KB — skip capturing larger payloads
+
+
+async def _read_json_request_body(
+    request: Request,
+    *,
+    max_body_bytes: int | None = _MAX_BODY_BYTES,
+) -> Optional[dict]:
+    """Return the request JSON body, optionally skipping bodies above a size cap."""
+    try:
+        raw = await request.body()
+        if not raw:
+            return None
+        if max_body_bytes is not None and len(raw) > max_body_bytes:
+            return None
+        payload = json.loads(raw)
+        return payload if isinstance(payload, dict) else {"payload": payload}
+    except Exception:
+        return None
 
 
 def _resolve_user_id(request: Request, db) -> Optional[int]:
@@ -64,13 +82,7 @@ async def log_api_error(
     """
     try:
         # ---- request body (best-effort, size-capped) ----------------------
-        request_body: Optional[dict] = None
-        try:
-            raw = await request.body()
-            if raw and len(raw) <= _MAX_BODY_BYTES:
-                request_body = json.loads(raw)
-        except Exception:
-            pass
+        request_body = await _read_json_request_body(request)
 
         # ---- optional request-id header (generate one if absent) ----------
         raw_rid = request.headers.get("x-request-id")
@@ -117,4 +129,55 @@ async def log_api_error(
 
     except Exception:
         # Audit logging must never interfere with returning the error response.
+        pass
+
+
+async def log_api_success(
+    request: Request,
+    *,
+    status_code: int,
+    success_category: str,
+    success_message: str,
+    success_code: Optional[str] = None,
+) -> None:
+    """Persist one successful API request payload without affecting the response."""
+    try:
+        request_body = await _read_json_request_body(request, max_body_bytes=None)
+
+        raw_rid = request.headers.get("x-request-id")
+        try:
+            request_id: uuid.UUID = uuid.UUID(raw_rid) if raw_rid else uuid.uuid4()
+        except ValueError:
+            request_id = uuid.uuid4()
+
+        db = SessionLocal()
+        try:
+            numeric_user_id = _resolve_user_id(request, db)
+            db.add(
+                ApiErrorLog(
+                    request_id=request_id,
+                    user_id=numeric_user_id,
+                    http_method=request.method,
+                    request_path=request.url.path,
+                    query_string=str(request.url.query) or None,
+                    status_code=status_code,
+                    error_category=success_category,
+                    error_code=success_code,
+                    error_message=success_message,
+                    validation_errors=None,
+                    request_body=request_body,
+                    client_ip=request.client.host if request.client else None,
+                    user_agent=request.headers.get("user-agent"),
+                    device_id=request.headers.get("x-device-id"),
+                    stack_trace=None,
+                )
+            )
+            db.commit()
+        except SQLAlchemyError:
+            db.rollback()
+        finally:
+            db.close()
+
+    except Exception:
+        # Audit logging must never interfere with returning the API response.
         pass

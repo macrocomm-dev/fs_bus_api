@@ -196,6 +196,49 @@ Shared helper:
 
 Both `GET /analytics/reporting-summary` and `GET /analytics/summary` must use this same route-start logic so the top KPI and expanded cards remain consistent.
 
+## Shift Payload Audit Trail
+
+Successful JSON submissions to `POST /shift/create_shift/` can be written to the same audit table used for malformed and failed payloads:
+
+```text
+audit.api_error_log
+```
+
+This is controlled by:
+
+```text
+AUDIT_SUCCESS_PAYLOADS_ENABLED=true|false
+```
+
+When the flag is `true`, the shift endpoint schedules the success audit write as a FastAPI background task after the shift, selfie, and inspection records have been created. This keeps the monitor request from waiting on the audit insert.
+
+Success rows use:
+
+```text
+status_code = 201
+error_category = SUCCESS
+error_code = SHIFT_CREATED
+error_message = Shift created successfully: shift_id=<id>
+request_body = raw JSON request body received from the client
+```
+
+The Cloud Run deployment workflow reads the GitHub Actions variable `AUDIT_SUCCESS_PAYLOADS_ENABLED` and falls back to `true` so successful mobile payloads are captured during the inspection investigation window. Set that variable to `false` once the payload question is resolved.
+
+Failure rows continue to use the existing exception-handler flow:
+
+```text
+error_category = VALIDATION_ERROR | HTTP_ERROR | INTERNAL_ERROR
+validation_errors = structured validation details where available
+error_message = failure reason
+request_body = captured request JSON when available and below the error-body size cap
+```
+
+Reason:
+
+- Inspection pass/fail investigations sometimes need to prove whether a mobile client explicitly sent a checklist value, such as `external.other.pass_ = false`, or omitted it and allowed the API schema default to apply.
+- Successful payload capture must use `Request.body()` instead of the parsed Pydantic model, because parsed models include defaults and can hide omitted fields.
+- Successful payload capture can increase audit-table storage because shift requests can contain inline image data. Keep it enabled only while the extra forensic detail is needed.
+
 ## Data Quality Notes
 
 Known limitations:

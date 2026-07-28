@@ -129,6 +129,8 @@ def _split_vehicle_label(value: str | None, alias: str | None = None) -> tuple[s
 def _event_type(event_id: int | None) -> str:
     if event_id is None:
         return "Event"
+    if event_id == 99:
+        return "Speeding"
     return f"Event {event_id}"
 
 
