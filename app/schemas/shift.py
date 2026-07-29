@@ -36,6 +36,21 @@ class BehindScheduleInterval(str, Enum):
     fifteen_plus = "15+ mins"
 
 
+_DEFAULT_BEHIND_SCHEDULE_INTERVAL = BehindScheduleInterval.zero_to_five.value
+_VALID_BEHIND_SCHEDULE_INTERVALS = {
+    interval.value for interval in BehindScheduleInterval
+}
+
+
+def normalize_behind_schedule_interval(value):
+    """Default invalid mobile-app behind-schedule interval values to 0-5 mins."""
+    if isinstance(value, BehindScheduleInterval):
+        return value
+    if value in _VALID_BEHIND_SCHEDULE_INTERVALS:
+        return value
+    return _DEFAULT_BEHIND_SCHEDULE_INTERVAL
+
+
 # ---------------------------------------------------------------------------
 # Photo / Selfie  (photos sent as base64 bytes in JSON body)
 # ---------------------------------------------------------------------------
@@ -128,6 +143,11 @@ class BehindScheduleReportIn(InspectionBaseIn):
     """Nested request model for one behind-schedule report."""
 
     behind_schedule_interval: BehindScheduleInterval
+
+    @field_validator("behind_schedule_interval", mode="before")
+    @classmethod
+    def default_invalid_interval(cls, value):
+        return normalize_behind_schedule_interval(value)
 
 
 class BusInspectionsIn(BaseModel):
@@ -407,6 +427,11 @@ class BehindScheduleReportMetaIn(InspectionBaseMetaIn):
     """Multipart metadata for one behind-schedule report."""
 
     behind_schedule_interval: BehindScheduleInterval
+
+    @field_validator("behind_schedule_interval", mode="before")
+    @classmethod
+    def default_invalid_interval(cls, value):
+        return normalize_behind_schedule_interval(value)
 
 
 class BusInspectionsMetaIn(BaseModel):

@@ -13,9 +13,12 @@ os.environ.setdefault("SECRET_KEY", "test")
 os.environ.setdefault("GCS_BUCKET_NAME", "test")
 
 from app.auth import TokenData, get_current_user
-from app.routers.monitors import _validate_bus_identifier
+from app.routers.monitors import (
+    _behind_schedule_interval_repairs,
+    _validate_bus_identifier,
+)
 from app.routers.inspection import _group_bus_inspection_rows
-from app.schemas.shift import ShiftCreate
+from app.schemas.shift import ShiftCreate, ShiftCreateMeta
 from fastapi.testclient import TestClient
 
 from app.database import get_db
@@ -622,6 +625,119 @@ class ShiftContractTests(unittest.TestCase):
         self.assertEqual(response.json()["status"], 201)
         self.assertEqual(response.json()["message"], "success")
         self.assertEqual(response.json()["shift_id"], 321)
+
+
+class ShiftPayloadCompatibilityTests(unittest.IsolatedAsyncioTestCase):
+    def test_invalid_behind_schedule_interval_defaults_to_zero_to_five(self):
+        payload = {
+            "user_id": "firebase_uid_abc123",
+            "start_time": "2026-05-01T07:00:00",
+            "end_time": "2026-05-01T15:30:00",
+            "start_lat": -26.2041,
+            "start_lon": 28.0473,
+            "end_lat": -26.2089,
+            "end_lon": 28.0512,
+            "device_id": "device_001",
+            "selfies": [],
+            "busses": [
+                {
+                    "bus_id": "VIN0001ZA",
+                    "bus_number": "7022",
+                    "duty_number": "DUTY-101",
+                    "replacement_bus": False,
+                    "inspections": {
+                        "behind_schedule_reports": [
+                            {
+                                "internal_inspection_id": "sch-1",
+                                "inspection_time": "2026-05-01T08:20:00",
+                                "inspection_lat": -26.2052,
+                                "inspection_lon": 28.0490,
+                                "behind_schedule_interval": "",
+                            }
+                        ],
+                    },
+                }
+            ],
+        }
+
+        shift = ShiftCreate.model_validate(payload)
+
+        self.assertEqual(
+            shift.busses[0]
+            .inspections.behind_schedule_reports[0]
+            .behind_schedule_interval.value,
+            "0-5 mins",
+        )
+
+    def test_invalid_multipart_behind_schedule_interval_defaults_to_zero_to_five(self):
+        payload = {
+            "user_id": "firebase_uid_abc123",
+            "start_time": "2026-05-01T07:00:00",
+            "end_time": "2026-05-01T15:30:00",
+            "start_lat": -26.2041,
+            "start_lon": 28.0473,
+            "end_lat": -26.2089,
+            "end_lon": 28.0512,
+            "device_id": "device_001",
+            "selfies": [],
+            "busses": [
+                {
+                    "bus_id": "VIN0001ZA",
+                    "bus_number": "7022",
+                    "duty_number": "DUTY-101",
+                    "replacement_bus": False,
+                    "inspections": {
+                        "behind_schedule_reports": [
+                            {
+                                "internal_inspection_id": "sch-1",
+                                "inspection_time": "2026-05-01T08:20:00",
+                                "inspection_lat": -26.2052,
+                                "inspection_lon": 28.0490,
+                                "behind_schedule_interval": "PT15M",
+                            }
+                        ],
+                    },
+                }
+            ],
+        }
+
+        shift = ShiftCreateMeta.model_validate(payload)
+
+        self.assertEqual(
+            shift.busses[0]
+            .inspections.behind_schedule_reports[0]
+            .behind_schedule_interval.value,
+            "0-5 mins",
+        )
+
+    async def test_invalid_behind_schedule_interval_is_reported_for_audit(self):
+        class FakeRequest:
+            async def json(self):
+                return {
+                    "busses": [
+                        {
+                            "bus_id": "VIN0001ZA",
+                            "bus_number": "7022",
+                            "duty_number": "DUTY-101",
+                            "inspections": {
+                                "behind_schedule_reports": [
+                                    {
+                                        "internal_inspection_id": "sch-1",
+                                        "inspection_time": "2026-05-01T08:20:00",
+                                        "behind_schedule_interval": "PT15M",
+                                    }
+                                ]
+                            },
+                        }
+                    ]
+                }
+
+        repairs = await _behind_schedule_interval_repairs(FakeRequest())
+
+        self.assertEqual(len(repairs), 1)
+        self.assertEqual(repairs[0]["original_value"], "PT15M")
+        self.assertEqual(repairs[0]["defaulted_to"], "0-5 mins")
+        self.assertEqual(repairs[0]["bus_number"], "7022")
 
 
 if __name__ == "__main__":

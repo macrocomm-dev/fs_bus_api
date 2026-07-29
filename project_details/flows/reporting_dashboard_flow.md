@@ -221,7 +221,7 @@ status_code = 201
 error_category = SUCCESS
 error_code = SHIFT_CREATED
 error_message = Shift created successfully: shift_id=<id>
-request_body = raw JSON request body received from the client
+request_body = validated ShiftCreate payload stored through model_dump(mode="json")
 ```
 
 The Cloud Run deployment workflow reads the GitHub Actions variable `AUDIT_SUCCESS_PAYLOADS_ENABLED` and falls back to `true` so successful mobile payloads are captured during the inspection investigation window. Set that variable to `false` once the payload question is resolved.
@@ -235,10 +235,55 @@ error_message = failure reason
 request_body = captured request JSON when available and below the error-body size cap
 ```
 
+## Behind-Schedule Interval Compatibility
+
+The mobile app has submitted invalid `behind_schedule_interval` values for late-route reports, most commonly a blank string:
+
+```json
+{
+  "behind_schedule_interval": ""
+}
+```
+
+The canonical allowed values remain:
+
+```text
+0-5 mins
+5-10 mins
+10-15 mins
+15+ mins
+```
+
+Temporary compatibility rule:
+
+- Any value outside the allowed set is defaulted to `0-5 mins`.
+- This prevents the whole `POST /shift/create_shift/` payload from failing with a Pydantic enum validation error.
+- The mobile app should still validate that a real interval is selected before submission; the API default is only a defensive capture rule.
+
+When the API repairs one or more invalid behind-schedule intervals and the shift is saved, it writes an audit row:
+
+```text
+status_code = 201
+error_category = PAYLOAD_NORMALIZED
+error_code = BEHIND_SCHEDULE_INTERVAL_DEFAULTED
+error_message = Invalid behind_schedule_interval value defaulted to 0-5 mins: shift_id=<id>
+request_body.repairs = list of repaired paths, original values, bus identifiers, and inspection timestamps
+```
+
+Audit query:
+
+```sql
+select occurred_at, error_message, request_body
+from audit.api_error_log
+where error_category = 'PAYLOAD_NORMALIZED'
+  and error_code = 'BEHIND_SCHEDULE_INTERVAL_DEFAULTED'
+order by occurred_at desc;
+```
+
 Reason:
 
 - Inspection pass/fail investigations sometimes need to prove whether a mobile client explicitly sent a checklist value, such as `external.other.pass_ = false`, or omitted it and allowed the API schema default to apply.
-- Successful payload capture must use `Request.body()` instead of the parsed Pydantic model, because parsed models include defaults and can hide omitted fields.
+- Successful payload capture currently stores the validated `ShiftCreate` payload passed into the background task. For forensic checks of omitted/defaulted fields, use the normalization audit rows above or failed-payload audit rows where the original request body is captured.
 - Successful payload capture can increase audit-table storage because shift requests can contain inline image data. Keep it enabled only while the extra forensic detail is needed.
 
 ## Data Quality Notes

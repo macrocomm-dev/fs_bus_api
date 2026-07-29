@@ -10,6 +10,7 @@ from datetime import date, time
 from typing import Annotated, List, Optional
 
 import base64
+import json
 from fastapi import BackgroundTasks, Depends, HTTPException, APIRouter, Query, Request, Form, status
 from firebase_admin import db
 from sqlalchemy.exc import IntegrityError, DataError, OperationalError
@@ -36,6 +37,8 @@ from app.schemas.shift import (
     BusIn,
     DateRangeLimitQueryParams,
     date_range_params,
+    _DEFAULT_BEHIND_SCHEDULE_INTERVAL,
+    _VALID_BEHIND_SCHEDULE_INTERVALS,
 )
 
 monitor_router = APIRouter()
@@ -61,6 +64,53 @@ def _combine_reasons(*reasons: str | None) -> str | None:
     """Join multiple optional failure reasons into one readable string."""
     combined = [reason for reason in reasons if reason]
     return "; ".join(combined) if combined else None
+
+
+def _behind_schedule_interval_repairs_from_payload(payload) -> list[dict]:
+    """Return behind-schedule intervals that were defaulted for compatibility."""
+    repairs: list[dict] = []
+    busses = payload.get("busses") if isinstance(payload, dict) else None
+    if not isinstance(busses, list):
+        return repairs
+
+    for bus_index, bus in enumerate(busses):
+        if not isinstance(bus, dict):
+            continue
+        inspections = bus.get("inspections")
+        if not isinstance(inspections, dict):
+            continue
+        reports = inspections.get("behind_schedule_reports")
+        if not isinstance(reports, list):
+            continue
+
+        for report_index, report in enumerate(reports):
+            if not isinstance(report, dict):
+                continue
+            original_value = report.get("behind_schedule_interval")
+            if original_value in _VALID_BEHIND_SCHEDULE_INTERVALS:
+                continue
+            repairs.append(
+                {
+                    "path": f"busses[{bus_index}].inspections.behind_schedule_reports[{report_index}].behind_schedule_interval",
+                    "bus_id": bus.get("bus_id"),
+                    "bus_number": bus.get("bus_number"),
+                    "duty_number": bus.get("duty_number"),
+                    "internal_inspection_id": report.get("internal_inspection_id"),
+                    "inspection_time": report.get("inspection_time"),
+                    "original_value": original_value,
+                    "defaulted_to": _DEFAULT_BEHIND_SCHEDULE_INTERVAL,
+                }
+            )
+    return repairs
+
+
+async def _behind_schedule_interval_repairs(request: Request) -> list[dict]:
+    """Inspect the original JSON body for defaulted behind-schedule intervals."""
+    try:
+        payload = await request.json()
+    except Exception:
+        return []
+    return _behind_schedule_interval_repairs_from_payload(payload)
 
 
 def _shift_response(shift: Shift, user: AppUser | None = None) -> ShiftResponse:
@@ -406,6 +456,26 @@ async def create_shift(
                 detail="An error occurred while processing selfies or inspections",
             )
 
+        interval_repairs = await _behind_schedule_interval_repairs(request)
+        if interval_repairs:
+            background_tasks.add_task(
+                log_api_success,
+                request,
+                status_code=status.HTTP_201_CREATED,
+                success_category="PAYLOAD_NORMALIZED",
+                success_code="BEHIND_SCHEDULE_INTERVAL_DEFAULTED",
+                success_message=(
+                    "Invalid behind_schedule_interval value defaulted to "
+                    f"{_DEFAULT_BEHIND_SCHEDULE_INTERVAL}: shift_id={create_shif.id}"
+                ),
+                request_body={
+                    "shift_id": create_shif.id,
+                    "user_id": shift_data.user_id,
+                    "defaulted_to": _DEFAULT_BEHIND_SCHEDULE_INTERVAL,
+                    "repairs": interval_repairs,
+                },
+            )
+
         if get_settings().audit_success_payloads_enabled:
             background_tasks.add_task(
                 log_api_success,
@@ -601,6 +671,7 @@ async def add_inspections(shift_id: int, user_id: str, buses: List[BusIn], db: S
 )
 async def create_shift_multipart(
     request: Request,
+    background_tasks: BackgroundTasks,
     data: str = Form(...),
     db: Session = Depends(get_db),
     current_user: TokenData = Depends(get_current_user),
@@ -612,6 +683,8 @@ async def create_shift_multipart(
     follows the same nested shift contract.
     """
     try:
+        raw_metadata = json.loads(data)
+        interval_repairs = _behind_schedule_interval_repairs_from_payload(raw_metadata)
         shift_data = ShiftCreateMeta.model_validate_json(data)
         form = await request.form()
 
@@ -690,6 +763,24 @@ async def create_shift_multipart(
                 _persist_inspection(db, inspection_payload)
 
         db.commit()
+        if interval_repairs:
+            background_tasks.add_task(
+                log_api_success,
+                request,
+                status_code=status.HTTP_201_CREATED,
+                success_category="PAYLOAD_NORMALIZED",
+                success_code="BEHIND_SCHEDULE_INTERVAL_DEFAULTED",
+                success_message=(
+                    "Invalid behind_schedule_interval value defaulted to "
+                    f"{_DEFAULT_BEHIND_SCHEDULE_INTERVAL}: shift_id={new_shift.id}"
+                ),
+                request_body={
+                    "shift_id": new_shift.id,
+                    "user_id": shift_data.user_id,
+                    "defaulted_to": _DEFAULT_BEHIND_SCHEDULE_INTERVAL,
+                    "repairs": interval_repairs,
+                },
+            )
         return ShiftCreatedResponse(
             status=201, message="success", shift_id=new_shift.id
         )
