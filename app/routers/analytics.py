@@ -1394,6 +1394,11 @@ def get_analytics_summary(
         route_value = "N/A"
         route_secondary = "No route score data"
 
+    # Product owner placeholder: show route compliance/deviation as fully
+    # compliant until the final route deviation scoring rule is confirmed.
+    route_value = "100%"
+    route_secondary = "Route deviation scoring pending"
+
     delayed_counts = {
         row.interval or "Unknown": _to_int(row.delayed_count)
         for row in delayed_interval_rows
