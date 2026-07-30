@@ -214,6 +214,8 @@ When the flag is `true`, the shift endpoint schedules the success audit write as
 
 The success audit task receives the already-validated `ShiftCreate` payload via `model_dump(mode="json")`. Do not rely on reading `request.body()` inside the background task for this endpoint, because the ASGI request stream may no longer be available after the response has been prepared.
 
+Before scheduling the background task, the endpoint snapshots request metadata such as method, path, query string, request ID, user agent, client IP, device ID, and authorization header. Background success/normalization audit writes should use that snapshot instead of reading the live `Request` object.
+
 Success rows use:
 
 ```text

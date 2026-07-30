@@ -24,6 +24,26 @@ from app.models.audit import ApiErrorLog
 _MAX_BODY_BYTES = 10_240  # 10 KB — skip capturing larger payloads
 
 
+def build_request_audit_context(request: Request) -> dict:
+    """Snapshot request metadata before a background audit task runs."""
+    raw_rid = request.headers.get("x-request-id")
+    try:
+        request_id = str(uuid.UUID(raw_rid)) if raw_rid else str(uuid.uuid4())
+    except ValueError:
+        request_id = str(uuid.uuid4())
+
+    return {
+        "request_id": request_id,
+        "authorization": request.headers.get("authorization", ""),
+        "http_method": request.method,
+        "request_path": request.url.path,
+        "query_string": str(request.url.query) or None,
+        "client_ip": request.client.host if request.client else None,
+        "user_agent": request.headers.get("user-agent"),
+        "device_id": request.headers.get("x-device-id"),
+    }
+
+
 async def _read_json_request_body(
     request: Request,
     *,
@@ -42,8 +62,8 @@ async def _read_json_request_body(
         return None
 
 
-def _resolve_user_id(request: Request, db) -> Optional[int]:
-    """Map the bearer token in a request to the local numeric ``user_id``.
+def _resolve_user_id_from_auth_header(auth_header: str, db) -> Optional[int]:
+    """Map a bearer token to the local numeric ``user_id``.
 
     Audit logging should be cheap and resilient, so this helper reads JWT claims
     without doing a network verification call. It is good enough for linking an
@@ -51,7 +71,6 @@ def _resolve_user_id(request: Request, db) -> Optional[int]:
     UID.
     """
     try:
-        auth_header = request.headers.get("authorization", "")
         if not auth_header.startswith("Bearer "):
             return None
         token = auth_header[7:]
@@ -63,6 +82,13 @@ def _resolve_user_id(request: Request, db) -> Optional[int]:
         return user.user_id if user else None
     except Exception:
         return None
+
+
+def _resolve_user_id(request: Request, db) -> Optional[int]:
+    """Map the bearer token in a request to the local numeric ``user_id``."""
+    return _resolve_user_id_from_auth_header(
+        request.headers.get("authorization", ""), db
+    )
 
 
 async def log_api_error(
@@ -133,44 +159,53 @@ async def log_api_error(
 
 
 async def log_api_success(
-    request: Request,
+    request: Request | None = None,
     *,
     status_code: int,
     success_category: str,
     success_message: str,
     success_code: Optional[str] = None,
     request_body: Optional[dict] = None,
+    request_context: Optional[dict] = None,
 ) -> None:
     """Persist one successful API request payload without affecting the response."""
     try:
+        if request_context is None:
+            if request is None:
+                return
+            request_context = build_request_audit_context(request)
+
         if request_body is None:
+            if request is None:
+                return
             request_body = await _read_json_request_body(request, max_body_bytes=None)
 
-        raw_rid = request.headers.get("x-request-id")
         try:
-            request_id: uuid.UUID = uuid.UUID(raw_rid) if raw_rid else uuid.uuid4()
+            request_id = uuid.UUID(request_context["request_id"])
         except ValueError:
             request_id = uuid.uuid4()
 
         db = SessionLocal()
         try:
-            numeric_user_id = _resolve_user_id(request, db)
+            numeric_user_id = _resolve_user_id_from_auth_header(
+                request_context.get("authorization", ""), db
+            )
             db.add(
                 ApiErrorLog(
                     request_id=request_id,
                     user_id=numeric_user_id,
-                    http_method=request.method,
-                    request_path=request.url.path,
-                    query_string=str(request.url.query) or None,
+                    http_method=request_context.get("http_method", "UNKNOWN"),
+                    request_path=request_context.get("request_path", "UNKNOWN"),
+                    query_string=request_context.get("query_string"),
                     status_code=status_code,
                     error_category=success_category,
                     error_code=success_code,
                     error_message=success_message,
                     validation_errors=None,
                     request_body=request_body,
-                    client_ip=request.client.host if request.client else None,
-                    user_agent=request.headers.get("user-agent"),
-                    device_id=request.headers.get("x-device-id"),
+                    client_ip=request_context.get("client_ip"),
+                    user_agent=request_context.get("user_agent"),
+                    device_id=request_context.get("device_id"),
                     stack_trace=None,
                 )
             )

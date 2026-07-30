@@ -20,7 +20,7 @@ from app.auth import TokenData, get_current_user
 from app.config import get_settings
 from app.database import get_db
 from app.models.app_auth import AppUser
-from app.services.audit_service import log_api_success
+from app.services.audit_service import build_request_audit_context, log_api_success
 
 # from app.models.master_data import Vehicle  # re-enable if _resolve_bus_reference is un-commented
 from app.models.photo import Selfie, Photo
@@ -428,6 +428,7 @@ async def create_shift(
     """
 
     try:
+        request_audit_context = build_request_audit_context(request)
 
         create_shif = Shift(
             user_id=shift_data.user_id,
@@ -468,6 +469,7 @@ async def create_shift(
                     "Invalid behind_schedule_interval value defaulted to "
                     f"{_DEFAULT_BEHIND_SCHEDULE_INTERVAL}: shift_id={create_shif.id}"
                 ),
+                request_context=request_audit_context,
                 request_body={
                     "shift_id": create_shif.id,
                     "user_id": shift_data.user_id,
@@ -484,6 +486,7 @@ async def create_shift(
                 success_category="SUCCESS",
                 success_code="SHIFT_CREATED",
                 success_message=f"Shift created successfully: shift_id={create_shif.id}",
+                request_context=request_audit_context,
                 request_body=shift_data.model_dump(mode="json"),
             )
 
@@ -683,6 +686,7 @@ async def create_shift_multipart(
     follows the same nested shift contract.
     """
     try:
+        request_audit_context = build_request_audit_context(request)
         raw_metadata = json.loads(data)
         interval_repairs = _behind_schedule_interval_repairs_from_payload(raw_metadata)
         shift_data = ShiftCreateMeta.model_validate_json(data)
@@ -774,6 +778,7 @@ async def create_shift_multipart(
                     "Invalid behind_schedule_interval value defaulted to "
                     f"{_DEFAULT_BEHIND_SCHEDULE_INTERVAL}: shift_id={new_shift.id}"
                 ),
+                request_context=request_audit_context,
                 request_body={
                     "shift_id": new_shift.id,
                     "user_id": shift_data.user_id,
