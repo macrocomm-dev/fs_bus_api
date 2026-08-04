@@ -24,6 +24,6 @@ export interface VehicleTripDetailResponse {
     route_score?: number | null;
     style_score?: number | null;
     risk_factor?: number | null;
+    event_count?: number;
     high_risk: boolean;
 }
-

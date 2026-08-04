@@ -288,6 +288,18 @@ def _event_measurement(row) -> str:
     return "-"
 
 
+def _event_count_for_trip(trip, event_rows) -> int:
+    """Count real analytics events that occurred inside a trip window."""
+
+    if trip.tripstart is None or trip.tripend is None:
+        return 0
+    return sum(
+        1
+        for event in event_rows
+        if event.event_date is not None and trip.tripstart <= event.event_date <= trip.tripend
+    )
+
+
 def _failed_checks(inspection: BusInspection) -> list[str]:
     checks: list[str] = []
     if inspection.tyres_pass is False:
@@ -523,7 +535,10 @@ async def get_vehicle_detail(
                     max_speed,
                     speed_limit
                 from analytics.events
-                where {_matching_text_condition("vehiclereg")}
+                where (
+                    {_matching_text_condition("vehiclereg")}
+                    or {_matching_text_condition("vin_no")}
+                )
                 order by event_date desc nulls last
                 limit 200
                 """
@@ -556,29 +571,32 @@ async def get_vehicle_detail(
         )
         inspection_rows = inspection_query.all()
 
-        trips = [
-            VehicleTripDetailResponse(
-                trip_start=trip.tripstart,
-                trip_end=trip.tripend,
-                driver=trip.driver,
-                start_location=trip.startloc,
-                end_location=trip.endloc,
-                distance_km=round(_to_float(trip.distance), 2),
-                duration_minutes=_to_minutes(trip.tripdur),
-                speed_duration_minutes=_to_minutes(trip.speeddur),
-                route_score=round(_to_float(trip.routescore), 1)
-                if trip.routescore is not None
-                else None,
-                style_score=round(_to_float(trip.stylescore), 1)
-                if trip.stylescore is not None
-                else None,
-                risk_factor=round(_to_float(trip.riskfactor), 2)
-                if trip.riskfactor is not None
-                else None,
-                high_risk=_to_float(trip.riskfactor) > 0,
+        trips = []
+        for trip in trip_rows:
+            event_count = _event_count_for_trip(trip, event_rows)
+            trips.append(
+                VehicleTripDetailResponse(
+                    trip_start=trip.tripstart,
+                    trip_end=trip.tripend,
+                    driver=trip.driver,
+                    start_location=trip.startloc,
+                    end_location=trip.endloc,
+                    distance_km=round(_to_float(trip.distance), 2),
+                    duration_minutes=_to_minutes(trip.tripdur),
+                    speed_duration_minutes=_to_minutes(trip.speeddur),
+                    route_score=round(_to_float(trip.routescore), 1)
+                    if trip.routescore is not None
+                    else None,
+                    style_score=round(_to_float(trip.stylescore), 1)
+                    if trip.stylescore is not None
+                    else None,
+                    risk_factor=round(_to_float(trip.riskfactor), 2)
+                    if trip.riskfactor is not None
+                    else None,
+                    event_count=event_count,
+                    high_risk=event_count >= 3,
+                )
             )
-            for trip in trip_rows
-        ]
 
         score_points = [
             VehicleScorePointResponse(

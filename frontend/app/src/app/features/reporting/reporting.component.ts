@@ -2468,6 +2468,11 @@ export class ReportingComponent implements OnInit {
       icon: 'pi pi-calendar',
       command: () => this.openShifts(),
     },
+    {
+      label: 'Monitors',
+      icon: 'pi pi-users',
+      command: () => this.openMonitors(),
+    },
   ];
 
   // ── Tiles grouped by dashboard row (reactive to applied filters) ──────────
@@ -3117,6 +3122,11 @@ export class ReportingComponent implements OnInit {
   openShifts(): void {
     this.menuVisible = false;
     this.router.navigate(['/shifts']);
+  }
+
+  openMonitors(): void {
+    this.menuVisible = false;
+    this.router.navigate(['/monitors']);
   }
 
   openReporting(): void {

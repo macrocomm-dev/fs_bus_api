@@ -98,6 +98,11 @@ export class VehicleDetailComponent implements OnInit {
       icon: 'pi pi-calendar',
       command: () => this.openShifts(),
     },
+    {
+      label: 'Monitors',
+      icon: 'pi pi-users',
+      command: () => this.openMonitors(),
+    },
   ];
 
   ngOnInit(): void {
@@ -152,6 +157,11 @@ export class VehicleDetailComponent implements OnInit {
   openShifts(): void {
     this.menuVisible = false;
     this.router.navigate(['/shifts']);
+  }
+
+  openMonitors(): void {
+    this.menuVisible = false;
+    this.router.navigate(['/monitors']);
   }
 
   logout(): void {

@@ -204,6 +204,8 @@ Successful JSON submissions to `POST /shift/create_shift/` can be written to the
 audit.api_error_log
 ```
 
+The table's `ck_api_error_log_status_code` constraint must allow standard HTTP response codes from `100` to `599`. It originally allowed only `400-599`, which prevented `201` success and normalization audit rows from being inserted.
+
 This is controlled by:
 
 ```text

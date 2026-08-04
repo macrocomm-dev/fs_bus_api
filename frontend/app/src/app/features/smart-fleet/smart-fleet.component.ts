@@ -84,6 +84,11 @@ export class SmartFleetComponent implements OnInit, OnDestroy {
       icon: 'pi pi-calendar',
       command: () => this.openShifts(),
     },
+    {
+      label: 'Monitors',
+      icon: 'pi pi-users',
+      command: () => this.openMonitors(),
+    },
   ];
 
   ngOnInit(): void {
@@ -133,6 +138,11 @@ export class SmartFleetComponent implements OnInit, OnDestroy {
   openShifts(): void {
     this.menuVisible = false;
     this.router.navigate(['/shifts']);
+  }
+
+  openMonitors(): void {
+    this.menuVisible = false;
+    this.router.navigate(['/monitors']);
   }
 
   openInNewWindow(): void {

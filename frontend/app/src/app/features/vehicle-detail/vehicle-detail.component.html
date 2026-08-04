@@ -195,6 +195,7 @@
                 <th pSortableColumn="duration_minutes">Duration <p-sortIcon field="duration_minutes" /></th>
                 <th pSortableColumn="style_score">Style <p-sortIcon field="style_score" /></th>
                 <th pSortableColumn="route_score">Route <p-sortIcon field="route_score" /></th>
+                <th pSortableColumn="event_count">Events <p-sortIcon field="event_count" /></th>
                 <th pSortableColumn="high_risk">Risk <p-sortIcon field="high_risk" /></th>
               </tr>
             </ng-template>
@@ -210,6 +211,7 @@
                 <td>{{ formatNumber(trip.duration_minutes) }} mins</td>
                 <td>{{ formatNumber(trip.style_score) }}%</td>
                 <td>{{ formatNumber(trip.route_score) }}%</td>
+                <td>{{ trip.event_count ?? 0 }}</td>
                 <td>
                   <p-tag
                     [value]="trip.high_risk ? 'High Risk' : 'Normal'"
@@ -221,7 +223,7 @@
 
             <ng-template pTemplate="emptymessage">
               <tr>
-                <td colspan="10">No trip data is available for this vehicle.</td>
+                <td colspan="11">No trip data is available for this vehicle.</td>
               </tr>
             </ng-template>
           </p-table>

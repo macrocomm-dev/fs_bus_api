@@ -1101,14 +1101,44 @@ def get_analytics_summary(
         trip_row = db.execute(
             text(
                 """
+                with filtered_trips as (
+                    select *
+                    from analytics.trip_data
+                    where (cast(:start_date as date) is null or tripstart::date >= cast(:start_date as date))
+                      and (cast(:end_date as date) is null or tripstart::date <= cast(:end_date as date))
+                ),
+                event_vehicle as (
+                    select
+                        e.event_date,
+                        v.registration_number,
+                        v.fleet_number
+                    from analytics.events e
+                    left join master_data.vehicle v on lower(v.vin) = lower(e.vin_no)
+                    where (cast(:start_date as date) is null or e.event_date::date >= cast(:start_date as date))
+                      and (cast(:end_date as date) is null or e.event_date::date <= cast(:end_date as date))
+                ),
+                trip_event_counts as (
+                    select
+                        t.rowid,
+                        count(e.*) as event_count
+                    from filtered_trips t
+                    left join event_vehicle e
+                      on e.event_date between t.tripstart and t.tripend
+                     and (
+                        lower(split_part(t.vehiclereg, ' - ', 1)) = lower(e.registration_number)
+                        or lower(split_part(t.vehiclereg, ' - ', 2)) = lower(e.fleet_number)
+                        or lower(t.vehiclereg) = lower(e.registration_number)
+                        or lower(t.vehiclereg) = lower(e.fleet_number)
+                     )
+                    group by t.rowid
+                )
                 select
-                    coalesce(sum(tripdur), 0) as trip_duration_seconds,
-                    coalesce(sum(speeddur), 0) as speed_duration_seconds,
-                    coalesce(sum(excess_idle_seconds), 0) as excess_idle_seconds,
-                    count(*) filter (where coalesce(riskfactor, 0) > 0) as high_risk_trips
-                from analytics.trip_data
-                where (cast(:start_date as date) is null or tripstart::date >= cast(:start_date as date))
-                  and (cast(:end_date as date) is null or tripstart::date <= cast(:end_date as date))
+                    coalesce(sum(t.tripdur), 0) as trip_duration_seconds,
+                    coalesce(sum(t.speeddur), 0) as speed_duration_seconds,
+                    coalesce(sum(t.excess_idle_seconds), 0) as excess_idle_seconds,
+                    count(*) filter (where coalesce(c.event_count, 0) >= 3) as high_risk_trips
+                from filtered_trips t
+                left join trip_event_counts c on c.rowid = t.rowid
                 """
             ),
             params,
@@ -1272,21 +1302,51 @@ def get_analytics_summary(
         vehicle_rows = db.execute(
             text(
                 """
-                with trip_rollup as (
-                    select
-                        vehiclereg,
-                        max(vehiclealias) as vehiclealias,
-                        max(vehiclegroup) as vehiclegroup,
-                        coalesce(sum(distance), 0) as distance,
-                        coalesce(sum(tripdur), 0) as trip_duration_seconds,
-                        coalesce(sum(speeddur), 0) as speed_duration_seconds,
-                        coalesce(sum(excess_idle_seconds), 0) as excess_idle_seconds,
-                        count(*) filter (where coalesce(riskfactor, 0) > 0) as high_risk_trips,
-                        avg(stylescore) as avg_style_score
+                with filtered_trips as (
+                    select *
                     from analytics.trip_data
                     where (cast(:start_date as date) is null or tripstart::date >= cast(:start_date as date))
                       and (cast(:end_date as date) is null or tripstart::date <= cast(:end_date as date))
-                    group by vehiclereg
+                ),
+                event_vehicle as (
+                    select
+                        e.event_date,
+                        v.registration_number,
+                        v.fleet_number
+                    from analytics.events e
+                    left join master_data.vehicle v on lower(v.vin) = lower(e.vin_no)
+                    where (cast(:start_date as date) is null or e.event_date::date >= cast(:start_date as date))
+                      and (cast(:end_date as date) is null or e.event_date::date <= cast(:end_date as date))
+                ),
+                trip_event_counts as (
+                    select
+                        t.rowid,
+                        count(e.*) as event_count
+                    from filtered_trips t
+                    left join event_vehicle e
+                      on e.event_date between t.tripstart and t.tripend
+                     and (
+                        lower(split_part(t.vehiclereg, ' - ', 1)) = lower(e.registration_number)
+                        or lower(split_part(t.vehiclereg, ' - ', 2)) = lower(e.fleet_number)
+                        or lower(t.vehiclereg) = lower(e.registration_number)
+                        or lower(t.vehiclereg) = lower(e.fleet_number)
+                     )
+                    group by t.rowid
+                ),
+                trip_rollup as (
+                    select
+                        t.vehiclereg,
+                        max(t.vehiclealias) as vehiclealias,
+                        max(t.vehiclegroup) as vehiclegroup,
+                        coalesce(sum(t.distance), 0) as distance,
+                        coalesce(sum(t.tripdur), 0) as trip_duration_seconds,
+                        coalesce(sum(t.speeddur), 0) as speed_duration_seconds,
+                        coalesce(sum(t.excess_idle_seconds), 0) as excess_idle_seconds,
+                        count(*) filter (where coalesce(c.event_count, 0) >= 3) as high_risk_trips,
+                        avg(t.stylescore) as avg_style_score
+                    from filtered_trips t
+                    left join trip_event_counts c on c.rowid = t.rowid
+                    group by t.vehiclereg
                 ),
                 latest_bi as (
                     select distinct on (vehiclereg)

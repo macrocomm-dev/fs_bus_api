@@ -142,6 +142,7 @@ export class InspectionsComponent implements OnInit {
     { label: 'Vehicles', icon: 'pi pi-car', command: () => this.openVehicles() },
     { label: 'Inspections', icon: 'pi pi-search', styleClass: 'nav-item-active', command: () => this.closeMenu() },
     { label: 'Shifts', icon: 'pi pi-calendar', command: () => this.openShifts() },
+    { label: 'Monitors', icon: 'pi pi-users', command: () => this.openMonitors() },
   ];
 
   ngOnInit(): void {
@@ -184,6 +185,11 @@ export class InspectionsComponent implements OnInit {
   openShifts(): void {
     this.menuVisible = false;
     this.router.navigate(['/shifts']);
+  }
+
+  openMonitors(): void {
+    this.menuVisible = false;
+    this.router.navigate(['/monitors']);
   }
 
   logout(): void {

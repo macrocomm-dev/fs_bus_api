@@ -1,7 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
+import type { EChartsOption } from 'echarts';
+import { NgxEchartsDirective } from 'ngx-echarts';
 import type { MenuItem } from 'primeng/api';
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
@@ -11,19 +14,28 @@ import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
+import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { InspectionService } from '../../core/api/api/inspection.service';
-import type { GroupedBusInspectionResponse } from '../../core/api/model/groupedBusInspectionResponse';
 import { ShiftsService } from '../../core/api/api/shifts.service';
+import type { GroupedBusInspectionResponse } from '../../core/api/model/groupedBusInspectionResponse';
 import type { ShiftResponse } from '../../core/api/model/shiftResponse';
 import { AuthService } from '../../core/services/auth.service';
 
-type ShiftInspectionItem = {
+type MonitorOption = {
+  label: string;
+  value: string;
+  shiftCount: number;
+  inspectionCount: number;
+};
+
+type MonitorInspectionItem = {
   inspectionId: number;
+  shiftId: number;
   busId: string;
   fleetNumber: string;
   dutyNumber: string;
@@ -34,21 +46,22 @@ type ShiftInspectionItem = {
   summary: string;
 };
 
-type ShiftRow = ShiftResponse & {
+type MonitorShiftRow = ShiftResponse & {
   loggedBy: string;
   duration: string;
   startGps: string;
   endGps: string;
-  inspections: ShiftInspectionItem[];
+  inspections: MonitorInspectionItem[];
   inspectionCount: number;
   failedInspectionCount: number;
 };
 
 @Component({
-  selector: 'app-shifts',
+  selector: 'app-monitors',
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     AvatarModule,
     ButtonModule,
     DrawerModule,
@@ -57,24 +70,71 @@ type ShiftRow = ShiftResponse & {
     InputIconModule,
     InputTextModule,
     MenuModule,
+    NgxEchartsDirective,
+    SelectModule,
     TableModule,
     TagModule,
     ToolbarModule,
     TooltipModule,
   ],
-  templateUrl: './shifts.component.html',
-  styleUrl: './shifts.component.css',
+  templateUrl: './monitors.component.html',
+  styleUrl: './monitors.component.css',
 })
-export class ShiftsComponent implements OnInit {
+export class MonitorsComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly shiftsApi = inject(ShiftsService);
   private readonly inspectionApi = inject(InspectionService);
 
   readonly session = this.auth.session;
-  readonly shifts = signal<ShiftRow[]>([]);
+  readonly shifts = signal<MonitorShiftRow[]>([]);
+  readonly selectedMonitorId = signal<string | null>(null);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
+
+  readonly monitorOptions = computed<MonitorOption[]>(() => {
+    const byMonitor = new Map<string, MonitorOption>();
+    for (const shift of this.shifts()) {
+      const value = this.monitorKey(shift);
+      const existing =
+        byMonitor.get(value) ??
+        {
+          label: shift.loggedBy,
+          value,
+          shiftCount: 0,
+          inspectionCount: 0,
+        };
+      existing.shiftCount += 1;
+      existing.inspectionCount += shift.inspectionCount;
+      byMonitor.set(value, existing);
+    }
+    return [...byMonitor.values()].sort((a, b) => a.label.localeCompare(b.label));
+  });
+
+  readonly selectedShifts = computed(() => {
+    const selected = this.selectedMonitorId();
+    if (!selected) return [];
+    return this.shifts().filter((shift) => this.monitorKey(shift) === selected);
+  });
+
+  readonly selectedInspections = computed(() =>
+    this.selectedShifts()
+      .flatMap((shift) => shift.inspections)
+      .sort((a, b) => Date.parse(b.inspectionTime) - Date.parse(a.inspectionTime)),
+  );
+
+  readonly summary = computed(() => {
+    const shifts = this.selectedShifts();
+    const inspections = this.selectedInspections();
+    return {
+      shifts: shifts.length,
+      inspections: inspections.length,
+      failed: inspections.filter((inspection) => inspection.pass === false).length,
+      buses: new Set(inspections.map((inspection) => inspection.busId).filter(Boolean)).size,
+    };
+  });
+
+  readonly monitorChartOptions = computed(() => this.buildMonitorChartOptions(this.selectedShifts()));
 
   menuVisible = true;
   readonly navigationItems: MenuItem[] = [
@@ -83,8 +143,8 @@ export class ShiftsComponent implements OnInit {
     { label: 'Analytics', icon: 'pi pi-chart-line', command: () => this.openAnalytics() },
     { label: 'Vehicles', icon: 'pi pi-car', command: () => this.openVehicles() },
     { label: 'Inspections', icon: 'pi pi-search', command: () => this.openInspections() },
-    { label: 'Shifts', icon: 'pi pi-calendar', styleClass: 'nav-item-active', command: () => this.closeMenu() },
-    { label: 'Monitors', icon: 'pi pi-users', command: () => this.openMonitors() },
+    { label: 'Shifts', icon: 'pi pi-calendar', command: () => this.openShifts() },
+    { label: 'Monitors', icon: 'pi pi-users', styleClass: 'nav-item-active', command: () => this.closeMenu() },
   ];
 
   ngOnInit(): void {
@@ -93,7 +153,7 @@ export class ShiftsComponent implements OnInit {
       return;
     }
 
-    this.loadShifts();
+    this.loadMonitorData();
   }
 
   toggleMenu(): void {
@@ -129,9 +189,9 @@ export class ShiftsComponent implements OnInit {
     this.router.navigate(['/inspections']);
   }
 
-  openMonitors(): void {
+  openShifts(): void {
     this.menuVisible = false;
-    this.router.navigate(['/monitors']);
+    this.router.navigate(['/shifts']);
   }
 
   logout(): void {
@@ -150,24 +210,19 @@ export class ShiftsComponent implements OnInit {
     return 'Not set';
   }
 
-  private loadShifts(): void {
+  private loadMonitorData(): void {
     this.loading.set(true);
     this.error.set(null);
 
     this.shiftsApi
-      .getAllShiftsShiftShiftsGet(
-        { limit: 500 },
-        'body',
-        false,
-        { transferCache: false },
-      )
+      .getAllShiftsShiftShiftsGet({ limit: 1000 }, 'body', false, { transferCache: false })
       .subscribe({
         next: (response) => {
           const shifts = response ?? [];
           const shiftIds = shifts.map((shift) => shift.id);
-
           if (shiftIds.length === 0) {
             this.shifts.set([]);
+            this.selectedMonitorId.set(null);
             this.loading.set(false);
             return;
           }
@@ -181,24 +236,28 @@ export class ShiftsComponent implements OnInit {
             )
             .subscribe({
               next: (inspectionGroups) => {
-                this.shifts.set(this.buildShiftRows(shifts, inspectionGroups ?? []));
+                const rows = this.buildShiftRows(shifts, inspectionGroups ?? []);
+                this.shifts.set(rows);
+                this.selectedMonitorId.set(this.selectedMonitorId() ?? this.monitorOptions()[0]?.value ?? null);
                 this.loading.set(false);
               },
               error: (err) => {
                 if (err?.status === 404) {
-                  this.shifts.set(this.buildShiftRows(shifts, []));
+                  const rows = this.buildShiftRows(shifts, []);
+                  this.shifts.set(rows);
+                  this.selectedMonitorId.set(this.selectedMonitorId() ?? this.monitorOptions()[0]?.value ?? null);
                   this.loading.set(false);
                   return;
                 }
 
                 this.loading.set(false);
-                this.error.set(err?.error?.detail ?? 'Could not load shift inspections.');
+                this.error.set(err?.error?.detail ?? 'Could not load monitor inspections.');
               },
             });
         },
         error: (err) => {
           this.loading.set(false);
-          this.error.set(err?.error?.detail ?? 'Could not load shifts.');
+          this.error.set(err?.error?.detail ?? 'Could not load monitor shifts.');
         },
       });
   }
@@ -206,8 +265,8 @@ export class ShiftsComponent implements OnInit {
   private buildShiftRows(
     shifts: ShiftResponse[],
     inspectionGroups: GroupedBusInspectionResponse[],
-  ): ShiftRow[] {
-    const inspectionsByShift = new Map<number, ShiftInspectionItem[]>();
+  ): MonitorShiftRow[] {
+    const inspectionsByShift = new Map<number, MonitorInspectionItem[]>();
     for (const group of inspectionGroups) {
       const items = this.flattenShiftInspectionGroup(group);
       const existing = inspectionsByShift.get(group.shift_id) ?? [];
@@ -233,9 +292,10 @@ export class ShiftsComponent implements OnInit {
       .sort((a, b) => Date.parse(b.start_time) - Date.parse(a.start_time));
   }
 
-  private flattenShiftInspectionGroup(group: GroupedBusInspectionResponse): ShiftInspectionItem[] {
-    const rows: ShiftInspectionItem[] = [];
+  private flattenShiftInspectionGroup(group: GroupedBusInspectionResponse): MonitorInspectionItem[] {
+    const rows: MonitorInspectionItem[] = [];
     const base = {
+      shiftId: group.shift_id,
       busId: group.bus_id,
       fleetNumber: group.fleet_number ?? '',
       dutyNumber: group.duty_number ?? '',
@@ -319,6 +379,65 @@ export class ShiftsComponent implements OnInit {
     }
 
     return rows;
+  }
+
+  private buildMonitorChartOptions(shifts: MonitorShiftRow[]): EChartsOption {
+    const buckets = new Map<string, { shifts: number; inspections: number }>();
+    for (const shift of shifts) {
+      const label = new Intl.DateTimeFormat('en-ZA', {
+        day: '2-digit',
+        month: '2-digit',
+      }).format(new Date(shift.start_time));
+      const bucket = buckets.get(label) ?? { shifts: 0, inspections: 0 };
+      bucket.shifts += 1;
+      bucket.inspections += shift.inspectionCount;
+      buckets.set(label, bucket);
+    }
+
+    const labels = [...buckets.keys()].reverse();
+    const values = labels.map((label) => buckets.get(label) ?? { shifts: 0, inspections: 0 });
+
+    return {
+      color: ['#1d4ed8', '#16a34a'],
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+      legend: {
+        top: 0,
+        data: ['Shifts', 'Inspections'],
+        textStyle: { color: '#374151', fontWeight: 700 },
+      },
+      grid: { left: 46, right: 24, top: 52, bottom: 42 },
+      xAxis: {
+        type: 'category',
+        data: labels,
+        axisLabel: { color: '#4b5563', fontWeight: 600 },
+      },
+      yAxis: {
+        type: 'value',
+        minInterval: 1,
+        axisLabel: { color: '#4b5563' },
+        splitLine: { lineStyle: { color: '#e5e7eb' } },
+      },
+      series: [
+        {
+          name: 'Shifts',
+          type: 'bar',
+          barMaxWidth: 36,
+          data: values.map((value) => value.shifts),
+          itemStyle: { borderRadius: [6, 6, 0, 0] },
+        },
+        {
+          name: 'Inspections',
+          type: 'line',
+          smooth: true,
+          symbolSize: 7,
+          data: values.map((value) => value.inspections),
+        },
+      ],
+    };
+  }
+
+  private monitorKey(shift: ShiftResponse): string {
+    return shift.user_id || this.loggedBy(shift).toLowerCase();
   }
 
   private gps(lat: number, lon: number): string {

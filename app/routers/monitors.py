@@ -117,6 +117,7 @@ def _shift_response(shift: Shift, user: AppUser | None = None) -> ShiftResponse:
     """Serialize a shift with the monitor's display name when available."""
     return ShiftResponse.model_validate(shift).model_copy(
         update={
+            "user_id": shift.user_id,
             "user_name": user.name if user else None,
             "user_surname": user.surname if user else None,
         }

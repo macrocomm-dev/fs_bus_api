@@ -398,6 +398,7 @@ class VehicleTripDetailResponse(BaseModel):
     route_score: float | None = None
     style_score: float | None = None
     risk_factor: float | None = None
+    event_count: int = 0
     high_risk: bool
 
 

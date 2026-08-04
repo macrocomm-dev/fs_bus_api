@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { LoginComponent } from './features/login/login.component';
 import { AnalyticsComponent } from './features/analytics/analytics.component';
 import { InspectionsComponent } from './features/inspections/inspections.component';
+import { MonitorsComponent } from './features/monitors/monitors.component';
 import { ReportingComponent } from './features/reporting/reporting.component';
 import { ShiftsComponent } from './features/shifts/shifts.component';
 import { SmartFleetComponent } from './features/smart-fleet/smart-fleet.component';
@@ -14,6 +15,7 @@ export const routes: Routes = [
   { path: 'home', redirectTo: 'reporting', pathMatch: 'full' },
   { path: 'analytics', component: AnalyticsComponent },
   { path: 'inspections', component: InspectionsComponent },
+  { path: 'monitors', component: MonitorsComponent },
   { path: 'reporting', component: ReportingComponent },
   { path: 'shifts', component: ShiftsComponent },
   { path: 'smart-fleet', component: SmartFleetComponent },

@@ -14,6 +14,7 @@
  */
 export interface ShiftResponse { 
     id: number;
+    user_id?: string | null;
     user_name?: string | null;
     user_surname?: string | null;
     start_time: string;
@@ -25,4 +26,3 @@ export interface ShiftResponse {
     device_id: string;
     created_at: string;
 }
-

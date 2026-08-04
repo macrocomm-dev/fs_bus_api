@@ -1,0 +1,318 @@
+<div class="monitors-wrapper">
+  <p-drawer
+    [(visible)]="menuVisible"
+    position="left"
+    styleClass="nav-drawer"
+    [modal]="false"
+    [showCloseIcon]="false"
+  >
+    <p-menu [model]="navigationItems" styleClass="nav-drawer__menu" />
+  </p-drawer>
+
+  <p-toolbar styleClass="top-bar">
+    <ng-template pTemplate="start">
+      <p-button
+        icon="pi pi-bars"
+        [text]="true"
+        severity="secondary"
+        styleClass="menu-toggle"
+        (onClick)="toggleMenu()"
+        pTooltip="Toggle navigation"
+        tooltipPosition="bottom"
+      />
+      <img src="macrocomm-black-background-toolbar.png" alt="Macrocomm" class="toolbar-logo" />
+      <span class="app-name">
+        <i class="pi pi-users mr-2"></i>FS Bus &#8211; Monitors
+      </span>
+    </ng-template>
+    <ng-template pTemplate="end">
+      @if (session()) {
+        <p-avatar
+          [label]="(session()!.name?.[0] ?? '') + (session()!.surname?.[0] ?? '')"
+          shape="circle"
+          styleClass="mr-2"
+        />
+        <span class="user-name mr-2">{{ session()!.name }} {{ session()!.surname }}</span>
+        <p-tag [value]="session()!.role" severity="info" styleClass="mr-3" />
+      }
+      <p-button
+        label="Sign out"
+        icon="pi pi-sign-out"
+        severity="secondary"
+        [outlined]="true"
+        size="small"
+        styleClass="signout-btn"
+        (onClick)="logout()"
+      />
+    </ng-template>
+  </p-toolbar>
+
+  <div class="monitors-body" [class.monitors-body--drawer-open]="menuVisible">
+    <main class="monitors-content">
+      <div class="page-header">
+        <div>
+          <h2>Monitor Performance</h2>
+          <p class="subtitle">Select a monitor to review their shifts and inspections.</p>
+        </div>
+
+        <p-floatlabel variant="on" class="app-float-label monitor-select">
+          <p-select
+            inputId="monitor-select"
+            [options]="monitorOptions()"
+            [ngModel]="selectedMonitorId()"
+            (ngModelChange)="selectedMonitorId.set($event)"
+            optionLabel="label"
+            optionValue="value"
+          />
+          <label for="monitor-select">Monitor</label>
+        </p-floatlabel>
+      </div>
+
+      @if (error()) {
+        <div class="error-banner">{{ error() }}</div>
+      }
+
+      <section class="monitor-summary-grid" aria-label="Monitor summary">
+        <article class="summary-card summary-card--blue">
+          <span>Shifts</span>
+          <strong>{{ summary().shifts }}</strong>
+        </article>
+        <article class="summary-card summary-card--green">
+          <span>Inspections</span>
+          <strong>{{ summary().inspections }}</strong>
+        </article>
+        <article class="summary-card summary-card--red">
+          <span>Failed Inspections</span>
+          <strong>{{ summary().failed }}</strong>
+        </article>
+        <article class="summary-card summary-card--slate">
+          <span>Buses Inspected</span>
+          <strong>{{ summary().buses }}</strong>
+        </article>
+      </section>
+
+      <section class="monitor-section">
+        <div class="section-header">
+          <div>
+            <h3>Shifts and Inspections Over Time</h3>
+            <p>Daily shift count with linked inspection totals.</p>
+          </div>
+        </div>
+
+        <div class="monitor-chart-card">
+          <div echarts [options]="monitorChartOptions()" class="monitor-chart"></div>
+        </div>
+      </section>
+
+      <section class="monitor-section">
+        <div class="section-header">
+          <div>
+            <h3>Monitor Shifts</h3>
+            <p>Shift rows for the selected monitor, with inspections expandable per shift.</p>
+          </div>
+        </div>
+
+        <p-table
+          #monitorShiftsTable
+          [value]="selectedShifts()"
+          [loading]="loading()"
+          [paginator]="true"
+          [rows]="10"
+          [rowsPerPageOptions]="[10, 25, 50]"
+          [globalFilterFields]="['id', 'loggedBy', 'device_id', 'startGps', 'endGps', 'start_time', 'end_time']"
+          sortMode="multiple"
+          styleClass="records-table"
+          stripedRows
+          dataKey="id"
+        >
+          <ng-template pTemplate="caption">
+            <p-floatlabel variant="on" class="app-float-label record-search">
+              <p-iconfield iconPosition="left">
+                <p-inputicon styleClass="pi pi-search" />
+                <input
+                  pInputText
+                  id="monitor-shift-search"
+                  #shiftSearch
+                  type="text"
+                  (input)="monitorShiftsTable.filterGlobal(shiftSearch.value, 'contains')"
+                />
+              </p-iconfield>
+              <label for="monitor-shift-search">Search monitor shifts</label>
+            </p-floatlabel>
+          </ng-template>
+
+          <ng-template pTemplate="header">
+            <tr>
+              <th class="expander-column"></th>
+              <th pSortableColumn="id">Shift <p-sortIcon field="id" /></th>
+              <th pSortableColumn="start_time">Start <p-sortIcon field="start_time" /></th>
+              <th pSortableColumn="end_time">End <p-sortIcon field="end_time" /></th>
+              <th pSortableColumn="duration">Duration <p-sortIcon field="duration" /></th>
+              <th pSortableColumn="inspectionCount">Inspections <p-sortIcon field="inspectionCount" /></th>
+              <th pSortableColumn="failedInspectionCount">Failed <p-sortIcon field="failedInspectionCount" /></th>
+              <th pSortableColumn="device_id">Device <p-sortIcon field="device_id" /></th>
+              <th pSortableColumn="created_at">Created <p-sortIcon field="created_at" /></th>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="body" let-row let-expanded="expanded">
+            <tr>
+              <td>
+                <p-button
+                  type="button"
+                  [pRowToggler]="row"
+                  [text]="true"
+                  severity="secondary"
+                  [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
+                  styleClass="row-expander-button"
+                  pTooltip="Show shift inspections"
+                  tooltipPosition="right"
+                />
+              </td>
+              <td class="mono-cell">{{ row.id }}</td>
+              <td>{{ row.start_time | date: 'yyyy-MM-dd HH:mm' }}</td>
+              <td>{{ row.end_time | date: 'yyyy-MM-dd HH:mm' }}</td>
+              <td>{{ row.duration }}</td>
+              <td>{{ row.inspectionCount }}</td>
+              <td>
+                <p-tag
+                  [value]="row.failedInspectionCount"
+                  [severity]="row.failedInspectionCount > 0 ? 'danger' : 'success'"
+                />
+              </td>
+              <td class="mono-cell">{{ row.device_id }}</td>
+              <td>{{ row.created_at | date: 'yyyy-MM-dd HH:mm' }}</td>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="expandedrow" let-row>
+            <tr>
+              <td colspan="9" class="shift-detail-cell">
+                <div class="shift-detail-panel">
+                  @if (row.inspections.length > 0) {
+                    <div class="shift-inspection-list">
+                      @for (inspection of row.inspections; track inspection.inspectionId) {
+                        <article class="shift-inspection-item">
+                          <div class="shift-inspection-item__heading">
+                            <div>
+                              <span>{{ inspection.type }}</span>
+                              <strong>#{{ inspection.inspectionId }}</strong>
+                            </div>
+                            <p-tag
+                              [value]="statusLabel(inspection.pass)"
+                              [severity]="statusSeverity(inspection.pass)"
+                            />
+                          </div>
+                          <dl>
+                            <div>
+                              <dt>Bus</dt>
+                              <dd class="mono-cell">{{ inspection.busId }}</dd>
+                            </div>
+                            <div>
+                              <dt>Fleet</dt>
+                              <dd>{{ inspection.fleetNumber || '-' }}</dd>
+                            </div>
+                            <div>
+                              <dt>Duty</dt>
+                              <dd>{{ inspection.dutyNumber || '-' }}</dd>
+                            </div>
+                            <div>
+                              <dt>Time</dt>
+                              <dd>{{ inspection.inspectionTime | date: 'yyyy-MM-dd HH:mm' }}</dd>
+                            </div>
+                          </dl>
+                          <p>{{ inspection.summary }}</p>
+                        </article>
+                      }
+                    </div>
+                  } @else {
+                    <div class="shift-empty-inspections">No inspections are linked to this shift.</div>
+                  }
+                </div>
+              </td>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="9" class="empty-message">No shifts are available for this monitor.</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </section>
+
+      <section class="monitor-section">
+        <div class="section-header">
+          <div>
+            <h3>Monitor Inspections</h3>
+            <p>All inspections linked to the selected monitor's shifts.</p>
+          </div>
+        </div>
+
+        <p-table
+          #monitorInspectionsTable
+          [value]="selectedInspections()"
+          [paginator]="true"
+          [rows]="10"
+          [rowsPerPageOptions]="[10, 25, 50]"
+          [globalFilterFields]="['inspectionId', 'shiftId', 'busId', 'fleetNumber', 'dutyNumber', 'type', 'summary']"
+          sortMode="multiple"
+          styleClass="records-table"
+          stripedRows
+        >
+          <ng-template pTemplate="caption">
+            <p-floatlabel variant="on" class="app-float-label record-search">
+              <p-iconfield iconPosition="left">
+                <p-inputicon styleClass="pi pi-search" />
+                <input
+                  pInputText
+                  id="monitor-inspection-search"
+                  #inspectionSearch
+                  type="text"
+                  (input)="monitorInspectionsTable.filterGlobal(inspectionSearch.value, 'contains')"
+                />
+              </p-iconfield>
+              <label for="monitor-inspection-search">Search monitor inspections</label>
+            </p-floatlabel>
+          </ng-template>
+
+          <ng-template pTemplate="header">
+            <tr>
+              <th pSortableColumn="inspectionId">Inspection <p-sortIcon field="inspectionId" /></th>
+              <th pSortableColumn="shiftId">Shift <p-sortIcon field="shiftId" /></th>
+              <th pSortableColumn="busId">Bus <p-sortIcon field="busId" /></th>
+              <th pSortableColumn="fleetNumber">Fleet <p-sortIcon field="fleetNumber" /></th>
+              <th pSortableColumn="dutyNumber">Duty <p-sortIcon field="dutyNumber" /></th>
+              <th pSortableColumn="type">Type <p-sortIcon field="type" /></th>
+              <th pSortableColumn="inspectionTime">Time <p-sortIcon field="inspectionTime" /></th>
+              <th pSortableColumn="pass">Status <p-sortIcon field="pass" /></th>
+              <th>Summary</th>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="body" let-row>
+            <tr>
+              <td class="mono-cell">{{ row.inspectionId }}</td>
+              <td class="mono-cell">{{ row.shiftId }}</td>
+              <td class="mono-cell">{{ row.busId }}</td>
+              <td>{{ row.fleetNumber || '-' }}</td>
+              <td>{{ row.dutyNumber || '-' }}</td>
+              <td>{{ row.type }}</td>
+              <td>{{ row.inspectionTime | date: 'yyyy-MM-dd HH:mm' }}</td>
+              <td>
+                <p-tag [value]="statusLabel(row.pass)" [severity]="statusSeverity(row.pass)" />
+              </td>
+              <td class="wide-cell">{{ row.summary }}</td>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="9" class="empty-message">No inspections are available for this monitor.</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </section>
+    </main>
+  </div>
+</div>
