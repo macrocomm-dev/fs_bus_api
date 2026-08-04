@@ -796,7 +796,7 @@ class DateRangeLimitQueryParams(BaseModel):
         examples=["16:00:00"],
     )
     limit: Optional[int] = Field(
-        100,
+        None,
         description="Maximum number of records to return",
         examples=[100],
     )
@@ -826,7 +826,7 @@ def date_range_params(
         examples=["16:00:00"],
     ),
     limit: Optional[int] = Query(
-        100, description="Maximum number of records to return", examples=[100]
+        None, description="Maximum number of records to return", examples=[100]
     ),
 ) -> DateRangeLimitQueryParams:
     """Build ``DateRangeLimitQueryParams`` from FastAPI query parameters."""

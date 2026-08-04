@@ -19,6 +19,7 @@ Frontend behavior:
 - `(onLazyLoad)` sends PrimeNG's `first`, `rows`, `sortField`, `sortOrder`, and the global search value to the API.
 - The page fetches only the visible shift page.
 - Inspection expansion still works by fetching inspection groups only for the visible shift IDs.
+- Shift expansion lookups rely on the inspection read endpoints returning all matching rows when no explicit `limit` is supplied. This avoids a mismatch where a shift row count is correct but the expansion is empty because the grouped-inspection request was capped before that shift's rows were reached.
 - Expanded shift rows group inspection cards by bus/fleet/duty inside PrimeNG fieldsets, so bus identity is shown once per group instead of repeated on every inspection card.
 
 Backend behavior:
