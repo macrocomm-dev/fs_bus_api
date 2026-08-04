@@ -15,6 +15,7 @@ import { AppSchemasOperationsErrorResponse } from '../model/models';
 import { HTTPValidationError } from '../model/models';
 import { ShiftCreate } from '../model/models';
 import { ShiftCreatedResponse } from '../model/models';
+import { ShiftPageResponse } from '../model/models';
 import { ShiftResponse } from '../model/models';
 
 
@@ -26,6 +27,19 @@ export interface CreateShiftShiftCreateShiftPostRequestParams {
 }
 
 export interface GetAllShiftsShiftShiftsGetRequestParams {
+    startDate?: string | null;
+    endDate?: string | null;
+    startTime?: string | null;
+    endTime?: string | null;
+    limit?: number | null;
+}
+
+export interface GetShiftsPagedShiftShiftsPagedGetRequestParams {
+    first?: number | null;
+    rows?: number | null;
+    search?: string | null;
+    sortField?: string | null;
+    sortOrder?: number | null;
     startDate?: string | null;
     endDate?: string | null;
     startTime?: string | null;
@@ -57,6 +71,14 @@ export interface ShiftsServiceInterface {
 * @param requestParameters
      */
     getAllShiftsShiftShiftsGet(requestParameters: GetAllShiftsShiftShiftsGetRequestParams, extraHttpRequestParams?: any): Observable<Array<ShiftResponse>>;
+
+    /**
+     * Get shifts using server-side pagination, search, and sorting
+     * Return one server-side page of shift rows for the PrimeNG lazy table.
+     * @endpoint get /shift/shifts/paged
+* @param requestParameters
+     */
+    getShiftsPagedShiftShiftsPagedGet(requestParameters: GetShiftsPagedShiftShiftsPagedGetRequestParams, extraHttpRequestParams?: any): Observable<ShiftPageResponse>;
 
     /**
      * Get shifts by one or more IDs

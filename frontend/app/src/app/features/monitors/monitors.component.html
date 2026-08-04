@@ -190,39 +190,41 @@
               <td colspan="9" class="shift-detail-cell">
                 <div class="shift-detail-panel">
                   @if (row.inspections.length > 0) {
-                    <div class="shift-inspection-list">
-                      @for (inspection of row.inspections; track inspection.inspectionId) {
-                        <article class="shift-inspection-item">
-                          <div class="shift-inspection-item__heading">
-                            <div>
-                              <span>{{ inspection.type }}</span>
-                              <strong>#{{ inspection.inspectionId }}</strong>
-                            </div>
-                            <p-tag
-                              [value]="statusLabel(inspection.pass)"
-                              [severity]="statusSeverity(inspection.pass)"
-                            />
+                    <div class="shift-bus-fieldsets">
+                      @for (group of inspectionGroupsForShift(row); track group.key) {
+                        <p-fieldset
+                          [legend]="busGroupLegend(group)"
+                          [toggleable]="true"
+                          styleClass="bus-inspection-fieldset"
+                        >
+                          <div class="shift-inspection-list">
+                            @for (inspection of group.inspections; track inspection.inspectionId) {
+                              <article class="shift-inspection-item">
+                                <div class="shift-inspection-item__heading">
+                                  <div>
+                                    <span>{{ inspection.type }}</span>
+                                    <strong>#{{ inspection.inspectionId }}</strong>
+                                  </div>
+                                  <p-tag
+                                    [value]="statusLabel(inspection.pass)"
+                                    [severity]="statusSeverity(inspection.pass)"
+                                  />
+                                </div>
+                                <dl>
+                                  <div>
+                                    <dt>Time</dt>
+                                    <dd>{{ inspection.inspectionTime | date: 'yyyy-MM-dd HH:mm' }}</dd>
+                                  </div>
+                                  <div>
+                                    <dt>GPS</dt>
+                                    <dd class="mono-cell">{{ inspection.gps }}</dd>
+                                  </div>
+                                </dl>
+                                <p>{{ inspection.summary }}</p>
+                              </article>
+                            }
                           </div>
-                          <dl>
-                            <div>
-                              <dt>Bus</dt>
-                              <dd class="mono-cell">{{ inspection.busId }}</dd>
-                            </div>
-                            <div>
-                              <dt>Fleet</dt>
-                              <dd>{{ inspection.fleetNumber || '-' }}</dd>
-                            </div>
-                            <div>
-                              <dt>Duty</dt>
-                              <dd>{{ inspection.dutyNumber || '-' }}</dd>
-                            </div>
-                            <div>
-                              <dt>Time</dt>
-                              <dd>{{ inspection.inspectionTime | date: 'yyyy-MM-dd HH:mm' }}</dd>
-                            </div>
-                          </dl>
-                          <p>{{ inspection.summary }}</p>
-                        </article>
+                        </p-fieldset>
                       }
                     </div>
                   } @else {

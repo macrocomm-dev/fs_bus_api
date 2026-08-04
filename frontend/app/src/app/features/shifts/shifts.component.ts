@@ -6,6 +6,7 @@ import type { MenuItem } from 'primeng/api';
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
 import { DrawerModule } from 'primeng/drawer';
+import { FieldsetModule } from 'primeng/fieldset';
 import { FloatLabelModule } from 'primeng/floatlabel';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
@@ -44,6 +45,22 @@ type ShiftRow = ShiftResponse & {
   failedInspectionCount: number;
 };
 
+type ShiftInspectionBusGroup = {
+  key: string;
+  busId: string;
+  fleetNumber: string;
+  dutyNumber: string;
+  inspections: ShiftInspectionItem[];
+};
+
+type ShiftLazyLoadEvent = {
+  first?: number | null;
+  rows?: number | null;
+  sortField?: string | string[] | null;
+  sortOrder?: number | null;
+  multiSortMeta?: { field: string; order: number }[] | null;
+};
+
 @Component({
   selector: 'app-shifts',
   standalone: true,
@@ -52,6 +69,7 @@ type ShiftRow = ShiftResponse & {
     AvatarModule,
     ButtonModule,
     DrawerModule,
+    FieldsetModule,
     FloatLabelModule,
     IconFieldModule,
     InputIconModule,
@@ -73,8 +91,17 @@ export class ShiftsComponent implements OnInit {
 
   readonly session = this.auth.session;
   readonly shifts = signal<ShiftRow[]>([]);
+  readonly totalRecords = signal(0);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
+  readonly searchTerm = signal('');
+  readonly rowsPerPage = signal(25);
+  private lastLazyEvent: ShiftLazyLoadEvent = {
+    first: 0,
+    rows: 25,
+    sortField: 'created_at',
+    sortOrder: -1,
+  };
 
   menuVisible = true;
   readonly navigationItems: MenuItem[] = [
@@ -150,21 +177,72 @@ export class ShiftsComponent implements OnInit {
     return 'Not set';
   }
 
-  private loadShifts(): void {
+  inspectionGroupsForShift(row: ShiftRow): ShiftInspectionBusGroup[] {
+    const groups = new Map<string, ShiftInspectionBusGroup>();
+    for (const inspection of row.inspections) {
+      const key = [
+        inspection.busId || 'unknown-bus',
+        inspection.fleetNumber || 'unknown-fleet',
+        inspection.dutyNumber || 'unknown-duty',
+      ].join('|');
+      const existing =
+        groups.get(key) ??
+        {
+          key,
+          busId: inspection.busId || '-',
+          fleetNumber: inspection.fleetNumber || '-',
+          dutyNumber: inspection.dutyNumber || '-',
+          inspections: [],
+        };
+      existing.inspections.push(inspection);
+      groups.set(key, existing);
+    }
+
+    return [...groups.values()];
+  }
+
+  busGroupLegend(group: ShiftInspectionBusGroup): string {
+    const bus = group.busId !== '-' ? `Bus ${group.busId}` : 'Unknown bus';
+    const fleet = group.fleetNumber !== '-' ? `Fleet ${group.fleetNumber}` : 'Fleet not set';
+    const duty = group.dutyNumber !== '-' ? `Duty ${group.dutyNumber}` : 'Duty not set';
+    return `${bus} | ${fleet} | ${duty}`;
+  }
+
+  onLazyLoad(event: ShiftLazyLoadEvent): void {
+    this.lastLazyEvent = event;
+    this.loadShifts(event);
+  }
+
+  onSearch(value: string, table: { reset: () => void }): void {
+    this.searchTerm.set(value);
+    table.reset();
+  }
+
+  private loadShifts(event: ShiftLazyLoadEvent = this.lastLazyEvent): void {
     this.loading.set(true);
     this.error.set(null);
 
+    const rows = event.rows ?? this.rowsPerPage();
+    this.rowsPerPage.set(rows);
+
     this.shiftsApi
-      .getAllShiftsShiftShiftsGet(
-        { limit: 500 },
+      .getShiftsPagedShiftShiftsPagedGet(
+        {
+          first: event.first ?? 0,
+          rows,
+          search: this.searchTerm().trim() || undefined,
+          sortField: this.sortField(event),
+          sortOrder: this.sortOrder(event),
+        },
         'body',
         false,
         { transferCache: false },
       )
       .subscribe({
         next: (response) => {
-          const shifts = response ?? [];
+          const shifts = response.items ?? [];
           const shiftIds = shifts.map((shift) => shift.id);
+          this.totalRecords.set(response.total ?? 0);
 
           if (shiftIds.length === 0) {
             this.shifts.set([]);
@@ -198,6 +276,7 @@ export class ShiftsComponent implements OnInit {
         },
         error: (err) => {
           this.loading.set(false);
+          this.totalRecords.set(0);
           this.error.set(err?.error?.detail ?? 'Could not load shifts.');
         },
       });
@@ -214,23 +293,34 @@ export class ShiftsComponent implements OnInit {
       inspectionsByShift.set(group.shift_id, [...existing, ...items]);
     }
 
-    return shifts
-      .map((shift) => {
-        const inspections = (inspectionsByShift.get(shift.id) ?? []).sort(
-          (a, b) => Date.parse(b.inspectionTime) - Date.parse(a.inspectionTime),
-        );
-        return {
-          ...shift,
-          loggedBy: this.loggedBy(shift),
-          duration: this.duration(shift.start_time, shift.end_time),
-          startGps: this.gps(shift.start_lat, shift.start_lon),
-          endGps: this.gps(shift.end_lat, shift.end_lon),
-          inspections,
-          inspectionCount: inspections.length,
-          failedInspectionCount: inspections.filter((inspection) => inspection.pass === false).length,
-        };
-      })
-      .sort((a, b) => Date.parse(b.start_time) - Date.parse(a.start_time));
+    return shifts.map((shift) => {
+      const inspections = (inspectionsByShift.get(shift.id) ?? []).sort(
+        (a, b) => Date.parse(b.inspectionTime) - Date.parse(a.inspectionTime),
+      );
+      return {
+        ...shift,
+        loggedBy: this.loggedBy(shift),
+        duration: this.duration(shift.start_time, shift.end_time),
+        startGps: this.gps(shift.start_lat, shift.start_lon),
+        endGps: this.gps(shift.end_lat, shift.end_lon),
+        inspections,
+        inspectionCount: inspections.length || shift.inspection_count || 0,
+        failedInspectionCount:
+          inspections.length > 0
+            ? inspections.filter((inspection) => inspection.pass === false).length
+            : shift.failed_inspection_count || 0,
+      };
+    });
+  }
+
+  private sortField(event: ShiftLazyLoadEvent): string {
+    const multiSortField = event.multiSortMeta?.[0]?.field;
+    const sortField = Array.isArray(event.sortField) ? event.sortField[0] : event.sortField;
+    return multiSortField || sortField || 'created_at';
+  }
+
+  private sortOrder(event: ShiftLazyLoadEvent): number {
+    return event.multiSortMeta?.[0]?.order ?? event.sortOrder ?? -1;
   }
 
   private flattenShiftInspectionGroup(group: GroupedBusInspectionResponse): ShiftInspectionItem[] {

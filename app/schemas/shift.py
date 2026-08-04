@@ -582,8 +582,19 @@ class ShiftResponse(BaseModel):
     end_lon: float
     device_id: str
     created_at: datetime
+    inspection_count: int = 0
+    failed_inspection_count: int = 0
 
     model_config = {"from_attributes": True}
+
+
+class ShiftPageResponse(BaseModel):
+    """Server-side page of shift rows for PrimeNG lazy tables."""
+
+    items: List[ShiftResponse]
+    total: int
+    first: int
+    rows: int
 
 
 class SelfieResponse(BaseModel):

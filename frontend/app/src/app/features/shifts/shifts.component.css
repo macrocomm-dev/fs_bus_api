@@ -188,6 +188,27 @@
   border-top: 1px solid #e5e7eb;
 }
 
+.shift-bus-fieldsets {
+  display: grid;
+  gap: 1rem;
+}
+
+:host ::ng-deep .bus-inspection-fieldset {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+:host ::ng-deep .bus-inspection-fieldset .p-fieldset-legend {
+  color: #111827;
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+:host ::ng-deep .bus-inspection-fieldset .p-fieldset-content {
+  padding: 1rem;
+}
+
 .shift-inspection-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -229,7 +250,7 @@
 
 .shift-inspection-item dl {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.75rem;
   margin: 0;
 }

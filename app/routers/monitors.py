@@ -11,8 +11,18 @@ from typing import Annotated, List, Optional
 
 import base64
 import json
-from fastapi import BackgroundTasks, Depends, HTTPException, APIRouter, Query, Request, Form, status
+from fastapi import (
+    BackgroundTasks,
+    Depends,
+    HTTPException,
+    APIRouter,
+    Query,
+    Request,
+    Form,
+    status,
+)
 from firebase_admin import db
+from sqlalchemy import String, cast, func, or_
 from sqlalchemy.exc import IntegrityError, DataError, OperationalError
 from sqlalchemy.orm import Session
 
@@ -30,6 +40,7 @@ from app.schemas.shift import (
     ShiftCreate,
     ShiftCreateMeta,
     ShiftCreatedResponse,
+    ShiftPageResponse,
     ShiftResponse,
     ErrorResponse,
     PhotoIn,
@@ -122,6 +133,34 @@ def _shift_response(shift: Shift, user: AppUser | None = None) -> ShiftResponse:
             "user_surname": user.surname if user else None,
         }
     )
+
+
+def _shift_page_sort_expression(
+    sort_field: str | None,
+    inspection_count,
+    failed_inspection_count,
+):
+    """Map UI sort names to safe SQLAlchemy expressions."""
+
+    if sort_field == "id":
+        return Shift.id
+    if sort_field == "loggedBy":
+        return func.coalesce(AppUser.full_name, "")
+    if sort_field == "start_time":
+        return Shift.start_time
+    if sort_field == "end_time":
+        return Shift.end_time
+    if sort_field == "duration":
+        return Shift.end_time - Shift.start_time
+    if sort_field == "inspectionCount":
+        return inspection_count
+    if sort_field == "failedInspectionCount":
+        return failed_inspection_count
+    if sort_field == "device_id":
+        return Shift.device_id
+    if sort_field == "created_at":
+        return Shift.created_at
+    return Shift.created_at
 
 
 def _photo_payloads_from_inline(photo_groups: dict[str, list]) -> list[dict]:
@@ -845,6 +884,116 @@ async def get_all_shifts(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error retrieving shifts: {exc}",
+        )
+
+
+@monitor_router.get(
+    "/shifts/paged",
+    response_model=ShiftPageResponse,
+    responses={**_401, **_500},
+    summary="Get shifts using server-side pagination, search, and sorting",
+)
+async def get_shifts_paged(
+    first: int = Query(0, ge=0, description="Zero-based row offset"),
+    rows: int = Query(25, ge=1, le=100, description="Number of rows to return"),
+    search: str | None = Query(None, description="Global table search value"),
+    sort_field: str | None = Query(
+        "created_at", description="PrimeNG sort field name"
+    ),
+    sort_order: int = Query(
+        -1, description="PrimeNG sort order: 1 for ascending, -1 for descending"
+    ),
+    params: DateRangeLimitQueryParams = Depends(date_range_params),
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    """Return one server-side page of shift rows for the PrimeNG lazy table."""
+
+    try:
+        inspection_counts = (
+            db.query(
+                BusInspection.shift_id.label("shift_id"),
+                func.count(BusInspection.id).label("inspection_count"),
+                func.count(BusInspection.id)
+                .filter(BusInspection.pass_.is_(False))
+                .label("failed_inspection_count"),
+            )
+            .group_by(BusInspection.shift_id)
+            .subquery()
+        )
+
+        inspection_count = func.coalesce(inspection_counts.c.inspection_count, 0)
+        failed_inspection_count = func.coalesce(
+            inspection_counts.c.failed_inspection_count, 0
+        )
+
+        query = (
+            db.query(Shift, AppUser, inspection_count, failed_inspection_count)
+            .outerjoin(AppUser, AppUser.firebase_uid == Shift.user_id)
+            .outerjoin(inspection_counts, inspection_counts.c.shift_id == Shift.id)
+        )
+
+        if params.start_date:
+            start_dt = datetime.datetime.combine(
+                params.start_date, params.start_time or time.min
+            )
+            query = query.filter(Shift.created_at >= start_dt)
+        if params.end_date:
+            end_dt = datetime.datetime.combine(
+                params.end_date, params.end_time or time(23, 59, 59)
+            )
+            query = query.filter(Shift.created_at <= end_dt)
+
+        if search and search.strip():
+            value = f"%{search.strip().lower()}%"
+            query = query.filter(
+                or_(
+                    cast(Shift.id, String).ilike(value),
+                    func.lower(func.coalesce(AppUser.full_name, "")).like(value),
+                    func.lower(func.coalesce(AppUser.name, "")).like(value),
+                    func.lower(func.coalesce(AppUser.surname, "")).like(value),
+                    func.lower(func.coalesce(Shift.user_id, "")).like(value),
+                    func.lower(func.coalesce(Shift.device_id, "")).like(value),
+                    cast(Shift.start_time, String).ilike(value),
+                    cast(Shift.end_time, String).ilike(value),
+                    cast(Shift.created_at, String).ilike(value),
+                    cast(Shift.start_lat, String).ilike(value),
+                    cast(Shift.start_lon, String).ilike(value),
+                    cast(Shift.end_lat, String).ilike(value),
+                    cast(Shift.end_lon, String).ilike(value),
+                )
+            )
+
+        total = query.count()
+        sort_expression = _shift_page_sort_expression(
+            sort_field,
+            inspection_count,
+            failed_inspection_count,
+        )
+        ordered_query = query.order_by(
+            sort_expression.asc() if sort_order == 1 else sort_expression.desc(),
+            Shift.id.desc(),
+        )
+        page_rows = ordered_query.offset(first).limit(rows).all()
+
+        return ShiftPageResponse(
+            items=[
+                _shift_response(shift, user).model_copy(
+                    update={
+                        "inspection_count": int(count or 0),
+                        "failed_inspection_count": int(failed_count or 0),
+                    }
+                )
+                for shift, user, count, failed_count in page_rows
+            ],
+            total=total,
+            first=first,
+            rows=rows,
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving paged shifts: {exc}",
         )
 
 

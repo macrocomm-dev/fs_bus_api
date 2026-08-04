@@ -25,4 +25,6 @@ export interface ShiftResponse {
     end_lon: number;
     device_id: string;
     created_at: string;
+    inspection_count?: number;
+    failed_inspection_count?: number;
 }

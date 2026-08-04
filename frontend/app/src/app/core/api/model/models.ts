@@ -45,6 +45,7 @@ export * from './selfieIn';
 export * from './selfieResponse';
 export * from './shiftCreate';
 export * from './shiftCreatedResponse';
+export * from './shiftPageResponse';
 export * from './shiftResponse';
 export * from './smartFleetIframeUrlResponse';
 export * from './userCreateRequest';

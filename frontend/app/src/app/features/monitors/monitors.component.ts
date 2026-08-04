@@ -5,10 +5,12 @@ import { Router } from '@angular/router';
 
 import type { EChartsOption } from 'echarts';
 import { NgxEchartsDirective } from 'ngx-echarts';
+import { catchError, forkJoin, map, of, throwError } from 'rxjs';
 import type { MenuItem } from 'primeng/api';
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
 import { DrawerModule } from 'primeng/drawer';
+import { FieldsetModule } from 'primeng/fieldset';
 import { FloatLabelModule } from 'primeng/floatlabel';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
@@ -56,6 +58,16 @@ type MonitorShiftRow = ShiftResponse & {
   failedInspectionCount: number;
 };
 
+type MonitorInspectionBusGroup = {
+  key: string;
+  busId: string;
+  fleetNumber: string;
+  dutyNumber: string;
+  inspections: MonitorInspectionItem[];
+};
+
+const INSPECTION_SHIFT_LOOKUP_CHUNK_SIZE = 80;
+
 @Component({
   selector: 'app-monitors',
   standalone: true,
@@ -65,6 +77,7 @@ type MonitorShiftRow = ShiftResponse & {
     AvatarModule,
     ButtonModule,
     DrawerModule,
+    FieldsetModule,
     FloatLabelModule,
     IconFieldModule,
     InputIconModule,
@@ -128,8 +141,8 @@ export class MonitorsComponent implements OnInit {
     const inspections = this.selectedInspections();
     return {
       shifts: shifts.length,
-      inspections: inspections.length,
-      failed: inspections.filter((inspection) => inspection.pass === false).length,
+      inspections: shifts.reduce((total, shift) => total + shift.inspectionCount, 0),
+      failed: shifts.reduce((total, shift) => total + shift.failedInspectionCount, 0),
       buses: new Set(inspections.map((inspection) => inspection.busId).filter(Boolean)).size,
     };
   });
@@ -210,6 +223,37 @@ export class MonitorsComponent implements OnInit {
     return 'Not set';
   }
 
+  inspectionGroupsForShift(row: MonitorShiftRow): MonitorInspectionBusGroup[] {
+    const groups = new Map<string, MonitorInspectionBusGroup>();
+    for (const inspection of row.inspections) {
+      const key = [
+        inspection.busId || 'unknown-bus',
+        inspection.fleetNumber || 'unknown-fleet',
+        inspection.dutyNumber || 'unknown-duty',
+      ].join('|');
+      const existing =
+        groups.get(key) ??
+        {
+          key,
+          busId: inspection.busId || '-',
+          fleetNumber: inspection.fleetNumber || '-',
+          dutyNumber: inspection.dutyNumber || '-',
+          inspections: [],
+        };
+      existing.inspections.push(inspection);
+      groups.set(key, existing);
+    }
+
+    return [...groups.values()];
+  }
+
+  busGroupLegend(group: MonitorInspectionBusGroup): string {
+    const bus = group.busId !== '-' ? `Bus ${group.busId}` : 'Unknown bus';
+    const fleet = group.fleetNumber !== '-' ? `Fleet ${group.fleetNumber}` : 'Fleet not set';
+    const duty = group.dutyNumber !== '-' ? `Duty ${group.dutyNumber}` : 'Duty not set';
+    return `${bus} | ${fleet} | ${duty}`;
+  }
+
   private loadMonitorData(): void {
     this.loading.set(true);
     this.error.set(null);
@@ -227,13 +271,7 @@ export class MonitorsComponent implements OnInit {
             return;
           }
 
-          this.inspectionApi
-            .getBusInspectionsByShiftInspectionBusInspectionsByShiftIdsGet(
-              { shiftIds },
-              'body',
-              false,
-              { transferCache: false },
-            )
+          this.loadInspectionGroupsByShiftIds(shiftIds)
             .subscribe({
               next: (inspectionGroups) => {
                 const rows = this.buildShiftRows(shifts, inspectionGroups ?? []);
@@ -262,6 +300,36 @@ export class MonitorsComponent implements OnInit {
       });
   }
 
+  private loadInspectionGroupsByShiftIds(shiftIds: number[]) {
+    const chunks: number[][] = [];
+    for (let index = 0; index < shiftIds.length; index += INSPECTION_SHIFT_LOOKUP_CHUNK_SIZE) {
+      chunks.push(shiftIds.slice(index, index + INSPECTION_SHIFT_LOOKUP_CHUNK_SIZE));
+    }
+
+    if (chunks.length === 0) {
+      return of<GroupedBusInspectionResponse[]>([]);
+    }
+
+    return forkJoin(
+      chunks.map((chunk) =>
+        this.inspectionApi
+          .getBusInspectionsByShiftInspectionBusInspectionsByShiftIdsGet(
+            { shiftIds: chunk },
+            'body',
+            false,
+            { transferCache: false },
+          )
+          .pipe(
+            catchError((error) =>
+              error?.status === 404
+                ? of<GroupedBusInspectionResponse[]>([])
+                : throwError(() => error),
+            ),
+          ),
+      ),
+    ).pipe(map((results) => results.flat()));
+  }
+
   private buildShiftRows(
     shifts: ShiftResponse[],
     inspectionGroups: GroupedBusInspectionResponse[],
@@ -285,8 +353,11 @@ export class MonitorsComponent implements OnInit {
           startGps: this.gps(shift.start_lat, shift.start_lon),
           endGps: this.gps(shift.end_lat, shift.end_lon),
           inspections,
-          inspectionCount: inspections.length,
-          failedInspectionCount: inspections.filter((inspection) => inspection.pass === false).length,
+          inspectionCount: inspections.length || shift.inspection_count || 0,
+          failedInspectionCount:
+            inspections.length > 0
+              ? inspections.filter((inspection) => inspection.pass === false).length
+              : shift.failed_inspection_count || 0,
         };
       })
       .sort((a, b) => Date.parse(b.start_time) - Date.parse(a.start_time));

@@ -52,7 +52,7 @@
       <div class="page-header">
         <div>
           <h2>Shift Records</h2>
-          <p class="subtitle">{{ shifts().length }} monitor shifts captured.</p>
+          <p class="subtitle">{{ totalRecords() }} monitor shifts captured.</p>
         </div>
 
         <p-floatlabel variant="on" class="app-float-label record-search">
@@ -63,7 +63,7 @@
               id="shift-search"
               #searchInput
               type="text"
-              (input)="shiftsTable.filterGlobal(searchInput.value, 'contains')"
+              (input)="onSearch(searchInput.value, shiftsTable)"
             />
           </p-iconfield>
           <label for="shift-search">Search shift, device, GPS or date</label>
@@ -78,23 +78,13 @@
         #shiftsTable
         [value]="shifts()"
         [loading]="loading()"
+        [lazy]="true"
+        [totalRecords]="totalRecords()"
+        (onLazyLoad)="onLazyLoad($event)"
         [paginator]="true"
-        [rows]="25"
+        [rows]="rowsPerPage()"
         [rowsPerPageOptions]="[25, 50, 100]"
-        [globalFilterFields]="[
-          'id',
-          'loggedBy',
-          'user_name',
-          'user_surname',
-          'device_id',
-          'startGps',
-          'endGps',
-          'start_time',
-          'end_time',
-          'inspectionCount',
-          'failedInspectionCount',
-        ]"
-        sortMode="multiple"
+        sortMode="single"
         styleClass="records-table"
         stripedRows
         dataKey="id"
@@ -153,46 +143,44 @@
 
         <ng-template pTemplate="expandedrow" let-row>
           <tr>
-            <td colspan="10" class="shift-detail-cell">
+            <td colspan="11" class="shift-detail-cell">
               <div class="shift-detail-panel">
                 @if (row.inspections.length > 0) {
-                  <div class="shift-inspection-list">
-                    @for (inspection of row.inspections; track inspection.inspectionId) {
-                      <article class="shift-inspection-item">
-                        <div class="shift-inspection-item__heading">
-                          <div>
-                            <span>{{ inspection.type }}</span>
-                            <strong>#{{ inspection.inspectionId }}</strong>
-                          </div>
-                          <p-tag
-                            [value]="statusLabel(inspection.pass)"
-                            [severity]="statusSeverity(inspection.pass)"
-                          />
+                  <div class="shift-bus-fieldsets">
+                    @for (group of inspectionGroupsForShift(row); track group.key) {
+                      <p-fieldset
+                        [legend]="busGroupLegend(group)"
+                        [toggleable]="true"
+                        styleClass="bus-inspection-fieldset"
+                      >
+                        <div class="shift-inspection-list">
+                          @for (inspection of group.inspections; track inspection.inspectionId) {
+                            <article class="shift-inspection-item">
+                              <div class="shift-inspection-item__heading">
+                                <div>
+                                  <span>{{ inspection.type }}</span>
+                                  <strong>#{{ inspection.inspectionId }}</strong>
+                                </div>
+                                <p-tag
+                                  [value]="statusLabel(inspection.pass)"
+                                  [severity]="statusSeverity(inspection.pass)"
+                                />
+                              </div>
+                              <dl>
+                                <div>
+                                  <dt>Time</dt>
+                                  <dd>{{ inspection.inspectionTime | date: 'yyyy-MM-dd HH:mm' }}</dd>
+                                </div>
+                                <div>
+                                  <dt>GPS</dt>
+                                  <dd class="mono-cell">{{ inspection.gps }}</dd>
+                                </div>
+                              </dl>
+                              <p>{{ inspection.summary }}</p>
+                            </article>
+                          }
                         </div>
-                        <dl>
-                          <div>
-                            <dt>Bus / VIN</dt>
-                            <dd class="mono-cell">{{ inspection.busId }}</dd>
-                          </div>
-                          <div>
-                            <dt>Fleet</dt>
-                            <dd>{{ inspection.fleetNumber || '—' }}</dd>
-                          </div>
-                          <div>
-                            <dt>Duty</dt>
-                            <dd>{{ inspection.dutyNumber || '—' }}</dd>
-                          </div>
-                          <div>
-                            <dt>Time</dt>
-                            <dd>{{ inspection.inspectionTime | date: 'yyyy-MM-dd HH:mm' }}</dd>
-                          </div>
-                          <div>
-                            <dt>GPS</dt>
-                            <dd class="mono-cell">{{ inspection.gps }}</dd>
-                          </div>
-                        </dl>
-                        <p>{{ inspection.summary }}</p>
-                      </article>
+                      </p-fieldset>
                     }
                   </div>
                 } @else {
@@ -205,7 +193,7 @@
 
         <ng-template pTemplate="emptymessage">
           <tr>
-            <td colspan="10" class="empty-message">No shift records found.</td>
+            <td colspan="11" class="empty-message">No shift records found.</td>
           </tr>
         </ng-template>
       </p-table>
