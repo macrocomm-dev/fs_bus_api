@@ -34,3 +34,14 @@ Backend behavior:
 The Monitors page loads shifts for the selected monitor and then fetches inspection groups in chunks by shift ID. The monitor summary cards, top chart, and shift table all use the same per-row `inspectionCount` value so totals stay aligned after the shift table inspection-count fix.
 
 Expanded monitor shift rows use the same bus/fleet/duty fieldset grouping as the Shifts page.
+
+## Shift Selfies
+
+Shift selfies are stored in `photos.selfies` and loaded through `GET /image/selfies/by_shift_ids`.
+
+Frontend behavior:
+
+- The Monitors page fetches selfies for the loaded shift IDs alongside inspection groups.
+- The selected monitor's latest selfie is derived by sorting that monitor's shift selfies by `timestamp` descending.
+- Expanded monitor and shift rows show shift selfie thumbnails with PrimeNG image preview.
+- Selfies are displayed at shift level because they belong to the monitor shift, not to a specific bus inspection row.

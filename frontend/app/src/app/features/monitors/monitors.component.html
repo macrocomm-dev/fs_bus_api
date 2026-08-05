@@ -72,6 +72,27 @@
         <div class="error-banner">{{ error() }}</div>
       }
 
+      <section class="last-selfie-card" aria-label="Last monitor selfie">
+        <div>
+          <span>Last Selfie</span>
+          @if (lastSelfie(); as selfie) {
+            <strong>{{ selfie.timestamp | date: 'yyyy-MM-dd HH:mm' }}</strong>
+            <p class="mono-cell">{{ selfie.lat | number: '1.5-5' }}, {{ selfie.lon | number: '1.5-5' }}</p>
+          } @else {
+            <strong>No selfie captured</strong>
+            <p>No shift selfie is available for the selected monitor.</p>
+          }
+        </div>
+        @if (lastSelfie(); as selfie) {
+          <p-image
+            [src]="selfieImageSrc(selfie.photo)"
+            alt="Last selfie for selected monitor"
+            [preview]="true"
+            imageClass="last-selfie-image"
+          />
+        }
+      </section>
+
       <section class="monitor-summary-grid" aria-label="Monitor summary">
         <article class="summary-card summary-card--blue">
           <span>Shifts</span>
@@ -189,6 +210,31 @@
             <tr>
               <td colspan="9" class="shift-detail-cell">
                 <div class="shift-detail-panel">
+                  @if (row.selfies.length > 0) {
+                    <section class="shift-selfie-panel" aria-label="Shift selfies">
+                      <div class="shift-selfie-panel__header">
+                        <span>Shift Selfies</span>
+                        <strong>{{ row.selfies.length }}</strong>
+                      </div>
+                      <div class="shift-selfie-list">
+                        @for (selfie of row.selfies; track selfie.id) {
+                          <figure class="shift-selfie-item">
+                            <p-image
+                              [src]="selfieImageSrc(selfie.photo)"
+                              alt="Shift selfie"
+                              [preview]="true"
+                              imageClass="shift-selfie-image"
+                            />
+                            <figcaption>
+                              <span>{{ selfie.timestamp | date: 'yyyy-MM-dd HH:mm' }}</span>
+                              <span class="mono-cell">{{ selfie.lat | number: '1.5-5' }}, {{ selfie.lon | number: '1.5-5' }}</span>
+                            </figcaption>
+                          </figure>
+                        }
+                      </div>
+                    </section>
+                  }
+
                   @if (row.inspections.length > 0) {
                     <div class="shift-bus-fieldsets">
                       @for (group of inspectionGroupsForShift(row); track group.key) {

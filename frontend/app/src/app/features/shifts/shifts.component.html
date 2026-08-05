@@ -145,6 +145,31 @@
           <tr>
             <td colspan="11" class="shift-detail-cell">
               <div class="shift-detail-panel">
+                @if (row.selfies.length > 0) {
+                  <section class="shift-selfie-panel" aria-label="Shift selfies">
+                    <div class="shift-selfie-panel__header">
+                      <span>Shift Selfies</span>
+                      <strong>{{ row.selfies.length }}</strong>
+                    </div>
+                    <div class="shift-selfie-list">
+                      @for (selfie of row.selfies; track selfie.id) {
+                        <figure class="shift-selfie-item">
+                          <p-image
+                            [src]="selfieImageSrc(selfie.photo)"
+                            alt="Shift selfie"
+                            [preview]="true"
+                            imageClass="shift-selfie-image"
+                          />
+                          <figcaption>
+                            <span>{{ selfie.timestamp | date: 'yyyy-MM-dd HH:mm' }}</span>
+                            <span class="mono-cell">{{ selfie.lat | number: '1.5-5' }}, {{ selfie.lon | number: '1.5-5' }}</span>
+                          </figcaption>
+                        </figure>
+                      }
+                    </div>
+                  </section>
+                }
+
                 @if (row.inspections.length > 0) {
                   <div class="shift-bus-fieldsets">
                     @for (group of inspectionGroupsForShift(row); track group.key) {

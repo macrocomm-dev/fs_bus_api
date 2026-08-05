@@ -13,6 +13,7 @@ import { DrawerModule } from 'primeng/drawer';
 import { FieldsetModule } from 'primeng/fieldset';
 import { FloatLabelModule } from 'primeng/floatlabel';
 import { IconFieldModule } from 'primeng/iconfield';
+import { ImageModule } from 'primeng/image';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
@@ -23,8 +24,10 @@ import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { InspectionService } from '../../core/api/api/inspection.service';
+import { ImageService } from '../../core/api/api/image.service';
 import { ShiftsService } from '../../core/api/api/shifts.service';
 import type { GroupedBusInspectionResponse } from '../../core/api/model/groupedBusInspectionResponse';
+import type { SelfieResponse } from '../../core/api/model/selfieResponse';
 import type { ShiftResponse } from '../../core/api/model/shiftResponse';
 import { AuthService } from '../../core/services/auth.service';
 
@@ -54,6 +57,7 @@ type MonitorShiftRow = ShiftResponse & {
   startGps: string;
   endGps: string;
   inspections: MonitorInspectionItem[];
+  selfies: SelfieResponse[];
   inspectionCount: number;
   failedInspectionCount: number;
 };
@@ -80,6 +84,7 @@ const INSPECTION_SHIFT_LOOKUP_CHUNK_SIZE = 80;
     FieldsetModule,
     FloatLabelModule,
     IconFieldModule,
+    ImageModule,
     InputIconModule,
     InputTextModule,
     MenuModule,
@@ -98,6 +103,7 @@ export class MonitorsComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly shiftsApi = inject(ShiftsService);
   private readonly inspectionApi = inject(InspectionService);
+  private readonly imageApi = inject(ImageService);
 
   readonly session = this.auth.session;
   readonly shifts = signal<MonitorShiftRow[]>([]);
@@ -135,6 +141,14 @@ export class MonitorsComponent implements OnInit {
       .flatMap((shift) => shift.inspections)
       .sort((a, b) => Date.parse(b.inspectionTime) - Date.parse(a.inspectionTime)),
   );
+
+  readonly selectedSelfies = computed(() =>
+    this.selectedShifts()
+      .flatMap((shift) => shift.selfies)
+      .sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp)),
+  );
+
+  readonly lastSelfie = computed(() => this.selectedSelfies()[0] ?? null);
 
   readonly summary = computed(() => {
     const shifts = this.selectedShifts();
@@ -254,6 +268,10 @@ export class MonitorsComponent implements OnInit {
     return `${bus} | ${fleet} | ${duty}`;
   }
 
+  selfieImageSrc(photo: string): string {
+    return photo.startsWith('data:image/') ? photo : `data:image/jpeg;base64,${photo}`;
+  }
+
   private loadMonitorData(): void {
     this.loading.set(true);
     this.error.set(null);
@@ -271,10 +289,13 @@ export class MonitorsComponent implements OnInit {
             return;
           }
 
-          this.loadInspectionGroupsByShiftIds(shiftIds)
+          forkJoin({
+            inspectionGroups: this.loadInspectionGroupsByShiftIds(shiftIds),
+            selfies: this.loadSelfiesByShiftIds(shiftIds),
+          })
             .subscribe({
-              next: (inspectionGroups) => {
-                const rows = this.buildShiftRows(shifts, inspectionGroups ?? []);
+              next: ({ inspectionGroups, selfies }) => {
+                const rows = this.buildShiftRows(shifts, inspectionGroups ?? [], selfies ?? []);
                 this.shifts.set(rows);
                 this.selectedMonitorId.set(this.selectedMonitorId() ?? this.monitorOptions()[0]?.value ?? null);
                 this.loading.set(false);
@@ -330,9 +351,38 @@ export class MonitorsComponent implements OnInit {
     ).pipe(map((results) => results.flat()));
   }
 
+  private loadSelfiesByShiftIds(shiftIds: number[]) {
+    const chunks: number[][] = [];
+    for (let index = 0; index < shiftIds.length; index += INSPECTION_SHIFT_LOOKUP_CHUNK_SIZE) {
+      chunks.push(shiftIds.slice(index, index + INSPECTION_SHIFT_LOOKUP_CHUNK_SIZE));
+    }
+
+    if (chunks.length === 0) {
+      return of<SelfieResponse[]>([]);
+    }
+
+    return forkJoin(
+      chunks.map((chunk) =>
+        this.imageApi
+          .getSelfiesByShiftImageSelfiesByShiftIdsGet(
+            { shiftIds: chunk },
+            'body',
+            false,
+            { transferCache: false },
+          )
+          .pipe(
+            catchError((error) =>
+              error?.status === 404 ? of<SelfieResponse[]>([]) : throwError(() => error),
+            ),
+          ),
+      ),
+    ).pipe(map((results) => results.flat()));
+  }
+
   private buildShiftRows(
     shifts: ShiftResponse[],
     inspectionGroups: GroupedBusInspectionResponse[],
+    selfies: SelfieResponse[] = [],
   ): MonitorShiftRow[] {
     const inspectionsByShift = new Map<number, MonitorInspectionItem[]>();
     for (const group of inspectionGroups) {
@@ -340,6 +390,7 @@ export class MonitorsComponent implements OnInit {
       const existing = inspectionsByShift.get(group.shift_id) ?? [];
       inspectionsByShift.set(group.shift_id, [...existing, ...items]);
     }
+    const selfiesByShift = this.groupSelfiesByShift(selfies);
 
     return shifts
       .map((shift) => {
@@ -353,6 +404,7 @@ export class MonitorsComponent implements OnInit {
           startGps: this.gps(shift.start_lat, shift.start_lon),
           endGps: this.gps(shift.end_lat, shift.end_lon),
           inspections,
+          selfies: selfiesByShift.get(shift.id) ?? [],
           inspectionCount: inspections.length || shift.inspection_count || 0,
           failedInspectionCount:
             inspections.length > 0
@@ -361,6 +413,21 @@ export class MonitorsComponent implements OnInit {
         };
       })
       .sort((a, b) => Date.parse(b.start_time) - Date.parse(a.start_time));
+  }
+
+  private groupSelfiesByShift(selfies: SelfieResponse[]): Map<number, SelfieResponse[]> {
+    const selfiesByShift = new Map<number, SelfieResponse[]>();
+    for (const selfie of selfies) {
+      const existing = selfiesByShift.get(selfie.shift_id) ?? [];
+      existing.push(selfie);
+      selfiesByShift.set(selfie.shift_id, existing);
+    }
+
+    for (const shiftSelfies of selfiesByShift.values()) {
+      shiftSelfies.sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp));
+    }
+
+    return selfiesByShift;
   }
 
   private flattenShiftInspectionGroup(group: GroupedBusInspectionResponse): MonitorInspectionItem[] {

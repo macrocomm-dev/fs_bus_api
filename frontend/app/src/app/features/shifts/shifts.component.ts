@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
+import { catchError, forkJoin, of, throwError } from 'rxjs';
 import type { MenuItem } from 'primeng/api';
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
@@ -9,6 +10,7 @@ import { DrawerModule } from 'primeng/drawer';
 import { FieldsetModule } from 'primeng/fieldset';
 import { FloatLabelModule } from 'primeng/floatlabel';
 import { IconFieldModule } from 'primeng/iconfield';
+import { ImageModule } from 'primeng/image';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
@@ -18,7 +20,9 @@ import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { InspectionService } from '../../core/api/api/inspection.service';
+import { ImageService } from '../../core/api/api/image.service';
 import type { GroupedBusInspectionResponse } from '../../core/api/model/groupedBusInspectionResponse';
+import type { SelfieResponse } from '../../core/api/model/selfieResponse';
 import { ShiftsService } from '../../core/api/api/shifts.service';
 import type { ShiftResponse } from '../../core/api/model/shiftResponse';
 import { AuthService } from '../../core/services/auth.service';
@@ -41,6 +45,7 @@ type ShiftRow = ShiftResponse & {
   startGps: string;
   endGps: string;
   inspections: ShiftInspectionItem[];
+  selfies: SelfieResponse[];
   inspectionCount: number;
   failedInspectionCount: number;
 };
@@ -72,6 +77,7 @@ type ShiftLazyLoadEvent = {
     FieldsetModule,
     FloatLabelModule,
     IconFieldModule,
+    ImageModule,
     InputIconModule,
     InputTextModule,
     MenuModule,
@@ -88,6 +94,7 @@ export class ShiftsComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly shiftsApi = inject(ShiftsService);
   private readonly inspectionApi = inject(InspectionService);
+  private readonly imageApi = inject(ImageService);
 
   readonly session = this.auth.session;
   readonly shifts = signal<ShiftRow[]>([]);
@@ -208,6 +215,10 @@ export class ShiftsComponent implements OnInit {
     return `${bus} | ${fleet} | ${duty}`;
   }
 
+  selfieImageSrc(photo: string): string {
+    return photo.startsWith('data:image/') ? photo : `data:image/jpeg;base64,${photo}`;
+  }
+
   onLazyLoad(event: ShiftLazyLoadEvent): void {
     this.lastLazyEvent = event;
     this.loadShifts(event);
@@ -250,27 +261,42 @@ export class ShiftsComponent implements OnInit {
             return;
           }
 
-          this.inspectionApi
-            .getBusInspectionsByShiftInspectionBusInspectionsByShiftIdsGet(
-              { shiftIds },
-              'body',
-              false,
-              { transferCache: false },
-            )
+          forkJoin({
+            inspectionGroups: this.inspectionApi
+              .getBusInspectionsByShiftInspectionBusInspectionsByShiftIdsGet(
+                { shiftIds },
+                'body',
+                false,
+                { transferCache: false },
+              )
+              .pipe(
+                catchError((err) =>
+                  err?.status === 404
+                    ? of<GroupedBusInspectionResponse[]>([])
+                    : throwError(() => err),
+                ),
+              ),
+            selfies: this.imageApi
+              .getSelfiesByShiftImageSelfiesByShiftIdsGet(
+                { shiftIds },
+                'body',
+                false,
+                { transferCache: false },
+              )
+              .pipe(
+                catchError((err) =>
+                  err?.status === 404 ? of<SelfieResponse[]>([]) : throwError(() => err),
+                ),
+              ),
+          })
             .subscribe({
-              next: (inspectionGroups) => {
-                this.shifts.set(this.buildShiftRows(shifts, inspectionGroups ?? []));
+              next: ({ inspectionGroups, selfies }) => {
+                this.shifts.set(this.buildShiftRows(shifts, inspectionGroups ?? [], selfies ?? []));
                 this.loading.set(false);
               },
               error: (err) => {
-                if (err?.status === 404) {
-                  this.shifts.set(this.buildShiftRows(shifts, []));
-                  this.loading.set(false);
-                  return;
-                }
-
                 this.loading.set(false);
-                this.error.set(err?.error?.detail ?? 'Could not load shift inspections.');
+                this.error.set(err?.error?.detail ?? 'Could not load shift details.');
               },
             });
         },
@@ -285,6 +311,7 @@ export class ShiftsComponent implements OnInit {
   private buildShiftRows(
     shifts: ShiftResponse[],
     inspectionGroups: GroupedBusInspectionResponse[],
+    selfies: SelfieResponse[] = [],
   ): ShiftRow[] {
     const inspectionsByShift = new Map<number, ShiftInspectionItem[]>();
     for (const group of inspectionGroups) {
@@ -292,6 +319,7 @@ export class ShiftsComponent implements OnInit {
       const existing = inspectionsByShift.get(group.shift_id) ?? [];
       inspectionsByShift.set(group.shift_id, [...existing, ...items]);
     }
+    const selfiesByShift = this.groupSelfiesByShift(selfies);
 
     return shifts.map((shift) => {
       const inspections = (inspectionsByShift.get(shift.id) ?? []).sort(
@@ -304,6 +332,7 @@ export class ShiftsComponent implements OnInit {
         startGps: this.gps(shift.start_lat, shift.start_lon),
         endGps: this.gps(shift.end_lat, shift.end_lon),
         inspections,
+        selfies: selfiesByShift.get(shift.id) ?? [],
         inspectionCount: inspections.length || shift.inspection_count || 0,
         failedInspectionCount:
           inspections.length > 0
@@ -311,6 +340,21 @@ export class ShiftsComponent implements OnInit {
             : shift.failed_inspection_count || 0,
       };
     });
+  }
+
+  private groupSelfiesByShift(selfies: SelfieResponse[]): Map<number, SelfieResponse[]> {
+    const selfiesByShift = new Map<number, SelfieResponse[]>();
+    for (const selfie of selfies) {
+      const existing = selfiesByShift.get(selfie.shift_id) ?? [];
+      existing.push(selfie);
+      selfiesByShift.set(selfie.shift_id, existing);
+    }
+
+    for (const shiftSelfies of selfiesByShift.values()) {
+      shiftSelfies.sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp));
+    }
+
+    return selfiesByShift;
   }
 
   private sortField(event: ShiftLazyLoadEvent): string {
