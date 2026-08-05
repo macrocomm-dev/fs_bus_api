@@ -398,7 +398,7 @@ async def get_all_selfies(
 @image_router.get(
     "/selfies/by_shift_ids",
     response_model=List[SelfieResponse],
-    responses={**_401, **_404, **_500},
+    responses={**_401, **_500},
     summary="Get selfies by shift IDs",
 )
 async def get_selfies_by_shift(
@@ -421,11 +421,6 @@ async def get_selfies_by_shift(
             .order_by(Selfie.timestamp)
             .all()
         )
-        if not selfies:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="No selfies found for the provided shift IDs",
-            )
         return [SelfieResponse.model_validate(s) for s in selfies]
     except HTTPException:
         raise
