@@ -87,6 +87,14 @@ type MonitorTimelineEvent = {
 };
 
 const INSPECTION_SHIFT_LOOKUP_CHUNK_SIZE = 80;
+const MONITOR_INSPECTION_TYPES = [
+  'External',
+  'Internal',
+  'Driver',
+  'Passenger Count',
+  'Behind Schedule',
+] as const;
+const MONITOR_INSPECTION_TYPE_COLORS = ['#2563eb', '#16a34a', '#d97706', '#7c3aed', '#dc2626'];
 
 @Component({
   selector: 'app-monitors',
@@ -619,27 +627,40 @@ export class MonitorsComponent implements OnInit {
   }
 
   private buildMonitorChartOptions(shifts: MonitorShiftRow[]): EChartsOption {
-    const buckets = new Map<string, { shifts: number; inspections: number }>();
+    const buckets = new Map<string, Record<string, number>>();
     for (const shift of shifts) {
-      const label = new Intl.DateTimeFormat('en-ZA', {
-        day: '2-digit',
-        month: '2-digit',
-      }).format(new Date(shift.start_time));
-      const bucket = buckets.get(label) ?? { shifts: 0, inspections: 0 };
-      bucket.shifts += 1;
-      bucket.inspections += shift.inspectionCount;
-      buckets.set(label, bucket);
+      const key = new Date(shift.start_time).toISOString().slice(0, 10);
+      const bucket = buckets.get(key) ?? {};
+      for (const inspectionType of MONITOR_INSPECTION_TYPES) {
+        bucket[inspectionType] ??= 0;
+      }
+      for (const inspection of shift.inspections) {
+        bucket[inspection.type] = (bucket[inspection.type] ?? 0) + 1;
+      }
+      buckets.set(key, bucket);
     }
 
-    const labels = [...buckets.keys()].reverse();
-    const values = labels.map((label) => buckets.get(label) ?? { shifts: 0, inspections: 0 });
+    const dateFormatter = new Intl.DateTimeFormat('en-ZA', {
+      day: '2-digit',
+      month: '2-digit',
+    });
+    const dateKeys = [...buckets.keys()].sort();
+    const labels = dateKeys.map((key) => dateFormatter.format(new Date(`${key}T00:00:00`)));
+    const valuesByType = new Map<string, number[]>();
+
+    for (const inspectionType of MONITOR_INSPECTION_TYPES) {
+      const values = dateKeys.map((key) => buckets.get(key)?.[inspectionType] ?? 0);
+      if (values.some((value) => value > 0) || dateKeys.length === 0) {
+        valuesByType.set(inspectionType, values);
+      }
+    }
 
     return {
-      color: ['#1d4ed8', '#16a34a'],
-      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+      color: MONITOR_INSPECTION_TYPE_COLORS,
+      tooltip: { trigger: 'axis', axisPointer: { type: 'line' } },
       legend: {
         top: 0,
-        data: ['Shifts', 'Inspections'],
+        data: [...valuesByType.keys()],
         textStyle: { color: '#374151', fontWeight: 700 },
       },
       grid: { left: 46, right: 24, top: 52, bottom: 42 },
@@ -654,22 +675,16 @@ export class MonitorsComponent implements OnInit {
         axisLabel: { color: '#4b5563' },
         splitLine: { lineStyle: { color: '#e5e7eb' } },
       },
-      series: [
-        {
-          name: 'Shifts',
-          type: 'bar',
-          barMaxWidth: 36,
-          data: values.map((value) => value.shifts),
-          itemStyle: { borderRadius: [6, 6, 0, 0] },
-        },
-        {
-          name: 'Inspections',
-          type: 'line',
-          smooth: true,
-          symbolSize: 7,
-          data: values.map((value) => value.inspections),
-        },
-      ],
+      series: [...valuesByType.entries()].map(([inspectionType, values]) => ({
+        name: inspectionType,
+        type: 'line' as const,
+        stack: 'inspection-count',
+        smooth: true,
+        symbolSize: 7,
+        areaStyle: { opacity: 0.16 },
+        emphasis: { focus: 'series' as const },
+        data: values,
+      })),
     };
   }
 

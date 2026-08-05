@@ -79,9 +79,15 @@ select a stable monitor key. The page shows:
 - linked inspection count;
 - failed inspection count;
 - distinct buses inspected;
-- shifts vs inspections chart;
+- stacked inspection-by-type chart over time;
 - expandable shift table;
 - inspection table for the selected monitor.
 
 This view reuses the same inspection flattening approach as the Shifts page, so
 inspection counts remain consistent across both screens.
+
+The monitor chart buckets selected-monitor inspection rows by shift date and
+splits them into External, Internal, Driver, Passenger Count, and Behind
+Schedule series. Shift selfies are loaded from `photos.selfies` by shift ID; if
+no selfie row exists for an expanded shift, the UI shows an explicit empty state
+instead of a missing image.

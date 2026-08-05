@@ -115,8 +115,8 @@
       <section class="monitor-section">
         <div class="section-header">
           <div>
-            <h3>Shifts and Inspections Over Time</h3>
-            <p>Daily shift count with linked inspection totals.</p>
+            <h3>Inspections By Type Over Time</h3>
+            <p>Daily linked inspection totals split by inspection type.</p>
           </div>
         </div>
 
@@ -210,6 +210,39 @@
             <tr>
               <td colspan="9" class="shift-detail-cell">
                 <div class="shift-detail-panel">
+                  @if (row.selfies.length > 0) {
+                    <section class="shift-selfie-panel" aria-label="Shift selfies">
+                      <div class="shift-selfie-panel__header">
+                        <span>Shift Selfies</span>
+                        <strong>{{ row.selfies.length }}</strong>
+                      </div>
+                      <div class="shift-selfie-list">
+                        @for (selfie of row.selfies; track selfie.id) {
+                          <figure class="shift-selfie-item">
+                            <p-image
+                              [src]="selfieImageSrc(selfie.photo)"
+                              alt="Shift selfie"
+                              [preview]="true"
+                              imageClass="shift-selfie-image"
+                            />
+                            <figcaption>
+                              <span>{{ selfie.timestamp | date: 'yyyy-MM-dd HH:mm' }}</span>
+                              <span class="mono-cell">{{ selfie.lat | number: '1.5-5' }}, {{ selfie.lon | number: '1.5-5' }}</span>
+                            </figcaption>
+                          </figure>
+                        }
+                      </div>
+                    </section>
+                  } @else {
+                    <section class="shift-selfie-panel shift-selfie-panel--empty" aria-label="Shift selfies">
+                      <div class="shift-selfie-panel__header">
+                        <span>Shift Selfies</span>
+                        <strong>0</strong>
+                      </div>
+                      <p>No selfie captured for this shift.</p>
+                    </section>
+                  }
+
                   @if (timelineEventsForShift(row).length > 0) {
                     <section class="shift-timeline-panel" aria-label="Shift timeline">
                       <div class="shift-detail-section-header">
