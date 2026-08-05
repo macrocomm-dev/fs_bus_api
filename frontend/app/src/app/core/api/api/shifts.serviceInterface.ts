@@ -13,6 +13,7 @@ import { Observable }                                        from 'rxjs';
 
 import { AppSchemasOperationsErrorResponse } from '../model/models';
 import { HTTPValidationError } from '../model/models';
+import { MonitorSummaryResponse } from '../model/models';
 import { ShiftCreate } from '../model/models';
 import { ShiftCreatedResponse } from '../model/models';
 import { ShiftPageResponse } from '../model/models';
@@ -32,6 +33,7 @@ export interface GetAllShiftsShiftShiftsGetRequestParams {
     startTime?: string | null;
     endTime?: string | null;
     limit?: number | null;
+    userId?: string | null;
 }
 
 export interface GetShiftsPagedShiftShiftsPagedGetRequestParams {
@@ -71,6 +73,13 @@ export interface ShiftsServiceInterface {
 * @param requestParameters
      */
     getAllShiftsShiftShiftsGet(requestParameters: GetAllShiftsShiftShiftsGetRequestParams, extraHttpRequestParams?: any): Observable<Array<ShiftResponse>>;
+
+    /**
+     * Get monitor options with aggregate shift and inspection counts
+     * Return lightweight monitor rows for dropdowns before loading details.  The Monitors page should not need to load every shift, inspection, and selfie before the selector is usable. This endpoint returns one row per monitor-like app user, plus any unknown user ID that already has shift rows.
+     * @endpoint get /shift/monitors/summary
+     */
+    getMonitorSummariesShiftMonitorsSummaryGet(extraHttpRequestParams?: any): Observable<Array<MonitorSummaryResponse>>;
 
     /**
      * Get shifts using server-side pagination, search, and sorting

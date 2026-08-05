@@ -60,10 +60,18 @@ to that direct key.
 The Angular route `/monitors` shows monitor productivity from existing live
 data. It currently uses:
 
-- `GET /shift/shifts` for shift rows;
+- `GET /shift/monitors/summary` for the monitor selector and aggregate counts;
+- `GET /shift/shifts?user_id=<firebase_uid>` for selected-monitor shift rows;
 - `GET /inspection/bus_inspections/by_shift_ids` for linked inspection rows.
+- `GET /image/selfies/by_shift_ids` for selected-monitor shift selfies.
 
-The shift API now exposes `user_id` alongside monitor name/surname so the UI can
+The monitor selector is populated from `app_auth.app_user` monitor/supervisor
+users plus any user ID with shift rows. This avoids the previous behavior where
+the selector was derived from the currently loaded shift list and could miss
+monitors outside the first result window. The selected monitor then drives the
+heavier shift, inspection, and selfie lookups.
+
+The shift API exposes `user_id` alongside monitor name/surname so the UI can
 select a stable monitor key. The page shows:
 
 - selected monitor dropdown;

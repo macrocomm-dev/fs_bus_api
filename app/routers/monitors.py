@@ -40,6 +40,7 @@ from app.schemas.shift import (
     ShiftCreate,
     ShiftCreateMeta,
     ShiftCreatedResponse,
+    MonitorSummaryResponse,
     ShiftPageResponse,
     ShiftResponse,
     ErrorResponse,
@@ -133,6 +134,16 @@ def _shift_response(shift: Shift, user: AppUser | None = None) -> ShiftResponse:
             "user_surname": user.surname if user else None,
         }
     )
+
+
+def _monitor_summary_label(user: AppUser | None, user_id: str) -> str:
+    """Return the best available display label for a monitor option."""
+    if not user:
+        return user_id
+    full_name = user.full_name or " ".join(
+        part for part in [user.name, user.surname] if part
+    ).strip()
+    return full_name or user.email or user_id
 
 
 def _shift_page_sort_expression(
@@ -841,6 +852,143 @@ async def create_shift_multipart(
 
 
 @monitor_router.get(
+    "/monitors/summary",
+    response_model=List[MonitorSummaryResponse],
+    responses={**_401, **_500},
+    summary="Get monitor options with aggregate shift and inspection counts",
+)
+async def get_monitor_summaries(
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    """Return lightweight monitor rows for dropdowns before loading details.
+
+    The Monitors page should not need to load every shift, inspection, and
+    selfie before the selector is usable. This endpoint returns one row per
+    monitor-like app user, plus any unknown user ID that already has shift rows.
+    """
+    try:
+        inspection_counts = (
+            db.query(
+                BusInspection.shift_id.label("shift_id"),
+                func.count(BusInspection.id).label("inspection_count"),
+                func.count(BusInspection.id)
+                .filter(BusInspection.pass_.is_(False))
+                .label("failed_inspection_count"),
+            )
+            .group_by(BusInspection.shift_id)
+            .subquery()
+        )
+
+        shift_summary = (
+            db.query(
+                Shift.user_id.label("user_id"),
+                func.count(Shift.id).label("shift_count"),
+                func.coalesce(func.sum(inspection_counts.c.inspection_count), 0).label(
+                    "inspection_count"
+                ),
+                func.coalesce(
+                    func.sum(inspection_counts.c.failed_inspection_count), 0
+                ).label("failed_inspection_count"),
+                func.max(Shift.start_time).label("last_shift_at"),
+            )
+            .outerjoin(inspection_counts, inspection_counts.c.shift_id == Shift.id)
+            .group_by(Shift.user_id)
+            .subquery()
+        )
+
+        rows = (
+            db.query(
+                AppUser,
+                shift_summary.c.shift_count,
+                shift_summary.c.inspection_count,
+                shift_summary.c.failed_inspection_count,
+                shift_summary.c.last_shift_at,
+            )
+            .outerjoin(shift_summary, shift_summary.c.user_id == AppUser.firebase_uid)
+            .filter(
+                or_(
+                    func.lower(AppUser.role).like("%monitor%"),
+                    func.lower(AppUser.role).like("%supervisor%"),
+                    shift_summary.c.shift_count.isnot(None),
+                )
+            )
+            .filter(
+                or_(
+                    AppUser.is_active.is_(True),
+                    shift_summary.c.shift_count.isnot(None),
+                )
+            )
+            .all()
+        )
+
+        summaries = [
+            MonitorSummaryResponse(
+                user_id=user.firebase_uid,
+                user_name=user.name,
+                user_surname=user.surname,
+                full_name=_monitor_summary_label(user, user.firebase_uid),
+                email=user.email,
+                role=user.role,
+                shift_count=int(shift_count or 0),
+                inspection_count=int(inspection_count or 0),
+                failed_inspection_count=int(failed_inspection_count or 0),
+                last_shift_at=last_shift_at,
+            )
+            for (
+                user,
+                shift_count,
+                inspection_count,
+                failed_inspection_count,
+                last_shift_at,
+            ) in rows
+        ]
+
+        unknown_rows = (
+            db.query(
+                shift_summary.c.user_id,
+                shift_summary.c.shift_count,
+                shift_summary.c.inspection_count,
+                shift_summary.c.failed_inspection_count,
+                shift_summary.c.last_shift_at,
+            )
+            .outerjoin(AppUser, AppUser.firebase_uid == shift_summary.c.user_id)
+            .filter(AppUser.firebase_uid.is_(None))
+            .all()
+        )
+        summaries.extend(
+            MonitorSummaryResponse(
+                user_id=user_id,
+                full_name=user_id,
+                shift_count=int(shift_count or 0),
+                inspection_count=int(inspection_count or 0),
+                failed_inspection_count=int(failed_inspection_count or 0),
+                last_shift_at=last_shift_at,
+            )
+            for (
+                user_id,
+                shift_count,
+                inspection_count,
+                failed_inspection_count,
+                last_shift_at,
+            ) in unknown_rows
+            if user_id
+        )
+
+        return sorted(
+            summaries,
+            key=lambda summary: (
+                summary.full_name or summary.email or summary.user_id
+            ).lower(),
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving monitor summaries: {exc}",
+        )
+
+
+@monitor_router.get(
     "/shifts",
     response_model=List[ShiftResponse],
     responses={**_401, **_500},
@@ -848,6 +996,9 @@ async def create_shift_multipart(
 )
 async def get_all_shifts(
     params: DateRangeLimitQueryParams = Depends(date_range_params),
+    user_id: str | None = Query(
+        None, description="Limit shifts to one monitor user ID"
+    ),
     db: Session = Depends(get_db),
     current_user: TokenData = Depends(get_current_user),
 ):
@@ -874,6 +1025,8 @@ async def get_all_shifts(
                 params.end_date, params.end_time or time(23, 59, 59)
             )
             query = query.filter(Shift.created_at <= end_dt)
+        if user_id:
+            query = query.filter(Shift.user_id == user_id)
 
         if params.limit:
             query = query.limit(params.limit)

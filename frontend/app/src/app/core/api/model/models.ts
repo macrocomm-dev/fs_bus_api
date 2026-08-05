@@ -38,6 +38,7 @@ export * from './inspectionItemResponse';
 export * from './interiorInspectionIn';
 export * from './interiorInspectionResponse';
 export * from './locationInner';
+export * from './monitorSummaryResponse';
 export * from './passengerCountIn';
 export * from './passengerCountInspectionResponse';
 export * from './photoResponse';

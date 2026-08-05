@@ -31,7 +31,9 @@ Backend behavior:
 
 ## Monitor Shift Counts
 
-The Monitors page loads shifts for the selected monitor and then fetches inspection groups in chunks by shift ID. The monitor summary cards, top chart, and shift table all use the same per-row `inspectionCount` value so totals stay aligned after the shift table inspection-count fix.
+The Monitors page first loads `GET /shift/monitors/summary` to populate the monitor selector and aggregate summary cards quickly. That endpoint reads monitor/supervisor users from `app_auth.app_user` and also includes unknown user IDs that have shift rows.
+
+After a monitor is selected, the page loads only that monitor's shifts through `GET /shift/shifts?user_id=<firebase_uid>` and then fetches inspection groups in chunks by shift ID. The monitor summary cards use the summary endpoint counts, while the top chart and shift table use the loaded per-row `inspectionCount` value so row-level details stay aligned.
 
 Expanded monitor shift rows use the same bus/fleet/duty fieldset grouping as the Shifts page.
 

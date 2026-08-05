@@ -21,6 +21,8 @@ import { AppSchemasOperationsErrorResponse } from '../model/appSchemasOperations
 // @ts-ignore
 import { HTTPValidationError } from '../model/hTTPValidationError';
 // @ts-ignore
+import { MonitorSummaryResponse } from '../model/monitorSummaryResponse';
+// @ts-ignore
 import { ShiftCreate } from '../model/shiftCreate';
 // @ts-ignore
 import { ShiftCreatedResponse } from '../model/shiftCreatedResponse';
@@ -141,6 +143,7 @@ export class ShiftsService extends BaseService implements ShiftsServiceInterface
         const startTime = requestParameters?.startTime;
         const endTime = requestParameters?.endTime;
         const limit = requestParameters?.limit;
+        const userId = requestParameters?.userId;
 
         let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
 
@@ -189,6 +192,15 @@ export class ShiftsService extends BaseService implements ShiftsServiceInterface
         );
 
 
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'user_id',
+            <any>userId,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
         let localVarHeaders = this.defaultHeaders;
 
         // authentication (HTTPBearer) required
@@ -223,6 +235,60 @@ export class ShiftsService extends BaseService implements ShiftsServiceInterface
             {
                 context: localVarHttpContext,
                 params: localVarQueryParameters.toHttpParams(),
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Get monitor options with aggregate shift and inspection counts
+     * Return lightweight monitor rows for dropdowns before loading details.  The Monitors page should not need to load every shift, inspection, and selfie before the selector is usable. This endpoint returns one row per monitor-like app user, plus any unknown user ID that already has shift rows.
+     * @endpoint get /shift/monitors/summary
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public getMonitorSummariesShiftMonitorsSummaryGet(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<Array<MonitorSummaryResponse>>;
+    public getMonitorSummariesShiftMonitorsSummaryGet(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Array<MonitorSummaryResponse>>>;
+    public getMonitorSummariesShiftMonitorsSummaryGet(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Array<MonitorSummaryResponse>>>;
+    public getMonitorSummariesShiftMonitorsSummaryGet(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (HTTPBearer) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('HTTPBearer', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/shift/monitors/summary`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<Array<MonitorSummaryResponse>>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

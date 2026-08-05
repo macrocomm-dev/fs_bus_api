@@ -597,6 +597,21 @@ class ShiftPageResponse(BaseModel):
     rows: int
 
 
+class MonitorSummaryResponse(BaseModel):
+    """Lightweight monitor option and aggregate counts for monitor pages."""
+
+    user_id: str
+    user_name: Optional[str] = None
+    user_surname: Optional[str] = None
+    full_name: Optional[str] = None
+    email: Optional[str] = None
+    role: Optional[str] = None
+    shift_count: int = 0
+    inspection_count: int = 0
+    failed_inspection_count: int = 0
+    last_shift_at: Optional[datetime] = None
+
+
 class SelfieResponse(BaseModel):
     """Read model for one stored shift selfie."""
 

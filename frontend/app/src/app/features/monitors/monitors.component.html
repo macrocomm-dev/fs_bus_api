@@ -60,7 +60,7 @@
             inputId="monitor-select"
             [options]="monitorOptions()"
             [ngModel]="selectedMonitorId()"
-            (ngModelChange)="selectedMonitorId.set($event)"
+            (ngModelChange)="onMonitorChange($event)"
             optionLabel="label"
             optionValue="value"
           />

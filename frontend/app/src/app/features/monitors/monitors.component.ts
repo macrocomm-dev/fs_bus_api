@@ -28,6 +28,7 @@ import { InspectionService } from '../../core/api/api/inspection.service';
 import { ImageService } from '../../core/api/api/image.service';
 import { ShiftsService } from '../../core/api/api/shifts.service';
 import type { GroupedBusInspectionResponse } from '../../core/api/model/groupedBusInspectionResponse';
+import type { MonitorSummaryResponse } from '../../core/api/model/monitorSummaryResponse';
 import type { SelfieResponse } from '../../core/api/model/selfieResponse';
 import type { ShiftResponse } from '../../core/api/model/shiftResponse';
 import { AuthService } from '../../core/services/auth.service';
@@ -122,28 +123,27 @@ export class MonitorsComponent implements OnInit {
   private readonly imageApi = inject(ImageService);
 
   readonly session = this.auth.session;
+  readonly monitorSummaries = signal<MonitorSummaryResponse[]>([]);
   readonly shifts = signal<MonitorShiftRow[]>([]);
   readonly selectedMonitorId = signal<string | null>(null);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
 
   readonly monitorOptions = computed<MonitorOption[]>(() => {
-    const byMonitor = new Map<string, MonitorOption>();
-    for (const shift of this.shifts()) {
-      const value = this.monitorKey(shift);
-      const existing =
-        byMonitor.get(value) ??
-        {
-          label: shift.loggedBy,
-          value,
-          shiftCount: 0,
-          inspectionCount: 0,
-        };
-      existing.shiftCount += 1;
-      existing.inspectionCount += shift.inspectionCount;
-      byMonitor.set(value, existing);
-    }
-    return [...byMonitor.values()].sort((a, b) => a.label.localeCompare(b.label));
+    return this.monitorSummaries()
+      .map((summary) => ({
+        label: this.monitorSummaryLabel(summary),
+        value: summary.user_id,
+        shiftCount: summary.shift_count ?? 0,
+        inspectionCount: summary.inspection_count ?? 0,
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  });
+
+  readonly selectedMonitorSummary = computed(() => {
+    const selected = this.selectedMonitorId();
+    if (!selected) return null;
+    return this.monitorSummaries().find((summary) => summary.user_id === selected) ?? null;
   });
 
   readonly selectedShifts = computed(() => {
@@ -169,10 +169,15 @@ export class MonitorsComponent implements OnInit {
   readonly summary = computed(() => {
     const shifts = this.selectedShifts();
     const inspections = this.selectedInspections();
+    const selectedSummary = this.selectedMonitorSummary();
     return {
-      shifts: shifts.length,
-      inspections: shifts.reduce((total, shift) => total + shift.inspectionCount, 0),
-      failed: shifts.reduce((total, shift) => total + shift.failedInspectionCount, 0),
+      shifts: selectedSummary?.shift_count ?? shifts.length,
+      inspections:
+        selectedSummary?.inspection_count ??
+        shifts.reduce((total, shift) => total + shift.inspectionCount, 0),
+      failed:
+        selectedSummary?.failed_inspection_count ??
+        shifts.reduce((total, shift) => total + shift.failedInspectionCount, 0),
       buses: new Set(inspections.map((inspection) => inspection.busId).filter(Boolean)).size,
     };
   });
@@ -196,7 +201,7 @@ export class MonitorsComponent implements OnInit {
       return;
     }
 
-    this.loadMonitorData();
+    this.loadMonitorSummaries();
   }
 
   toggleMenu(): void {
@@ -251,6 +256,16 @@ export class MonitorsComponent implements OnInit {
     if (pass === true) return 'Pass';
     if (pass === false) return 'Fail';
     return 'Not set';
+  }
+
+  onMonitorChange(monitorId: string | null): void {
+    this.selectedMonitorId.set(monitorId);
+    this.shifts.set([]);
+    if (monitorId) {
+      this.loadMonitorData(monitorId);
+      return;
+    }
+    this.loading.set(false);
   }
 
   inspectionGroupsForShift(row: MonitorShiftRow): MonitorInspectionBusGroup[] {
@@ -326,19 +341,44 @@ export class MonitorsComponent implements OnInit {
     );
   }
 
-  private loadMonitorData(): void {
+  private loadMonitorSummaries(): void {
     this.loading.set(true);
     this.error.set(null);
 
     this.shiftsApi
-      .getAllShiftsShiftShiftsGet({ limit: 1000 }, 'body', false, { transferCache: false })
+      .getMonitorSummariesShiftMonitorsSummaryGet('body', false, { transferCache: false })
+      .subscribe({
+        next: (response) => {
+          const summaries = response ?? [];
+          this.monitorSummaries.set(summaries);
+          const selected = this.selectedMonitorId() ?? summaries[0]?.user_id ?? null;
+          this.selectedMonitorId.set(selected);
+          if (selected) {
+            this.loadMonitorData(selected);
+            return;
+          }
+          this.shifts.set([]);
+          this.loading.set(false);
+        },
+        error: (err) => {
+          this.loading.set(false);
+          this.error.set(err?.error?.detail ?? 'Could not load monitor list.');
+        },
+      });
+  }
+
+  private loadMonitorData(userId: string): void {
+    this.loading.set(true);
+    this.error.set(null);
+
+    this.shiftsApi
+      .getAllShiftsShiftShiftsGet({ userId, limit: 1000 }, 'body', false, { transferCache: false })
       .subscribe({
         next: (response) => {
           const shifts = response ?? [];
           const shiftIds = shifts.map((shift) => shift.id);
           if (shiftIds.length === 0) {
             this.shifts.set([]);
-            this.selectedMonitorId.set(null);
             this.loading.set(false);
             return;
           }
@@ -351,14 +391,12 @@ export class MonitorsComponent implements OnInit {
               next: ({ inspectionGroups, selfies }) => {
                 const rows = this.buildShiftRows(shifts, inspectionGroups ?? [], selfies ?? []);
                 this.shifts.set(rows);
-                this.selectedMonitorId.set(this.selectedMonitorId() ?? this.monitorOptions()[0]?.value ?? null);
                 this.loading.set(false);
               },
               error: (err) => {
                 if (err?.status === 404) {
                   const rows = this.buildShiftRows(shifts, []);
                   this.shifts.set(rows);
-                  this.selectedMonitorId.set(this.selectedMonitorId() ?? this.monitorOptions()[0]?.value ?? null);
                   this.loading.set(false);
                   return;
                 }
@@ -373,6 +411,13 @@ export class MonitorsComponent implements OnInit {
           this.error.set(err?.error?.detail ?? 'Could not load monitor shifts.');
         },
       });
+  }
+
+  private monitorSummaryLabel(summary: MonitorSummaryResponse): string {
+    const fullName =
+      summary.full_name ||
+      [summary.user_name, summary.user_surname].filter(Boolean).join(' ').trim();
+    return fullName || summary.email || summary.user_id;
   }
 
   private loadInspectionGroupsByShiftIds(shiftIds: number[]) {
