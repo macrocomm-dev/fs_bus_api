@@ -19,6 +19,7 @@ import type { VehicleDataQualityResponse } from '../../core/api/model/vehicleDat
 import type { VehicleDetailResponse } from '../../core/api/model/vehicleDetailResponse';
 import type { VehicleResponse } from '../../core/api/model/vehicleResponse';
 import type { VehicleScorePointResponse } from '../../core/api/model/vehicleScorePointResponse';
+import { ViewLoadingOverlayComponent } from '../../core/components/view-loading-overlay/view-loading-overlay.component';
 import { AuthService } from '../../core/services/auth.service';
 
 type DetailMetric = {
@@ -48,6 +49,7 @@ type QualityItem = {
     TagModule,
     ToolbarModule,
     TooltipModule,
+    ViewLoadingOverlayComponent,
   ],
   templateUrl: './vehicle-detail.component.html',
   styleUrl: './vehicle-detail.component.css',

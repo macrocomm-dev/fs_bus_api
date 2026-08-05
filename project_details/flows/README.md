@@ -48,3 +48,14 @@ Frontend behavior:
 - Expanded monitor and shift rows show shift selfie thumbnails with PrimeNG image preview.
 - Expanded monitor and shift rows also render a chronological timeline that interleaves shift selfies and inspection events by timestamp.
 - Selfies are displayed at shift level because they belong to the monitor shift, not to a specific bus inspection row.
+
+## View Loading Overlay
+
+Authenticated dashboard views render `app-view-loading-overlay` inside the routed page `<main>` element, which is marked with `view-loading-host`. This keeps the blur and loading artwork scoped to the page content while leaving the app top bar and sidebar usable/visible.
+
+The overlay uses `ViewLoadingService` and the view's existing loading signal. Views with more than one startup request, such as Reporting, keep a small in-flight request count so the overlay is only dismissed once all required startup data has completed loading.
+
+The overlay artwork uses the existing public assets:
+
+- `free_state_logo_transparent.png`
+- `macrocomm.png`

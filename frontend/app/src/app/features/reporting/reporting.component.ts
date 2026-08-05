@@ -12,6 +12,7 @@ import type { AnalyticsReportingSummaryResponse } from '../../core/api/model/ana
 import type { AnalyticsReportingTileResponse } from '../../core/api/model/analyticsReportingTileResponse';
 import type { AnalyticsTopKpiResponse } from '../../core/api/model/analyticsTopKpiResponse';
 import { DashboardFiltersComponent } from '../../core/components/dashboard-filters/dashboard-filters.component';
+import { ViewLoadingOverlayComponent } from '../../core/components/view-loading-overlay/view-loading-overlay.component';
 import {
   DashboardFilterService,
   type DashboardFilters,
@@ -2418,6 +2419,7 @@ const TILES: KpiTile[] = [
     TagModule,
     ToolbarModule,
     TooltipModule,
+    ViewLoadingOverlayComponent,
   ],
   templateUrl: './reporting.component.html',
   styleUrl: './reporting.component.css',
@@ -2435,6 +2437,8 @@ export class ReportingComponent implements OnInit {
   readonly reportError = signal<string | null>(null);
   readonly topKpiApiValues = signal<Record<string, TopKpiApiValue>>({});
   readonly topKpiError = signal<string | null>(null);
+  readonly loadingRequests = signal(0);
+  readonly loading = computed(() => this.loadingRequests() > 0);
   menuVisible = true;
   readonly navigationItems: MenuItem[] = [
     {
@@ -2952,6 +2956,7 @@ export class ReportingComponent implements OnInit {
   private loadReportingSummary(
     range: Pick<DashboardFilters, 'dateFrom' | 'dateTo'> = this.appliedFilters(),
   ): void {
+    this.beginViewLoading();
     this.reportError.set(null);
     this.analyticsApi
       .getReportingSummary(
@@ -2967,10 +2972,12 @@ export class ReportingComponent implements OnInit {
           this.reportTiles.set([]);
           this.reportDrilldowns.set({});
         },
-      });
+      })
+      .add(() => this.finishViewLoading());
   }
 
   private loadTopKpis(range: Pick<DashboardFilters, 'dateFrom' | 'dateTo'> = this.appliedFilters()): void {
+    this.beginViewLoading();
     this.topKpiError.set(null);
     this.analyticsApi
       .getAnalyticsSummary(
@@ -2986,7 +2993,16 @@ export class ReportingComponent implements OnInit {
         error: (err) => {
           this.topKpiError.set(err?.error?.detail ?? 'Could not load KPI summary.');
         },
-      });
+      })
+      .add(() => this.finishViewLoading());
+  }
+
+  private beginViewLoading(): void {
+    this.loadingRequests.update((count) => count + 1);
+  }
+
+  private finishViewLoading(): void {
+    this.loadingRequests.update((count) => Math.max(count - 1, 0));
   }
 
   private mapTopKpis(kpis: AnalyticsTopKpiResponse[]): Record<string, TopKpiApiValue> {

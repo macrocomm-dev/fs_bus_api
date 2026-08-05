@@ -1,0 +1,44 @@
+:host {
+  display: contents;
+}
+
+.view-loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  min-height: 100%;
+  background: rgba(243, 244, 246, 0.66);
+  backdrop-filter: blur(7px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: all;
+}
+
+.view-loading-card {
+  width: min(24rem, calc(100% - 2rem));
+  min-height: 13rem;
+  padding: 1.5rem;
+  border: 1px solid rgba(203, 213, 225, 0.88);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 24px 56px rgba(15, 23, 42, 0.16);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.15rem;
+}
+
+.view-loading-card__province {
+  width: min(13.5rem, 78%);
+  height: auto;
+  display: block;
+}
+
+.view-loading-card__macrocomm {
+  width: min(12rem, 70%);
+  height: auto;
+  display: block;
+}
+

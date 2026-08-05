@@ -51,7 +51,10 @@ def get_engine():
     """
     settings = get_settings()
     url = _build_url(settings)
-    return create_engine(url, pool_pre_ping=True)
+    connect_args = {
+        "options": f"-c timezone={settings.db_timezone}",
+    }
+    return create_engine(url, pool_pre_ping=True, connect_args=connect_args)
 
 
 engine = get_engine()

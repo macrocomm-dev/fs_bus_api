@@ -48,7 +48,9 @@
   </p-toolbar>
 
   <div class="analytics-body" [class.analytics-body--drawer-open]="menuVisible">
-    <main class="analytics-content">
+    <main class="analytics-content view-loading-host">
+      <app-view-loading-overlay [active]="loading()" label="Loading analytics" />
+
       @if (error()) {
         <div class="analytics-error">
           {{ error() }}

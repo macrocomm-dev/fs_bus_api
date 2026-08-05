@@ -239,6 +239,26 @@ error_message = failure reason
 request_body = captured request JSON when available and below the error-body size cap
 ```
 
+## Shift And Inspection Timezone Rules
+
+The mobile app sends operational timestamps such as `start_time`, `end_time`,
+`inspection_time`, photo timestamps, and selfie timestamps as local Free State
+wall-clock times. These columns are stored as `timestamp without time zone`, so
+the API treats them as already-local `Africa/Johannesburg` values and does not
+shift them during persistence.
+
+Database-generated timestamps such as `created_at` use PostgreSQL `now()`
+defaults. The database and SQLAlchemy sessions must therefore run with:
+
+```text
+DB_TIMEZONE=Africa/Johannesburg
+```
+
+The API engine sends `-c timezone=<DB_TIMEZONE>` on every PostgreSQL connection,
+and the Cloud SQL database default has also been set to `Africa/Johannesburg`.
+This keeps future `created_at` values aligned with app-supplied shift and
+inspection times.
+
 ## Behind-Schedule Interval Compatibility
 
 The mobile app has submitted invalid `behind_schedule_interval` values for late-route reports, most commonly a blank string:

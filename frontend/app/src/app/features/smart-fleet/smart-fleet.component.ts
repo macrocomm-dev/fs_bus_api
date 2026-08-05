@@ -14,6 +14,7 @@ import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { AuthService } from '../../core/services/auth.service';
+import { ViewLoadingOverlayComponent } from '../../core/components/view-loading-overlay/view-loading-overlay.component';
 import { SmartFleetService } from '../../core/services/smart-fleet.service';
 
 @Component({
@@ -29,6 +30,7 @@ import { SmartFleetService } from '../../core/services/smart-fleet.service';
     TagModule,
     ToolbarModule,
     TooltipModule,
+    ViewLoadingOverlayComponent,
   ],
   templateUrl: './smart-fleet.component.html',
   styleUrl: './smart-fleet.component.css',

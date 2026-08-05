@@ -31,6 +31,7 @@ import type { GroupedBusInspectionResponse } from '../../core/api/model/groupedB
 import type { MonitorSummaryResponse } from '../../core/api/model/monitorSummaryResponse';
 import type { SelfieResponse } from '../../core/api/model/selfieResponse';
 import type { ShiftResponse } from '../../core/api/model/shiftResponse';
+import { ViewLoadingOverlayComponent } from '../../core/components/view-loading-overlay/view-loading-overlay.component';
 import { AuthService } from '../../core/services/auth.service';
 
 type MonitorOption = {
@@ -119,6 +120,7 @@ const MONITOR_INSPECTION_TYPE_COLORS = ['#2563eb', '#16a34a', '#d97706', '#7c3ae
     TimelineModule,
     ToolbarModule,
     TooltipModule,
+    ViewLoadingOverlayComponent,
   ],
   templateUrl: './monitors.component.html',
   styleUrl: './monitors.component.css',

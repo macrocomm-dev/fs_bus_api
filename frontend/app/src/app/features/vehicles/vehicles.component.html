@@ -48,7 +48,9 @@
   </p-toolbar>
 
   <div class="vehicles-body" [class.vehicles-body--drawer-open]="menuVisible">
-    <main class="vehicles-content">
+    <main class="vehicles-content view-loading-host">
+      <app-view-loading-overlay [active]="loading()" label="Loading vehicles" />
+
       <div class="page-header">
         <div>
           <h2>Vehicle Fleet List</h2>

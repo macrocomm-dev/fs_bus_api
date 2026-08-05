@@ -32,6 +32,7 @@ env:
   ARTIFACT_REGISTRY_REPO: ${{ vars.ARTIFACT_REGISTRY_REPO }}
   CLOUD_RUN_SERVICE: ${{ vars.CLOUD_RUN_SERVICE }}
   AUDIT_SUCCESS_PAYLOADS_ENABLED: ${{ vars.AUDIT_SUCCESS_PAYLOADS_ENABLED || 'true' }}
+  DB_TIMEZONE: ${{ vars.DB_TIMEZONE || 'Africa/Johannesburg' }}
   IMAGE_NAME: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REGISTRY_REPO }}/fs-bus-api
 
 jobs:
@@ -137,7 +138,7 @@ jobs:
             --allow-unauthenticated \
             --add-cloudsql-instances "${{ vars.CLOUD_SQL_INSTANCE }}" \
             --set-secrets="SECRET_KEY=api-secret-key:latest,DB_PASSWORD=db-password:latest,DB_NAME=db-name:latest,DB_USER=db-user:latest,SMART_FLEET_EMAIL=smart-fleet-email:latest,SMART_FLEET_API_HASH=smart-fleet-api-hash:latest" \
-            --set-env-vars="GOOGLE_CLOUD_PROJECT=${{ env.GCP_PROJECT_ID }},DB_HOST=/cloudsql/${{ vars.CLOUD_SQL_INSTANCE }},SMART_FLEET_BASE_URL=https://smart-fleet.co.za,AUDIT_SUCCESS_PAYLOADS_ENABLED=${{ env.AUDIT_SUCCESS_PAYLOADS_ENABLED }}" \
+            --set-env-vars="GOOGLE_CLOUD_PROJECT=${{ env.GCP_PROJECT_ID }},DB_HOST=/cloudsql/${{ vars.CLOUD_SQL_INSTANCE }},DB_TIMEZONE=${{ env.DB_TIMEZONE }},SMART_FLEET_BASE_URL=https://smart-fleet.co.za,AUDIT_SUCCESS_PAYLOADS_ENABLED=${{ env.AUDIT_SUCCESS_PAYLOADS_ENABLED }}" \
             --quiet
 
       - name: Show service URL

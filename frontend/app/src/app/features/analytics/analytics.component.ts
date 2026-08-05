@@ -18,6 +18,7 @@ import { AnalyticsService } from '../../core/api/api/analytics.service';
 import type { AnalyticsSummaryResponse } from '../../core/api/model/analyticsSummaryResponse';
 import type { AnalyticsVehicleScoreResponse } from '../../core/api/model/analyticsVehicleScoreResponse';
 import { DashboardFiltersComponent } from '../../core/components/dashboard-filters/dashboard-filters.component';
+import { ViewLoadingOverlayComponent } from '../../core/components/view-loading-overlay/view-loading-overlay.component';
 import {
   DashboardFilterService,
   type DashboardFilters,
@@ -75,6 +76,7 @@ type LastEvent = {
     TagModule,
     ToolbarModule,
     TooltipModule,
+    ViewLoadingOverlayComponent,
   ],
   templateUrl: './analytics.component.html',
   styleUrl: './analytics.component.css',

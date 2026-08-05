@@ -18,6 +18,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { VehicleService } from '../../core/api/api/vehicle.service';
 import type { VehicleResponse } from '../../core/api/model/vehicleResponse';
+import { ViewLoadingOverlayComponent } from '../../core/components/view-loading-overlay/view-loading-overlay.component';
 import { AuthService } from '../../core/services/auth.service';
 import { operatorBadgeFor, type OperatorBadge } from '../../core/utils/operator-badge';
 
@@ -38,6 +39,7 @@ import { operatorBadgeFor, type OperatorBadge } from '../../core/utils/operator-
     TagModule,
     ToolbarModule,
     TooltipModule,
+    ViewLoadingOverlayComponent,
   ],
   templateUrl: './vehicles.component.html',
   styleUrl: './vehicles.component.css',

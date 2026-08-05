@@ -107,3 +107,7 @@ body .nav-drawer__menu .nav-item-active .p-menu-item-label {
   font-weight: 800;
   letter-spacing: 0.03em;
 }
+
+.view-loading-host {
+  position: relative;
+}

@@ -26,6 +26,7 @@ import type { GroupedBusInspectionResponse } from '../../core/api/model/groupedB
 import type { SelfieResponse } from '../../core/api/model/selfieResponse';
 import { ShiftsService } from '../../core/api/api/shifts.service';
 import type { ShiftResponse } from '../../core/api/model/shiftResponse';
+import { ViewLoadingOverlayComponent } from '../../core/components/view-loading-overlay/view-loading-overlay.component';
 import { AuthService } from '../../core/services/auth.service';
 
 type ShiftInspectionItem = {
@@ -101,6 +102,7 @@ type ShiftTimelineEvent = {
     TimelineModule,
     ToolbarModule,
     TooltipModule,
+    ViewLoadingOverlayComponent,
   ],
   templateUrl: './shifts.component.html',
   styleUrl: './shifts.component.css',

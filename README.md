@@ -171,6 +171,7 @@ See `.env.example` for the full list.  Key variables:
 | `CLOUD_SQL_INSTANCE` | `bus-track-480813:africa-south1:fs-bus-db` | Cloud SQL connection name |
 | `DB_HOST` | `127.0.0.1` | DB host (proxy address) |
 | `DB_PORT` | `5432` | DB port |
+| `DB_TIMEZONE` | `Africa/Johannesburg` | PostgreSQL session timezone used for DB-generated timestamps |
 | `SECRET_KEY` | *(from Secret Manager)* | Legacy local JWT helper secret |
 | `ENABLE_TEST_AUTH_ENDPOINTS` | `true` | Enables the temporary `/auth/test/token` backend proxy |
 | `DOCS_REQUIRED_ROLE` | `Admin` | Minimum Firebase role allowed to fetch `/openapi.json` |

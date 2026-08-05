@@ -21,6 +21,7 @@ import { VehicleService } from '../../core/api/api/vehicle.service';
 import type { GroupedBusInspectionResponse } from '../../core/api/model/groupedBusInspectionResponse';
 import type { VehicleResponse } from '../../core/api/model/vehicleResponse';
 import { DashboardFiltersComponent } from '../../core/components/dashboard-filters/dashboard-filters.component';
+import { ViewLoadingOverlayComponent } from '../../core/components/view-loading-overlay/view-loading-overlay.component';
 import { AuthService } from '../../core/services/auth.service';
 import {
   DashboardFilterService,
@@ -88,6 +89,7 @@ const INSPECTION_METRIC_TYPES = [
     TagModule,
     ToolbarModule,
     TooltipModule,
+    ViewLoadingOverlayComponent,
   ],
   templateUrl: './inspections.component.html',
   styleUrl: './inspections.component.css',

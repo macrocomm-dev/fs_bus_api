@@ -48,7 +48,9 @@
   </p-toolbar>
 
   <div class="smart-fleet-body" [class.smart-fleet-body--drawer-open]="menuVisible">
-    <main class="smart-fleet-content">
+    <main class="smart-fleet-content view-loading-host">
+      <app-view-loading-overlay [active]="loading() || iframeLoading()" label="Loading Smart Fleet map" />
+
       <div class="page-header">
         <div>
           <h2>Smart Fleet Live Map</h2>
