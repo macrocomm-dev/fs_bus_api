@@ -16,6 +16,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
+import { TimelineModule } from 'primeng/timeline';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
@@ -66,6 +67,20 @@ type ShiftLazyLoadEvent = {
   multiSortMeta?: { field: string; order: number }[] | null;
 };
 
+type ShiftTimelineEvent = {
+  id: string;
+  kind: 'selfie' | 'inspection';
+  timestamp: string;
+  title: string;
+  subtitle: string;
+  details: string;
+  gps: string;
+  icon: string;
+  severity: 'success' | 'danger' | 'warn' | 'info';
+  selfie?: SelfieResponse;
+  inspection?: ShiftInspectionItem;
+};
+
 @Component({
   selector: 'app-shifts',
   standalone: true,
@@ -83,6 +98,7 @@ type ShiftLazyLoadEvent = {
     MenuModule,
     TableModule,
     TagModule,
+    TimelineModule,
     ToolbarModule,
     TooltipModule,
   ],
@@ -217,6 +233,44 @@ export class ShiftsComponent implements OnInit {
 
   selfieImageSrc(photo: string): string {
     return photo.startsWith('data:image/') ? photo : `data:image/jpeg;base64,${photo}`;
+  }
+
+  timelineEventsForShift(row: ShiftRow): ShiftTimelineEvent[] {
+    const selfieEvents: ShiftTimelineEvent[] = row.selfies.map((selfie) => ({
+      id: `selfie-${selfie.id}`,
+      kind: 'selfie',
+      timestamp: selfie.timestamp,
+      title: 'Shift selfie',
+      subtitle: 'Monitor verification',
+      details: 'Selfie captured during the shift.',
+      gps: this.gps(selfie.lat, selfie.lon),
+      icon: 'pi pi-camera',
+      severity: 'info',
+      selfie,
+    }));
+
+    const inspectionEvents: ShiftTimelineEvent[] = row.inspections.map((inspection) => ({
+      id: `inspection-${inspection.inspectionId}`,
+      kind: 'inspection',
+      timestamp: inspection.inspectionTime,
+      title: inspection.type,
+      subtitle: [
+        inspection.busId ? `Bus ${inspection.busId}` : 'Unknown bus',
+        inspection.fleetNumber ? `Fleet ${inspection.fleetNumber}` : null,
+        inspection.dutyNumber ? `Duty ${inspection.dutyNumber}` : null,
+      ]
+        .filter(Boolean)
+        .join(' | '),
+      details: inspection.summary,
+      gps: inspection.gps,
+      icon: inspection.pass === false ? 'pi pi-times' : 'pi pi-check',
+      severity: this.statusSeverity(inspection.pass),
+      inspection,
+    }));
+
+    return [...selfieEvents, ...inspectionEvents].sort(
+      (a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp),
+    );
   }
 
   onLazyLoad(event: ShiftLazyLoadEvent): void {

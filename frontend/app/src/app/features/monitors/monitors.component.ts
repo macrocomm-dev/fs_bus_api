@@ -20,6 +20,7 @@ import { MenuModule } from 'primeng/menu';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
+import { TimelineModule } from 'primeng/timeline';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
@@ -70,6 +71,20 @@ type MonitorInspectionBusGroup = {
   inspections: MonitorInspectionItem[];
 };
 
+type MonitorTimelineEvent = {
+  id: string;
+  kind: 'selfie' | 'inspection';
+  timestamp: string;
+  title: string;
+  subtitle: string;
+  details: string;
+  gps: string;
+  icon: string;
+  severity: 'success' | 'danger' | 'warn' | 'info';
+  selfie?: SelfieResponse;
+  inspection?: MonitorInspectionItem;
+};
+
 const INSPECTION_SHIFT_LOOKUP_CHUNK_SIZE = 80;
 
 @Component({
@@ -92,6 +107,7 @@ const INSPECTION_SHIFT_LOOKUP_CHUNK_SIZE = 80;
     SelectModule,
     TableModule,
     TagModule,
+    TimelineModule,
     ToolbarModule,
     TooltipModule,
   ],
@@ -270,6 +286,44 @@ export class MonitorsComponent implements OnInit {
 
   selfieImageSrc(photo: string): string {
     return photo.startsWith('data:image/') ? photo : `data:image/jpeg;base64,${photo}`;
+  }
+
+  timelineEventsForShift(row: MonitorShiftRow): MonitorTimelineEvent[] {
+    const selfieEvents: MonitorTimelineEvent[] = row.selfies.map((selfie) => ({
+      id: `selfie-${selfie.id}`,
+      kind: 'selfie',
+      timestamp: selfie.timestamp,
+      title: 'Shift selfie',
+      subtitle: 'Monitor verification',
+      details: 'Selfie captured during the shift.',
+      gps: this.gps(selfie.lat, selfie.lon),
+      icon: 'pi pi-camera',
+      severity: 'info',
+      selfie,
+    }));
+
+    const inspectionEvents: MonitorTimelineEvent[] = row.inspections.map((inspection) => ({
+      id: `inspection-${inspection.inspectionId}`,
+      kind: 'inspection',
+      timestamp: inspection.inspectionTime,
+      title: inspection.type,
+      subtitle: [
+        inspection.busId ? `Bus ${inspection.busId}` : 'Unknown bus',
+        inspection.fleetNumber ? `Fleet ${inspection.fleetNumber}` : null,
+        inspection.dutyNumber ? `Duty ${inspection.dutyNumber}` : null,
+      ]
+        .filter(Boolean)
+        .join(' | '),
+      details: inspection.summary,
+      gps: inspection.gps,
+      icon: inspection.pass === false ? 'pi pi-times' : 'pi pi-check',
+      severity: this.statusSeverity(inspection.pass),
+      inspection,
+    }));
+
+    return [...selfieEvents, ...inspectionEvents].sort(
+      (a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp),
+    );
   }
 
   private loadMonitorData(): void {

@@ -210,32 +210,53 @@
             <tr>
               <td colspan="9" class="shift-detail-cell">
                 <div class="shift-detail-panel">
-                  @if (row.selfies.length > 0) {
-                    <section class="shift-selfie-panel" aria-label="Shift selfies">
-                      <div class="shift-selfie-panel__header">
-                        <span>Shift Selfies</span>
-                        <strong>{{ row.selfies.length }}</strong>
+                  @if (timelineEventsForShift(row).length > 0) {
+                    <section class="shift-timeline-panel" aria-label="Shift timeline">
+                      <div class="shift-detail-section-header">
+                        <span>Shift Timeline</span>
+                        <strong>{{ timelineEventsForShift(row).length }}</strong>
                       </div>
-                      <div class="shift-selfie-list">
-                        @for (selfie of row.selfies; track selfie.id) {
-                          <figure class="shift-selfie-item">
-                            <p-image
-                              [src]="selfieImageSrc(selfie.photo)"
-                              alt="Shift selfie"
-                              [preview]="true"
-                              imageClass="shift-selfie-image"
-                            />
-                            <figcaption>
-                              <span>{{ selfie.timestamp | date: 'yyyy-MM-dd HH:mm' }}</span>
-                              <span class="mono-cell">{{ selfie.lat | number: '1.5-5' }}, {{ selfie.lon | number: '1.5-5' }}</span>
-                            </figcaption>
-                          </figure>
-                        }
-                      </div>
+                      <p-timeline
+                        [value]="timelineEventsForShift(row)"
+                        align="left"
+                        styleClass="shift-timeline"
+                      >
+                        <ng-template pTemplate="marker" let-event>
+                          <span class="shift-timeline-marker" [ngClass]="'shift-timeline-marker--' + event.kind">
+                            <i [class]="event.icon"></i>
+                          </span>
+                        </ng-template>
+                        <ng-template pTemplate="content" let-event>
+                          <article class="shift-timeline-event">
+                            <div class="shift-timeline-event__heading">
+                              <div>
+                                <span>{{ event.timestamp | date: 'yyyy-MM-dd HH:mm' }}</span>
+                                <strong>{{ event.title }}</strong>
+                                <p>{{ event.subtitle }}</p>
+                              </div>
+                              <p-tag [value]="event.kind === 'selfie' ? 'Selfie' : statusLabel(event.inspection?.pass)" [severity]="event.severity" />
+                            </div>
+                            <p>{{ event.details }}</p>
+                            <span class="mono-cell">{{ event.gps }}</span>
+                            @if (event.selfie) {
+                              <p-image
+                                [src]="selfieImageSrc(event.selfie.photo)"
+                                alt="Shift selfie"
+                                [preview]="true"
+                                imageClass="shift-timeline-selfie"
+                              />
+                            }
+                          </article>
+                        </ng-template>
+                      </p-timeline>
                     </section>
                   }
 
                   @if (row.inspections.length > 0) {
+                    <div class="shift-detail-section-header shift-detail-section-header--spaced">
+                      <span>Inspection Details</span>
+                      <strong>{{ row.inspections.length }}</strong>
+                    </div>
                     <div class="shift-bus-fieldsets">
                       @for (group of inspectionGroupsForShift(row); track group.key) {
                         <p-fieldset

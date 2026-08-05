@@ -319,6 +319,108 @@
   border-top: 1px solid #e5e7eb;
 }
 
+.shift-detail-section-header {
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.shift-detail-section-header--spaced {
+  margin-top: 1rem;
+}
+
+.shift-detail-section-header span {
+  color: #6b7280;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.shift-detail-section-header strong {
+  color: #111827;
+}
+
+.shift-timeline-panel {
+  padding: 0.85rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+:host ::ng-deep .shift-timeline .p-timeline-event-opposite {
+  display: none;
+}
+
+:host ::ng-deep .shift-timeline .p-timeline-event-content {
+  padding-bottom: 0.85rem;
+}
+
+.shift-timeline-marker {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.18);
+}
+
+.shift-timeline-marker--inspection {
+  background: #2563eb;
+}
+
+.shift-timeline-marker--selfie {
+  background: #f97316;
+}
+
+.shift-timeline-event {
+  padding: 0.85rem;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.shift-timeline-event__heading {
+  margin-bottom: 0.55rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.shift-timeline-event__heading span {
+  display: block;
+  color: #6b7280;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.shift-timeline-event__heading strong {
+  display: block;
+  margin-top: 0.15rem;
+  color: #111827;
+  font-size: 0.95rem;
+}
+
+.shift-timeline-event__heading p,
+.shift-timeline-event > p {
+  margin: 0.2rem 0 0;
+  color: #4b5563;
+  line-height: 1.35;
+}
+
+:host ::ng-deep .shift-timeline-selfie {
+  width: 8.5rem;
+  height: 6.25rem;
+  margin-top: 0.75rem;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
 .shift-selfie-panel {
   margin-bottom: 1rem;
   padding: 0.85rem;

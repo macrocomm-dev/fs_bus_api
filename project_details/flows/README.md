@@ -44,4 +44,5 @@ Frontend behavior:
 - The Monitors page fetches selfies for the loaded shift IDs alongside inspection groups.
 - The selected monitor's latest selfie is derived by sorting that monitor's shift selfies by `timestamp` descending.
 - Expanded monitor and shift rows show shift selfie thumbnails with PrimeNG image preview.
+- Expanded monitor and shift rows also render a chronological timeline that interleaves shift selfies and inspection events by timestamp.
 - Selfies are displayed at shift level because they belong to the monitor shift, not to a specific bus inspection row.
