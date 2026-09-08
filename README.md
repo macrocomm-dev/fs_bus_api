@@ -29,6 +29,9 @@ The database (PostgreSQL) lives in the `bus-track-480813` GCloud project (Cloud 
 
 ## Local development
 
+For the complete configuration checklist and recovery steps after a fresh
+checkout, see [Local Development Setup](project_details/local_development.md).
+
 ### Prerequisites
 
 | Tool | Purpose |
@@ -64,8 +67,13 @@ chmod +x start.sh
 The script will:
 - Create / activate a `.venv` virtual environment
 - Install dependencies from `requirements.txt`
-- Start the Cloud SQL Auth Proxy (if `cloud-sql-proxy` is on your `PATH`)
+- Start the Cloud SQL Auth Proxy (from your `PATH` or `./cloud-sql-proxy`)
+- Start Angular on `FRONTEND_PORT` (default 4200; run `yarn install --immutable` in `frontend/app` first)
 - Launch the API at <http://127.0.0.1:8000>
+
+Set `LOAD_GCP_SECRETS=true` in `.env` when leaving secret fields empty. Add the
+chosen frontend origin to `CORS_ORIGINS`. The restored workstation uses frontend
+port 4201 because another project already uses 4200.
 
 Interactive docs shell: <http://127.0.0.1:8000/docs>
 

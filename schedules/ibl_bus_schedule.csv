@@ -1,0 +1,1173 @@
+duty_no,departure,origin,destination,direction,valid_days,bus_type
+504,04:40,Freedomsquare,Central Park,Forward,Monday to Friday,Standard
+539,05:30,Freedomsquare,Central Park,Forward,Monday to Friday,Standard
+530,05:40,Freedomsquare,Central Park,Forward,Monday to Friday,Standard
+543,06:30,Freedomsquare,Central Park,Forward,Monday to Friday,Standard
+538,05:20,Bergmansquare,Central Park,Forward,Monday to Friday,Standard
+546,06:30,Bergmansquare,Central Park,Forward,Monday to Friday,Standard
+534,05:20,Khayalitsha,Central Park,Forward,Monday to Friday,Standard
+543,05:20,Khayalitsha,Central Park,Forward,Monday to Friday,Standard
+551,06:20,Khayalitsha,Central Park,Forward,Monday to Friday,Standard
+534,06:20,Khayalitsha,Central Park,Forward,Monday to Friday,Standard
+559,05:30,Meadows,Central Park,Forward,Monday to Friday,Standard
+560,06:30,Meadows,Central Park,Forward,Monday to Friday,Standard
+531,05:20,Naledi,Central Park,Forward,Monday to Friday,Standard
+540,05:30,Naledi,Central Park,Forward,Monday to Friday,Standard
+547,06:20,Naledi,Central Park,Forward,Monday to Friday,Standard
+502,05:40,Namibia,Central Park,Forward,Monday to Friday,Standard
+545,05:20,Phase 2,Central Park,Forward,Monday to Friday,Standard
+505,06:30,Phase 2,Central Park,Forward,Monday to Friday,Standard
+506,05:00,Motsabi,Central Park,Forward,Monday to Friday,Standard
+535,05:20,Motsabi,Central Park,Forward,Monday to Friday,Standard
+501,05:30,Motsabi,Central Park,Forward,Monday to Friday,Standard
+548,06:20,Motsabi,Central Park,Forward,Monday to Friday,Standard
+562,05:20,Motsabi 2,Central Park,Forward,Monday to Friday,Standard
+560,05:20,Motsabi 2,Central Park,Forward,Monday to Friday,Standard
+532,06:20,Motsabi 2,Central Park,Forward,Monday to Friday,Standard
+530,04:40,Phelindaba,Central Park,Forward,Monday to Friday,Standard
+553,05:20,Phelindaba,Central Park,Forward,Monday to Friday,Standard
+552,05:30,Phelindaba,Central Park,Forward,Monday to Friday,Standard
+535,06:20,Phelindaba,Central Park,Forward,Monday to Friday,Standard
+502,06:40,Phelindaba,Central Park,Forward,Monday to Friday,Standard
+555,05:30,Rocklands,Central Park,Forward,Monday to Friday,Standard
+533,06:40,Rocklands,Central Park,Forward,Monday to Friday,Standard
+501,04:30,Phase 4,Central Park,Forward,Monday to Friday,Standard
+536,05:20,Phase 4,Central Park,Forward,Monday to Friday,Standard
+541,05:30,Phase 4,Central Park,Forward,Monday to Friday,Standard
+538,06:20,Phase 4,Central Park,Forward,Monday to Friday,Standard
+503,05:30,Turflaagte,Central Park,Forward,Monday to Friday,Standard
+519,05:30,Turflaagte,Central Park,Forward,Monday to Friday,Standard
+520,06:40,Turflaagte,Central Park,Forward,Monday to Friday,Standard
+551,05:20,Peter Swart,Central Park,Forward,Monday to Friday,Standard
+518,05:20,Peter Swart,Central Park,Forward,Monday to Friday,Standard
+503,06:30,Peter Swart,Central Park,Forward,Monday to Friday,Standard
+539,06:40,Peter Swart,Central Park,Forward,Monday to Friday,Standard
+7,05:50,Bloemside,Central Park,Forward,Monday to Friday,Standard
+502,04:40,Phase 6,Central Park,Forward,Monday to Friday,Standard
+533,05:20,Phase 6,Central Park,Forward,Monday to Friday,Standard
+546,05:20,Phase 6,Central Park,Forward,Monday to Friday,Standard
+561,05:20,Phase 6,Central Park,Forward,Monday to Friday,Standard
+31,06:40,Mandela View,Central Park,Forward,Monday to Friday,Standard
+203,04:20,Zone 1,Central Park,Forward,Monday to Friday,Standard
+252,08:00,Zone 1,Central Park,Forward,Monday to Friday,Standard
+291,17:30,Zone 1,Central Park,Forward,Monday to Friday,Standard
+293,19:00,Zone 1,Central Park,Forward,Monday to Friday,Standard
+6202,04:00,Zone 1,Central Park,Forward,Saturday,Standard
+6256,06:00,Zone 1,Central Park,Forward,Saturday,Standard
+6208,06:10,Zone 1,Central Park,Forward,Saturday,Standard
+6210,06:30,Zone 1,Central Park,Forward,Saturday,Standard
+6211,06:40,Zone 1,Central Park,Forward,Saturday,Standard
+6202,08:00,Zone 1,Central Park,Forward,Saturday,Standard
+6254,09:00,Zone 1,Central Park,Forward,Saturday,Standard
+6252,10:00,Zone 1,Central Park,Forward,Saturday,Standard
+6205,12:40,Zone 1,Central Park,Forward,Saturday,Standard
+7255,07:00,Zone 1,Central Park,Forward,Sunday,Standard
+7208,09:00,Zone 1,Central Park,Forward,Sunday,Standard
+7208,14:00,Zone 1,Central Park,Forward,Sunday,Standard
+228,11:00,Zone 1,Central Park,Forward,Monday to Friday,Standard
+255,09:00,Zone 1,Central Park,Forward,Monday to Friday,Standard
+232,10:00,Zone 1,Central Park,Forward,Monday to Friday,Standard
+227,11:50,Zone 1,Central Park,Forward,Monday to Friday,Standard
+293,15:20,Zone 1,Central Park,Forward,Monday to Friday,Standard
+231,15:50,Zone 1,Central Park,Forward,Monday to Friday,Standard
+294,16:30,Zone 1,Central Park,Forward,Monday to Friday,Standard
+7251,04:00,Zone 1,Central Park,Forward,Sunday,Standard
+7212,18:00,Zone 1,Central Park,Forward,Sunday,Standard
+7213,18:30,Zone 1,Central Park,Forward,Sunday,Standard
+7204,05:00,Zone 1,Universitas Hospital,Forward,Sunday,Standard
+201,16:00,CR Swart,Zone 1,Forward,Monday to Friday,Standard
+201,04:40,Zone 1,Hospitals,Forward,Monday to Friday,Standard
+229,17:00,Zone 1,Hospitals,Forward,Monday to Friday,Standard
+226,04:30,Zone 2,Central Park,Forward,Monday to Friday,Standard
+220,06:30,Unit 1,Central Park,Forward,Monday to Friday,Standard
+214,04:50,Zone 5,Central Park,Forward,Monday to Friday,Standard
+268,05:30,Zone 5,Central Park,Forward,Monday to Friday,Standard
+215,06:00,Zone 5,Central Park,Forward,Monday to Friday,Standard
+209,04:50,Sakanyoka,Central Park,Forward,Monday to Friday,Standard
+217,06:10,Sakanyoka,Central Park,Forward,Monday to Friday,Standard
+7252,04:00,Sakanyoka,Central Park,Forward,Sunday,Standard
+7203,05:00,Sakanyoka,Central Park,Forward,Sunday,Standard
+7206,06:00,Sakanyoka,Central Park,Forward,Sunday,Standard
+210,05:00,Makurung,Central Park,Forward,Monday to Friday,Standard
+207,05:40,Makurung,Central Park,Forward,Monday to Friday,Standard
+252,05:00,Zone 3,Central Park,Forward,Monday to Friday,Standard
+262,05:10,Zone 3,Central Park,Forward,Monday to Friday,Standard
+202,06:00,Zone 3,Central Park,Forward,Monday to Friday,Standard
+218,06:20,Zone 3,Central Park,Forward,Monday to Friday,Standard
+290,16:50,Zone 3,Central Park,Forward,Monday to Friday,Standard
+263,06:00,Zone 4,Central Park,Forward,Monday to Friday,Standard
+206,04:40,Garapulana,Central Park,Forward,Monday to Friday,Standard
+211,04:50,Mokwena,Central Park,Forward,Monday to Friday,Standard
+212,05:20,Mokwena,Central Park,Forward,Monday to Friday,Standard
+213,05:40,Mokwena,Central Park,Forward,Monday to Friday,Standard
+216,06:00,Mokwena,Central Park,Forward,Monday to Friday,Standard
+219,06:20,Mokwena,Central Park,Forward,Monday to Friday,Standard
+230,15:10,Mokwena,Central Park,Forward,Monday to Friday,Standard
+227,16:10,Mokwena,Central Park,Forward,Monday to Friday,Standard
+6204,05:40,Mokwena,Central Park,Forward,Saturday,Standard
+6217,06:10,Mokwena,Central Park,Forward,Saturday,Standard
+7205,06:00,Mokwena,Central Park,Forward,Sunday,Standard
+205,03:40,Mokwena,Central Park,Forward,Monday to Friday,Standard
+6201,04:00,Mokwena,Central Park,Forward,Saturday,Standard
+7201,04:00,Mokwena,Central Park,Forward,Sunday,Standard
+221,06:30,Moroka School,Central Park,Forward,Monday to Friday,Standard
+6206,06:00,Moroka School,Central Park,Forward,Saturday,Standard
+6209,06:30,Moroka School,Central Park,Forward,Saturday,Standard
+233,05:30,Selosesha,Central Park,Forward,Monday to Friday,Standard
+222,06:20,Selosesha,Central Park,Forward,Monday to Friday,Standard
+209,08:00,Selosesha,Central Park,Forward,Monday to Friday,Standard
+6203,08:10,Selosesha,Central Park,Forward,Saturday,Standard
+7213,15:20,Selosesha,Central Park,Forward,Sunday,Standard
+266,05:30,Zone 1,Tempe,Forward,Monday to Friday,Standard
+224,05:40,Zone 1,Air Force,Forward,Monday to Friday,Standard
+208,05:00,Esso,Central Park,Forward,Monday to Friday,Standard
+512,16:00,UFS,Phase 2,Forward,Monday to Friday,Standard
+537,05:20,Phase 3,Central Park,Forward,Monday to Friday,Standard
+542,05:40,Phase 3,Central Park,Forward,Monday to Friday,Standard
+561,06:30,Phase 3,Central Park,Forward,Monday to Friday,Standard
+537,06:30,Phase 3,Central Park,Forward,Monday to Friday,Standard
+513,05:40,Ipopeng,Central Park,Forward,Monday to Friday,Standard
+532,05:20,Mafora,Central Park,Forward,Monday to Friday,Standard
+545,06:30,Mafora,Central Park,Forward,Monday to Friday,Standard
+536,06:30,Mafora,Central Park,Forward,Monday to Friday,Standard
+503,04:30,Phase 7,Central Park,Forward,Monday to Friday,Standard
+524,05:10,Phase 7,Central Park,Forward,Monday to Friday,Standard
+525,05:10,Phase 7,Central Park,Forward,Monday to Friday,Standard
+518,06:10,Phase 7,Central Park,Forward,Monday to Friday,Standard
+562,06:10,Phase 7,Central Park,Forward,Monday to Friday,Standard
+550,05:20,Phase 6,Central Park,Forward,Monday to Friday,Train
+544,05:30,Phase 6,Central Park,Forward,Monday to Friday,Train
+531,06:30,Phase 6,Central Park,Forward,Monday to Friday,Train
+251,04:50,Zone 1,Central Park,Forward,Monday to Friday,Train
+257,05:20,Zone 1,Central Park,Forward,Monday to Friday,Train
+264,06:00,Zone 1,Central Park,Forward,Monday to Friday,Train
+265,06:20,Zone 1,Central Park,Forward,Monday to Friday,Train
+6252,05:30,Zone 1,Central Park,Forward,Saturday,Train
+6255,05:40,Zone 1,Central Park,Forward,Saturday,Train
+250,03:50,Zone 1,Central Park,Forward,Monday to Friday,Train
+292,14:50,Zone 1,Central Park,Forward,Monday to Friday,Train
+290,12:50,Zone 1,Central Park,Forward,Monday to Friday,Train
+291,13:50,Zone 1,Central Park,Forward,Monday to Friday,Train
+6254,04:50,Zone 1,Central Park,Forward,Saturday,Train
+7253,04:50,Zone 1,Central Park,Forward,Sunday,Train
+7254,06:00,Zone 1,Central Park,Forward,Sunday,Train
+7256,10:00,Zone 1,Central Park,Forward,Sunday,Train
+7255,11:00,Zone 1,Central Park,Forward,Sunday,Train
+7258,13:00,Zone 1,Central Park,Forward,Sunday,Train
+7257,15:00,Zone 1,Central Park,Forward,Sunday,Train
+7256,16:00,Zone 1,Central Park,Forward,Sunday,Train
+7258,17:00,Zone 1,Central Park,Forward,Sunday,Train
+250,07:20,Zone 1,Central Park,Forward,Monday to Friday,Train
+253,04:50,Zone 2,Central Park,Forward,Monday to Friday,Train
+256,05:30,Zone 2,Central Park,Forward,Monday to Friday,Train
+261,06:00,Zone 2,Central Park,Forward,Monday to Friday,Train
+259,05:40,Unit 1,Central Park,Forward,Monday to Friday,Train
+6253,05:00,Zone 3 + 4,Central Park,Forward,Saturday,Train
+255,05:20,Moroka School,Central Park,Forward,Monday to Friday,Train
+260,05:40,Moroka School,Central Park,Forward,Monday to Friday,Train
+267,04:20,Rooifontein,Central Park,Forward,Monday to Friday,Train
+4,04:10,A1,Central Park,Forward,Monday to Friday,Standard
+35,06:00,A1,Central Park,Forward,Monday to Friday,Standard
+42,06:10,A1,Central Park,Forward,Monday to Friday,Standard
+6005,05:00,A1,Central Park,Forward,Saturday,Standard
+6027,06:30,A1,Central Park,Forward,Saturday,Standard
+6,04:10,A4,Central Park,Forward,Monday to Friday,Standard
+12,05:00,C2,Central Park,Forward,Monday to Friday,Standard
+63,05:10,C2,Central Park,Forward,Monday to Friday,Standard
+13,05:50,C2,Central Park,Forward,Monday to Friday,Standard
+8,04:30,D1,Central Park,Forward,Monday to Friday,Standard
+36,05:40,D1,Central Park,Forward,Monday to Friday,Standard
+41,06:20,D1,Central Park,Forward,Monday to Friday,Standard
+7,04:00,J1,Central Park,Forward,Monday to Friday,Standard
+16,04:50,J1,Central Park,Forward,Monday to Friday,Standard
+66,05:50,J1,Central Park,Forward,Monday to Friday,Standard
+65,05:50,J1,Central Park,Forward,Monday to Friday,Standard
+57,15:00,J1,Central Park,Forward,Monday to Friday,Standard
+23,14:50,G1,Central Park,Forward,Monday to Friday,Standard
+7102,04:10,G2,Central Park,Forward,Sunday,Standard
+1,04:00,J3,Central Park,Forward,Monday to Friday,Standard
+18,05:10,J3,Central Park,Forward,Monday to Friday,Standard
+9,05:20,J3,Central Park,Forward,Monday to Friday,Standard
+29,05:30,J3,Central Park,Forward,Monday to Friday,Standard
+34,05:40,J3,Central Park,Forward,Monday to Friday,Standard
+44,06:30,J3,Central Park,Forward,Monday to Friday,Standard
+160,15:40,J3,Central Park,Forward,Monday to Friday,Standard
+6003,04:20,J3,Central Park,Forward,Saturday,Standard
+6044,06:00,J3,Central Park,Forward,Saturday,Standard
+7108,05:20,J3,Central Park,Forward,Sunday,Standard
+153,15:40,K6,Central Park,Forward,Monday to Friday,Standard
+22,05:20,M1,Central Park,Forward,Monday to Friday,Standard
+32,05:20,M1,Central Park,Forward,Monday to Friday,Standard
+51,15:20,M4,Central Park,Forward,Monday to Friday,Standard
+3,04:30,N1,Central Park,Forward,Monday to Friday,Standard
+27,05:10,N1,Central Park,Forward,Monday to Friday,Standard
+28,05:30,N1,Central Park,Forward,Monday to Friday,Standard
+45,06:40,N1,Central Park,Forward,Monday to Friday,Standard
+56,15:00,N1,Central Park,Forward,Monday to Friday,Standard
+58,15:30,N1,Central Park,Forward,Monday to Friday,Standard
+44,16:30,N1,Central Park,Forward,Monday to Friday,Standard
+6001,04:20,N1,Central Park,Forward,Saturday,Standard
+7004,04:30,N1,Central Park,Forward,Sunday,Standard
+7109,05:30,N1,Central Park,Forward,Sunday,Standard
+7015,15:10,N1,Central Park,Forward,Sunday,Standard
+46,04:00,S1,Central Park,Forward,Monday to Friday,Standard
+10,04:20,S1,Central Park,Forward,Monday to Friday,Standard
+14,04:40,S1,Central Park,Forward,Monday to Friday,Standard
+54,15:20,S1,Central Park,Forward,Monday to Friday,Standard
+6047,04:00,S1,Central Park,Forward,Saturday,Standard
+6048,04:50,S1,Central Park,Forward,Saturday,Standard
+6017,05:20,S1,Central Park,Forward,Saturday,Standard
+7101,04:00,S1,Central Park,Forward,Sunday,Standard
+7107,05:00,S1,Central Park,Forward,Sunday,Standard
+64,04:30,1,Central Park,Forward,Monday to Friday,Standard
+23,05:10,T1,Central Park,Forward,Monday to Friday,Standard
+50,15:00,T1,Central Park,Forward,Monday to Friday,Standard
+15,04:00,U7,Central Park,Forward,Monday to Friday,Standard
+20,05:10,U7,Central Park,Forward,Monday to Friday,Standard
+38,06:10,U7,Central Park,Forward,Monday to Friday,Standard
+55,15:20,U7,Central Park,Forward,Monday to Friday,Standard
+6110,15:10,U7,Central Park,Forward,Saturday,Standard
+7103,04:10,U7,Central Park,Forward,Sunday,Standard
+5,04:10,W4,Central Park,Forward,Monday to Friday,Standard
+17,05:00,W4,Central Park,Forward,Monday to Friday,Standard
+30,05:10,W4,Central Park,Forward,Monday to Friday,Standard
+122,05:20,W4,Central Park,Forward,Monday to Friday,Standard
+21,06:10,W4,Central Park,Forward,Monday to Friday,Standard
+60,15:30,W4,Central Park,Forward,Monday to Friday,Standard
+7022,16:00,Belgie,Kortpad,Forward,Sunday,Standard
+40,05:40,M4,Langenhovenpark,Forward,Monday to Friday,Standard
+4,05:30,Central Park,Fairways,Forward,Monday to Friday,Standard
+173,05:50,Central Park,Fairways,Forward,Monday to Friday,Standard
+7,08:30,Central Park,Fairways,Forward,Monday to Friday,Standard
+8,09:00,Central Park,Fairways,Forward,Monday to Friday,Standard
+3,09:10,Central Park,Fairways,Forward,Monday to Friday,Standard
+5,09:30,Central Park,Fairways,Forward,Monday to Friday,Standard
+46,10:10,Central Park,Fairways,Forward,Monday to Friday,Standard
+103,10:40,Central Park,Fairways,Forward,Monday to Friday,Standard
+19,11:00,Central Park,Fairways,Forward,Monday to Friday,Standard
+6,11:40,Central Park,Fairways,Forward,Monday to Friday,Standard
+6004,05:30,Central Park,Fairways,Forward,Saturday,Standard
+6047,06:00,Central Park,Fairways,Forward,Saturday,Standard
+6003,07:00,Central Park,Fairways,Forward,Saturday,Standard
+6044,07:10,Central Park,Fairways,Forward,Saturday,Standard
+6002,08:40,Central Park,Fairways,Forward,Saturday,Standard
+6003,10:40,Central Park,Fairways,Forward,Saturday,Standard
+6005,11:10,Central Park,Fairways,Forward,Saturday,Standard
+6006,12:10,Central Park,Fairways,Forward,Saturday,Standard
+6007,12:30,Central Park,Fairways,Forward,Saturday,Standard
+7001,05:40,Central Park,Fairways,Forward,Sunday,Standard
+7102,06:50,Central Park,Fairways,Forward,Sunday,Standard
+7003,07:00,Central Park,Fairways,Forward,Sunday,Standard
+7103,07:00,Central Park,Fairways,Forward,Sunday,Standard
+7104,07:00,Central Park,Fairways,Forward,Sunday,Standard
+7004,07:40,Central Park,Fairways,Forward,Sunday,Standard
+7105,08:00,Central Park,Fairways,Forward,Sunday,Standard
+7106,08:00,Central Park,Fairways,Forward,Sunday,Standard
+7005,09:00,Central Park,Fairways,Forward,Sunday,Standard
+7006,10:00,Central Park,Fairways,Forward,Sunday,Standard
+7108,12:00,Central Park,Fairways,Forward,Sunday,Standard
+7116,15:00,Central Park,Fairways,Forward,Sunday,Standard
+7010,17:00,Central Park,Fairways,Forward,Sunday,Standard
+7011,17:00,Central Park,Fairways,Forward,Sunday,Standard
+7012,17:00,Central Park,Fairways,Forward,Sunday,Standard
+7013,17:40,Central Park,Fairways,Forward,Sunday,Standard
+7014,17:40,Central Park,Fairways,Forward,Sunday,Standard
+7015,19:00,Central Park,Fairways,Forward,Sunday,Standard
+7016,19:00,Central Park,Fairways,Forward,Sunday,Standard
+7017,19:00,Central Park,Fairways,Forward,Sunday,Standard
+7018,19:00,Central Park,Fairways,Forward,Sunday,Standard
+61,22:30,Central Park,Kortpad,Forward,Monday to Friday,Standard
+7020,20:00,Central Park,Kortpad,Forward,Sunday,Standard
+2,04:10,N6,Central Park,Forward,Monday to Friday,Standard
+39,06:20,N6,Central Park,Forward,Monday to Friday,Standard
+6011,05:00,N6,Central Park,Forward,Saturday,Standard
+6024,06:00,N6,Central Park,Forward,Saturday,Standard
+19,04:50,H2,Central Park,Forward,Monday to Friday,Standard
+49,12:00,Fairways,Central Park,Forward,Monday to Friday,Standard
+52,14:30,Fairways,Central Park,Forward,Monday to Friday,Standard
+61,18:10,Fairways,Central Park,Forward,Monday to Friday,Standard
+6003,09:30,Fairways,Central Park,Forward,Saturday,Standard
+6032,12:00,Fairways,Central Park,Forward,Saturday,Standard
+7009,11:00,Fairways,Central Park,Forward,Sunday,Standard
+7010,12:00,Fairways,Central Park,Forward,Sunday,Standard
+7011,12:30,Fairways,Central Park,Forward,Sunday,Standard
+7012,13:00,Fairways,Central Park,Forward,Sunday,Standard
+7013,14:00,Fairways,Central Park,Forward,Sunday,Standard
+7023,15:00,Fairways,Central Park,Forward,Sunday,Standard
+7024,15:30,Fairways,Central Park,Forward,Sunday,Standard
+7019,16:00,Fairways,Central Park,Forward,Sunday,Standard
+7018,17:00,Fairways,Central Park,Forward,Sunday,Standard
+7020,18:50,Fairways,Central Park,Forward,Sunday,Standard
+49,17:30,Fairways,Hospitals,Forward,Monday to Friday,Standard
+11,05:00,C1,Central Park,Forward,Monday to Friday,Standard
+37,06:00,C1,Central Park,Forward,Monday to Friday,Standard
+26,05:30,A5,Tempe,Forward,Monday to Friday,Standard
+159,05:30,K6,Tempe,Forward,Monday to Friday,Standard
+120,15:50,Waterbron,Central Park,Forward,Monday to Friday,Standard
+138,16:40,Waterbron,Central Park,Forward,Monday to Friday,Standard
+28,13:50,Bayswater,Central Park,Forward,Monday to Friday,Standard
+210,15:30,Bayswater,Central Park,Forward,Monday to Friday,Standard
+553,16:00,Bayswater,Central Park,Forward,Monday to Friday,Standard
+155,16:30,Bayswater,Central Park,Forward,Monday to Friday,Standard
+162,17:40,Bayswater,Central Park,Forward,Monday to Friday,Standard
+6017,15:20,Bayswater,Central Park,Forward,Saturday,Standard
+212,15:10,Pitstop,Central Park,Forward,Monday to Friday,Standard
+154,16:00,Pitstop,Central Park,Forward,Monday to Friday,Standard
+544,16:30,Pitstop,Central Park,Forward,Monday to Friday,Standard
+117,14:40,Brandwag,Central Park,Forward,Monday to Friday,Standard
+216,15:30,Brandwag,Central Park,Forward,Monday to Friday,Standard
+119,16:10,Brandwag,Central Park,Forward,Monday to Friday,Standard
+136,17:00,Brandwag,Central Park,Forward,Monday to Friday,Standard
+201,14:30,Dan Pienaar,Central Park,Forward,Monday to Friday,Standard
+29,15:50,Dan Pienaar,Central Park,Forward,Monday to Friday,Standard
+33,16:20,Dan Pienaar,Central Park,Forward,Monday to Friday,Standard
+130,16:20,Dan Pienaar,Central Park,Forward,Monday to Friday,Standard
+264,17:10,Dan Pienaar,Central Park,Forward,Monday to Friday,Standard
+156,17:30,Dan Pienaar,Central Park,Forward,Monday to Friday,Standard
+6030,14:00,Dan Pienaar,Central Park,Forward,Saturday,Standard
+7252,07:00,Central Park,Dan Pienaar,Forward,Sunday,Standard
+130,14:30,Fauna,Central Park,Forward,Monday to Friday,Standard
+38,15:30,Fauna,Central Park,Forward,Monday to Friday,Standard
+157,16:20,Fauna,Central Park,Forward,Monday to Friday,Standard
+218,17:00,Fauna,Central Park,Forward,Monday to Friday,Standard
+549,13:50,De Wet,Central Park,Forward,Monday to Friday,Standard
+26,14:50,De Wet,Central Park,Forward,Monday to Friday,Standard
+215,15:30,De Wet,Central Park,Forward,Monday to Friday,Standard
+174,16:00,De Wet,Central Park,Forward,Monday to Friday,Standard
+517,16:20,De Wet,Central Park,Forward,Monday to Friday,Standard
+129,17:00,De Wet,Central Park,Forward,Monday to Friday,Standard
+154,17:30,De Wet,Central Park,Forward,Monday to Friday,Standard
+545,14:20,Fichardtpark,Central Park,Forward,Monday to Friday,Standard
+122,14:20,Fichardtpark,Central Park,Forward,Monday to Friday,Standard
+134,15:30,Fichardtpark,Central Park,Forward,Monday to Friday,Standard
+542,16:10,Fichardtpark,Central Park,Forward,Monday to Friday,Standard
+35,16:30,Fichardtpark,Central Park,Forward,Monday to Friday,Standard
+230,17:40,Fichardtpark,Central Park,Forward,Monday to Friday,Standard
+6019,13:20,Fichardtpark,Central Park,Forward,Saturday,Standard
+6028,16:20,Fichardtpark,Central Park,Forward,Saturday,Standard
+28,15:30,Hamilton,Central Park,Forward,Monday to Friday,Standard
+264,16:00,Hamilton,Central Park,Forward,Monday to Friday,Standard
+163,16:20,Hamilton,Central Park,Forward,Monday to Friday,Standard
+171,16:40,Hamilton,Central Park,Forward,Monday to Friday,Standard
+265,17:00,Hamilton,Central Park,Forward,Monday to Friday,Standard
+512,14:20,Heuwelsig,Central Park,Forward,Monday to Friday,Standard
+50,17:00,Heuwelsig,Central Park,Forward,Monday to Friday,Standard
+43,15:20,Lillyvale,Central Park,Forward,Monday to Friday,Standard
+215,16:20,Lillyvale,Central Park,Forward,Monday to Friday,Standard
+12,14:50,Hospitaalpark,Central Park,Forward,Monday to Friday,Standard
+26,15:40,Hospitaalpark,Central Park,Forward,Monday to Friday,Standard
+222,16:30,Hospitaalpark,Central Park,Forward,Monday to Friday,Standard
+221,17:30,Hospitaalpark,Central Park,Forward,Monday to Friday,Standard
+6020,07:30,Central Park,Hospitaalpark,Forward,Saturday,Standard
+506,12:30,Langenhovenpark,Central Park,Forward,Monday to Friday,Standard
+11,13:20,Langenhovenpark,Central Park,Forward,Monday to Friday,Standard
+111,15:00,Langenhovenpark,Central Park,Forward,Monday to Friday,Standard
+257,15:30,Langenhovenpark,Central Park,Forward,Monday to Friday,Standard
+63,16:00,Langenhovenpark,Central Park,Forward,Monday to Friday,Standard
+132,16:20,Langenhovenpark,Central Park,Forward,Monday to Friday,Standard
+202,16:20,Langenhovenpark,Central Park,Forward,Monday to Friday,Standard
+167,18:20,Langenhovenpark,Central Park,Forward,Monday to Friday,Standard
+6020,13:20,Langenhovenpark,Central Park,Forward,Saturday,Standard
+6506,15:20,Langenhovenpark,Central Park,Forward,Saturday,Standard
+224,16:10,Fruit & Veg,Central Park,Forward,Monday to Friday,Standard
+141,17:10,Fruit & Veg,Central Park,Forward,Monday to Friday,Standard
+521,16:40,Lourierpark,Central Park,Forward,Monday to Friday,Standard
+127,14:00,Noordhoek,Central Park,Forward,Monday to Friday,Standard
+516,14:10,Noordhoek,Central Park,Forward,Monday to Friday,Standard
+63,14:50,Noordhoek,Central Park,Forward,Monday to Friday,Standard
+144,15:50,Noordhoek,Central Park,Forward,Monday to Friday,Standard
+216,16:30,Noordhoek,Central Park,Forward,Monday to Friday,Standard
+133,16:50,Noordhoek,Central Park,Forward,Monday to Friday,Standard
+213,16:30,Ooseinde,Central Park,Forward,Monday to Friday,Standard
+39,17:10,Ooseinde,Central Park,Forward,Monday to Friday,Standard
+146,17:10,Ooseinde,Central Park,Forward,Monday to Friday,Standard
+14,13:50,Pellissier,Central Park,Forward,Monday to Friday,Standard
+233,15:20,Pellissier,Central Park,Forward,Monday to Friday,Standard
+261,15:50,Pellissier,Central Park,Forward,Monday to Friday,Standard
+118,16:10,Pellissier,Central Park,Forward,Monday to Friday,Standard
+155,17:30,Pellissier,Central Park,Forward,Monday to Friday,Standard
+6208,15:20,Pellissier,Central Park,Forward,Saturday,Standard
+6031,17:00,Pellissier,Central Park,Forward,Saturday,Standard
+38,13:40,Universitas,Central Park,Forward,Monday to Friday,Standard
+508,14:40,Universitas,Central Park,Forward,Monday to Friday,Standard
+14,15:00,Universitas,Central Park,Forward,Monday to Friday,Standard
+13,15:40,Universitas,Central Park,Forward,Monday to Friday,Standard
+117,16:20,Universitas,Central Park,Forward,Monday to Friday,Standard
+137,17:00,Universitas,Central Park,Forward,Monday to Friday,Standard
+149,17:40,Universitas,Central Park,Forward,Monday to Friday,Standard
+6030,07:30,Central Park,Universitas,Forward,Saturday,Standard
+523,14:30,Universitas West,Central Park,Forward,Monday to Friday,Standard
+35,15:30,Universitas West,Central Park,Forward,Monday to Friday,Standard
+149,16:30,Universitas West,Central Park,Forward,Monday to Friday,Standard
+558,17:10,Universitas West,Central Park,Forward,Monday to Friday,Standard
+141,16:10,Vogue,Central Park,Forward,Monday to Friday,Standard
+158,17:10,Vogue,Central Park,Forward,Monday to Friday,Standard
+11,14:40,Wilgehof,Central Park,Forward,Monday to Friday,Standard
+523,15:30,Wilgehof,Central Park,Forward,Monday to Friday,Standard
+134,16:40,Wilgehof,Central Park,Forward,Monday to Friday,Standard
+105,14:10,Kwaggafontein,Central Park,Forward,Monday to Friday,Standard
+532,17:10,Kwaggafontein,Central Park,Forward,Monday to Friday,Standard
+505,17:20,Kwaggafontein,Central Park,Forward,Monday to Friday,Standard
+514,18:10,Kwaggafontein,Central Park,Forward,Monday to Friday,Standard
+164,18:10,Makro,Central Park,Forward,Monday to Friday,Standard
+9,16:10,UOVS,Central Park,Forward,Monday to Friday,Standard
+126,16:10,UOVS,Central Park,Forward,Monday to Friday,Standard
+30,16:30,UOVS,Central Park,Forward,Monday to Friday,Standard
+556,14:20,Vista,Central Park,Forward,Monday to Friday,Standard
+9,15:10,Vista,Central Park,Forward,Monday to Friday,Standard
+30,14:50,Kelly's View,Central Park,Forward,Monday to Friday,Standard
+43,17:10,Kelly's View,Central Park,Forward,Monday to Friday,Standard
+523,04:30,Brandfort,Central Park ,Forward,Monday to Friday,Standard
+10,14:30,Woodland Hills,Central Park,Forward,Monday to Friday,Standard
+66,16:00,Woodland Hills,Central Park,Forward,Monday to Friday,Standard
+114,04:50,A1,Central Park,Forward,Monday to Friday,Train
+172,05:10,A1,Central Park,Forward,Monday to Friday,Train
+124,05:20,A1,Central Park,Forward,Monday to Friday,Train
+137,05:40,A1,Central Park,Forward,Monday to Friday,Train
+160,06:20,A1,Central Park,Forward,Monday to Friday,Train
+6012,05:30,A1,Central Park,Forward,Saturday,Train
+111,04:50,A4,Central Park,Forward,Monday to Friday,Train
+125,05:30,A4,Central Park,Forward,Monday to Friday,Train
+141,05:50,A4,Central Park,Forward,Monday to Friday,Train
+7106,05:10,A4,Central Park,Forward,Sunday,Train
+110,04:50,D1,Central Park,Forward,Monday to Friday,Train
+6122,04:00,D1,Central Park,Forward,Saturday,Train
+7111,05:30,A5,Central Park,Forward,Sunday,Train
+101,04:40,J1,Central Park,Forward,Monday to Friday,Train
+121,05:10,J1,Central Park,Forward,Monday to Friday,Train
+171,05:30,J1,Central Park,Forward,Monday to Friday,Train
+6106,06:30,G2,Central Park,Forward,Saturday,Train
+7110,05:30,G2,Central Park,Forward,Sunday,Train
+105,04:40,J3,Central Park,Forward,Monday to Friday,Train
+116,04:50,J3,Central Park,Forward,Monday to Friday,Train
+174,05:50,J3,Central Park,Forward,Monday to Friday,Train
+140,05:50,J3,Central Park,Forward,Monday to Friday,Train
+7104,04:20,J3,Central Park,Forward,Sunday,Train
+7114,06:20,J3,Central Park,Forward,Sunday,Train
+173,04:40,K6,Central Park,Forward,Monday to Friday,Train
+108,04:50,K6,Central Park,Forward,Monday to Friday,Train
+117,05:10,K6,Central Park,Forward,Monday to Friday,Train
+123,05:20,K6,Central Park,Forward,Monday to Friday,Train
+135,05:40,K6,Central Park,Forward,Monday to Friday,Train
+149,05:50,K6,Central Park,Forward,Monday to Friday,Train
+154,06:20,K6,Central Park,Forward,Monday to Friday,Train
+102,04:00,M1,Central Park,Forward,Monday to Friday,Train
+103,04:30,M1,Central Park,Forward,Monday to Friday,Train
+109,04:50,M1,Central Park,Forward,Monday to Friday,Train
+118,05:10,M1,Central Park,Forward,Monday to Friday,Train
+136,05:40,M1,Central Park,Forward,Monday to Friday,Train
+147,05:50,M1,Central Park,Forward,Monday to Friday,Train
+156,06:20,M1,Central Park,Forward,Monday to Friday,Train
+158,15:00,M4,Central Park,Forward,Monday to Friday,Train
+7112,06:00,M4,Central Park,Forward,Sunday,Train
+107,04:50,N1,Central Park,Forward,Monday to Friday,Train
+119,05:10,N1,Central Park,Forward,Monday to Friday,Train
+138,05:30,N1,Central Park,Forward,Monday to Friday,Train
+146,05:50,N1,Central Park,Forward,Monday to Friday,Train
+145,06:00,N1,Central Park,Forward,Monday to Friday,Train
+153,06:20,N1,Central Park,Forward,Monday to Friday,Train
+6103,05:30,N1,Central Park,Forward,Saturday,Train
+6109,06:30,N1,Central Park,Forward,Saturday,Train
+7113,06:10,N1,Central Park,Forward,Sunday,Train
+129,05:20,S1,Central Park,Forward,Monday to Friday,Train
+142,05:40,S1,Central Park,Forward,Monday to Friday,Train
+176,04:40,1,Central Park,Forward,Monday to Friday,Train
+132,05:20,1,Central Park,Forward,Monday to Friday,Train
+106,04:50,T1,Central Park,Forward,Monday to Friday,Train
+130,05:30,T1,Central Park,Forward,Monday to Friday,Train
+151,06:00,T1,Central Park,Forward,Monday to Friday,Train
+104,04:40,U7,Central Park,Forward,Monday to Friday,Train
+115,04:50,U7,Central Park,Forward,Monday to Friday,Train
+127,05:20,U7,Central Park,Forward,Monday to Friday,Train
+133,05:40,U7,Central Park,Forward,Monday to Friday,Train
+148,05:50,U7,Central Park,Forward,Monday to Friday,Train
+157,06:20,U7,Central Park,Forward,Monday to Friday,Train
+7105,05:00,U7,Central Park,Forward,Sunday,Train
+6101,05:00,U7,Central Park,Forward,Saturday,Train
+6102,05:10,U7,Central Park,Forward,Saturday,Train
+6104,05:30,U7,Central Park,Forward,Saturday,Train
+6105,06:00,U7,Central Park,Forward,Saturday,Train
+6108,06:30,U7,Central Park,Forward,Saturday,Train
+112,04:50,W4,Central Park,Forward,Monday to Friday,Train
+134,05:40,W4,Central Park,Forward,Monday to Friday,Train
+144,05:50,W4,Central Park,Forward,Monday to Friday,Train
+158,06:30,W4,Central Park,Forward,Monday to Friday,Train
+6123,04:00,W4,Central Park,Forward,Saturday,Train
+6124,05:00,W4,Central Park,Forward,Saturday,Train
+6125,06:00,W4,Central Park,Forward,Saturday,Train
+111,06:20,Central Park,Fairways,Forward,Monday to Friday,Train
+122,06:50,Central Park,Fairways,Forward,Monday to Friday,Train
+135,07:00,Central Park,Fairways,Forward,Monday to Friday,Train
+107,07:20,Central Park,Fairways,Forward,Monday to Friday,Train
+102,07:40,Central Park,Fairways,Forward,Monday to Friday,Train
+101,08:00,Central Park,Fairways,Forward,Monday to Friday,Train
+161,10:00,Central Park,Fairways,Forward,Monday to Friday,Train
+107,10:30,Central Park,Fairways,Forward,Monday to Friday,Train
+164,11:10,Central Park,Fairways,Forward,Monday to Friday,Train
+104,12:10,Central Park,Fairways,Forward,Monday to Friday,Train
+106,12:40,Central Park,Fairways,Forward,Monday to Friday,Train
+158,13:10,Central Park,Fairways,Forward,Monday to Friday,Train
+125,13:40,Central Park,Fairways,Forward,Monday to Friday,Train
+159,14:00,Central Park,Fairways,Forward,Monday to Friday,Train
+160,14:10,Central Park,Fairways,Forward,Monday to Friday,Train
+6122,06:00,Central Park,Fairways,Forward,Saturday,Train
+6101,06:30,Central Park,Fairways,Forward,Saturday,Train
+6103,07:00,Central Park,Fairways,Forward,Saturday,Train
+6104,07:00,Central Park,Fairways,Forward,Saturday,Train
+6105,07:40,Central Park,Fairways,Forward,Saturday,Train
+6106,08:10,Central Park,Fairways,Forward,Saturday,Train
+6122,09:40,Central Park,Fairways,Forward,Saturday,Train
+7112,11:00,Central Park,Fairways,Forward,Sunday,Train
+7109,13:00,Central Park,Fairways,Forward,Sunday,Train
+7110,13:30,Central Park,Fairways,Forward,Sunday,Train
+7111,13:40,Central Park,Fairways,Forward,Sunday,Train
+7113,14:00,Central Park,Fairways,Forward,Sunday,Train
+7117,14:00,Central Park,Fairways,Forward,Sunday,Train
+7114,16:00,Central Park,Fairways,Forward,Sunday,Train
+7115,16:00,Central Park,Fairways,Forward,Sunday,Train
+7118,18:00,Central Park,Fairways,Forward,Sunday,Train
+7119,18:00,Central Park,Fairways,Forward,Sunday,Train
+7120,18:00,Central Park,Fairways,Forward,Sunday,Train
+113,04:50,N6,Central Park,Forward,Monday to Friday,Train
+139,05:30,N6,Central Park,Forward,Monday to Friday,Train
+111,07:30,Fairways,Central Park,Forward,Monday to Friday,Train
+122,08:10,Fairways,Central Park,Forward,Monday to Friday,Train
+135,08:20,Fairways,Central Park,Forward,Monday to Friday,Train
+107,08:40,Fairways,Central Park,Forward,Monday to Friday,Train
+123,09:10,Fairways,Central Park,Forward,Monday to Friday,Train
+164,09:40,Fairways,Central Park,Forward,Monday to Friday,Train
+163,10:10,Fairways,Central Park,Forward,Monday to Friday,Train
+161,11:10,Fairways,Central Park,Forward,Monday to Friday,Train
+164,12:30,Fairways,Central Park,Forward,Monday to Friday,Train
+169,13:00,Fairways,Central Park,Forward,Monday to Friday,Train
+165,13:30,Fairways,Central Park,Forward,Monday to Friday,Train
+168,14:00,Fairways,Central Park,Forward,Monday to Friday,Train
+125,15:00,Fairways,Central Park,Forward,Monday to Friday,Train
+159,15:30,Fairways,Central Park,Forward,Monday to Friday,Train
+167,16:00,Fairways,Central Park,Forward,Monday to Friday,Train
+166,17:10,Fairways,Central Park,Forward,Monday to Friday,Train
+6122,07:10,Fairways,Central Park,Forward,Saturday,Train
+6101,08:00,Fairways,Central Park,Forward,Saturday,Train
+6103,08:30,Fairways,Central Park,Forward,Saturday,Train
+6104,09:00,Fairways,Central Park,Forward,Saturday,Train
+6105,10:00,Fairways,Central Park,Forward,Saturday,Train
+6106,10:30,Fairways,Central Park,Forward,Saturday,Train
+6110,11:00,Fairways,Central Park,Forward,Saturday,Train
+6113,13:00,Fairways,Central Park,Forward,Saturday,Train
+6114,14:00,Fairways,Central Park,Forward,Saturday,Train
+6115,15:10,Fairways,Central Park,Forward,Saturday,Train
+6116,15:40,Fairways,Central Park,Forward,Saturday,Train
+6117,15:40,Fairways,Central Park,Forward,Saturday,Train
+6118,16:00,Fairways,Central Park,Forward,Saturday,Train
+6119,16:00,Fairways,Central Park,Forward,Saturday,Train
+6121,16:30,Fairways,Central Park,Forward,Saturday,Train
+6113,17:00,Fairways,Central Park,Forward,Saturday,Train
+6114,17:30,Fairways,Central Park,Forward,Saturday,Train
+7115,07:00,Fairways,Central Park,Forward,Sunday,Train
+7116,07:00,Fairways,Central Park,Forward,Sunday,Train
+7117,08:00,Fairways,Central Park,Forward,Sunday,Train
+7118,16:30,Fairways,Central Park,Forward,Sunday,Train
+7122,18:00,Fairways,Central Park,Forward,Sunday,Train
+7121,17:30,Fairways,Hospitals,Forward,Sunday,Train
+109,15:00,Bayswater,Central Park,Forward,Monday to Friday,Train
+126,15:00,Bayswater,Central Park,Forward,Monday to Friday,Train
+156,16:20,Bayswater,Central Park,Forward,Monday to Friday,Train
+169,17:00,Bayswater,Central Park,Forward,Monday to Friday,Train
+109,13:50,Dan Pienaar,Central Park,Forward,Monday to Friday,Train
+264,15:00,Dan Pienaar,Central Park,Forward,Monday to Friday,Train
+545,15:30,Dan Pienaar,Central Park,Forward,Monday to Friday,Train
+260,16:30,Dan Pienaar,Central Park,Forward,Monday to Friday,Train
+135,16:50,Dan Pienaar,Central Park,Forward,Monday to Friday,Train
+163,14:00,Langenhovenpark,Central Park,Forward,Monday to Friday,Train
+108,14:30,Langenhovenpark,Central Park,Forward,Monday to Friday,Train
+260,15:00,Langenhovenpark,Central Park,Forward,Monday to Friday,Train
+142,15:40,Langenhovenpark,Central Park,Forward,Monday to Friday,Train
+145,15:40,Langenhovenpark,Central Park,Forward,Monday to Friday,Train
+552,16:10,Langenhovenpark,Central Park,Forward,Monday to Friday,Train
+533,16:10,Langenhovenpark,Central Park,Forward,Monday to Friday,Train
+168,17:00,Langenhovenpark,Central Park,Forward,Monday to Friday,Train
+120,17:30,Langenhovenpark,Central Park,Forward,Monday to Friday,Train
+552,15:00,Pellissier,Central Park,Forward,Monday to Friday,Train
+557,05:20,Brandfort,Central Park ,Forward,Monday to Friday,Train
+116,15:30,Woodland Hills,Central Park,Forward,Monday to Friday,Train
+127,16:10,Woodland Hills,Central Park,Forward,Monday to Friday,Train
+128,16:30,Woodland Hills,Central Park,Forward,Monday to Friday,Train
+142,17:10,Woodland Hills,Central Park,Forward,Monday to Friday,Train
+280,04:10,Springfontein,Thaba Nchu,Forward,Monday to Friday,Standard
+280,07:30,Klipfontein,Thaba Nchu,Forward,Monday to Friday,Standard
+6280,07:30,Klipfontein,Thaba Nchu,Forward,Saturday,Standard
+7280,08:00,Klipfontein,Thaba Nchu,Forward,Sunday,Standard
+280,06:30,Thaba Nchu,Klipfontein,Forward,Monday to Friday,Standard
+272,13:30,Thaba Nchu,Klipfontein,Forward,Monday to Friday,Standard
+6280,16:30,Thaba Nchu,Klipfontein,Forward,Saturday,Standard
+7280,17:00,Thaba Nchu,Klipfontein,Forward,Sunday,Standard
+281,06:40,Thaba Nchu,Woodbridge,Forward,Monday to Friday,Standard
+6281,16:30,Thaba Nchu,Woodbridge,Forward,Saturday,Standard
+7281,17:00,Thaba Nchu,Woodbridge,Forward,Sunday,Standard
+281,05:10,Woodbridge,Thaba Nchu,Forward,Monday to Friday,Standard
+281,16:30,Thaba Nchu,Woodbridge,Forward,Monday to Friday,Standard
+282,18:00,Thaba Nchu,Woodbridge,Forward,Monday to Friday,Standard
+282,05:10,Woodbridge,Thaba Nchu,Forward,Monday to Friday,Standard
+271,08:00,Mariasdal,Thaba Nchu,Forward,Monday to Friday,Standard
+277,15:00,Mariasdal,Thaba Nchu,Forward,Monday to Friday,Standard
+219,05:10,Rooifontein,Thaba Nchu,Forward,Monday to Friday,Standard
+276,19:10,Sediti,Spitskop,Forward,Monday to Friday,Standard
+6270,08:40,Sediti,Thaba Nchu,Forward,Saturday,Standard
+6270,14:20,Sediti,Thaba Nchu,Forward,Saturday,Standard
+7270,08:30,Sediti,Thaba Nchu,Forward,Sunday,Standard
+7270,14:20,Sediti,Thaba Nchu,Forward,Sunday,Standard
+272,04:40,Modutung,Thaba Nchu,Forward,Monday to Friday,Standard
+282,08:00,Modutung,Thaba Nchu,Forward,Monday to Friday,Standard
+282,14:50,Modutung,Thaba Nchu,Forward,Monday to Friday,Standard
+6272,07:30,Modutung,Thaba Nchu,Forward,Saturday,Standard
+6274,14:40,Modutung,Thaba Nchu,Forward,Saturday,Standard
+7272,08:00,Modutung,Thaba Nchu,Forward,Sunday,Standard
+7274,14:40,Modutung,Thaba Nchu,Forward,Sunday,Standard
+7271,08:00,Moroto,Thaba Nchu,Forward,Sunday,Standard
+273,04:40,Spitskop,Thaba Nchu,Forward,Monday to Friday,Standard
+273,08:00,Spitskop,Thaba Nchu,Forward,Monday to Friday,Standard
+6273,07:30,Spitskop,Thaba Nchu,Forward,Saturday,Standard
+6273,14:40,Spitskop,Thaba Nchu,Forward,Saturday,Standard
+7273,08:00,Spitskop,Thaba Nchu,Forward,Sunday,Standard
+7273,14:30,Spitskop,Thaba Nchu,Forward,Sunday,Standard
+271,05:00,Moroto,Thaba Nchu,Forward,Monday to Friday,Standard
+6271,07:30,Moroto,Thaba Nchu,Forward,Saturday,Standard
+276,15:00,Spitskop,Thaba Nchu,Forward,Monday to Friday,Standard
+282,06:40,Thaba Nchu,Modutung,Forward,Monday to Friday,Standard
+282,13:30,Thaba Nchu,Modutung,Forward,Monday to Friday,Standard
+272,17:30,Thaba Nchu,Modutung,Forward,Monday to Friday,Standard
+6274,13:30,Thaba Nchu,Modutung,Forward,Saturday,Standard
+6272,16:30,Thaba Nchu,Modutung,Forward,Saturday,Standard
+7274,13:30,Thaba Nchu,Modutung,Forward,Sunday,Standard
+7272,17:00,Thaba Nchu,Modutung,Forward,Sunday,Standard
+274,06:30,Thaba Nchu,Paradys,Forward,Monday to Friday,Standard
+6274,16:30,Thaba Nchu,Paradys,Forward,Saturday,Standard
+7274,17:00,Thaba Nchu,Paradys,Forward,Sunday,Standard
+280,13:30,Thaba Nchu,Paradys,Forward,Monday to Friday,Standard
+277,17:30,Thaba Nchu,Moroto,Forward,Monday to Friday,Standard
+6271,16:30,Thaba Nchu,Moroto,Forward,Saturday,Standard
+7271,17:00,Thaba Nchu,Moroto,Forward,Sunday,Standard
+274,17:30,Thaba Nchu,Paradys,Forward,Monday to Friday,Standard
+273,06:40,Thaba Nchu,Spitskop,Forward,Monday to Friday,Standard
+273,13:30,Thaba Nchu,Spitskop,Forward,Monday to Friday,Standard
+276,17:30,Thaba Nchu,Spitskop,Forward,Monday to Friday,Standard
+6273,13:30,Thaba Nchu,Spitskop,Forward,Saturday,Standard
+6273,16:30,Thaba Nchu,Spitskop,Forward,Saturday,Standard
+6274,07:30,Paradys,Thaba Nchu,Forward,Saturday,Standard
+274,03:30,Paradys,Zone 1,Forward,Monday to Friday,Standard
+520,05:10,Soutpan,Central Park,Forward,Monday to Friday,Standard
+558,05:50,Soutpan,Central Park,Forward,Monday to Friday,Standard
+6505,05:50,Soutpan,Central Park,Forward,Saturday,Standard
+7520,15:00,Soutpan,Central Park,Forward,Sunday,Standard
+520,17:00,Central Park,Soutpan,Forward,Monday to Friday,Standard
+558,18:00,Central Park,Soutpan,Forward,Monday to Friday,Standard
+6505,13:30,Central Park,Soutpan,Forward,Saturday,Standard
+7520,17:30,Central Park,Soutpan,Forward,Sunday,Standard
+561,15:10,Central Park,Freedomsquare,Reverse,Monday to Friday,Standard
+546,16:00,Central Park,Freedomsquare,Reverse,Monday to Friday,Standard
+508,16:30,Central Park,Freedomsquare,Reverse,Monday to Friday,Standard
+552,17:00,Central Park,Freedomsquare,Reverse,Monday to Friday,Standard
+534,17:30,Central Park,Freedomsquare,Reverse,Monday to Friday,Standard
+540,18:00,Central Park,Freedomsquare,Reverse,Monday to Friday,Standard
+516,18:30,Central Park,Freedomsquare,Reverse,Monday to Friday,Standard
+520,15:40,Central Park,Bergmansquare,Reverse,Monday to Friday,Standard
+541,17:00,Central Park,Bergmansquare,Reverse,Monday to Friday,Standard
+537,17:50,Central Park,Bergmansquare,Reverse,Monday to Friday,Standard
+7,07:10,Central Park,Limo Mall,Reverse,Monday to Friday,Standard
+549,15:00,Central Park,Khayalitsha,Reverse,Monday to Friday,Standard
+531,16:00,Central Park,Khayalitsha,Reverse,Monday to Friday,Standard
+561,16:30,Central Park,Khayalitsha,Reverse,Monday to Friday,Standard
+553,17:00,Central Park,Khayalitsha,Reverse,Monday to Friday,Standard
+555,17:30,Central Park,Khayalitsha,Reverse,Monday to Friday,Standard
+560,18:30,Central Park,Khayalitsha,Reverse,Monday to Friday,Standard
+538,16:00,Central Park,Meadows,Reverse,Monday to Friday,Standard
+535,17:30,Central Park,Meadows,Reverse,Monday to Friday,Standard
+559,15:30,Central Park,Naledi,Reverse,Monday to Friday,Standard
+547,17:00,Central Park,Naledi,Reverse,Monday to Friday,Standard
+521,18:30,Central Park,Naledi,Reverse,Monday to Friday,Standard
+511,16:00,Central Park,Namibia,Reverse,Monday to Friday,Standard
+517,17:00,Central Park,Namibia,Reverse,Monday to Friday,Standard
+515,15:10,Central Park,Phase 2,Reverse,Monday to Friday,Standard
+516,16:20,Central Park,Phase 2,Reverse,Monday to Friday,Standard
+549,17:30,Central Park,Phase 2,Reverse,Monday to Friday,Standard
+505,18:30,Central Park,Phase 2,Reverse,Monday to Friday,Standard
+539,15:30,Central Park,Motsabi,Reverse,Monday to Friday,Standard
+540,16:20,Central Park,Motsabi,Reverse,Monday to Friday,Standard
+543,17:10,Central Park,Motsabi,Reverse,Monday to Friday,Standard
+536,17:50,Central Park,Motsabi,Reverse,Monday to Friday,Standard
+543,18:30,Central Park,Motsabi,Reverse,Monday to Friday,Standard
+531,17:10,Central Park,Motsabi 2,Reverse,Monday to Friday,Standard
+532,15:10,Central Park,Phelindaba,Reverse,Monday to Friday,Standard
+509,15:40,Central Park,Phelindaba,Reverse,Monday to Friday,Standard
+537,16:20,Central Park,Phelindaba,Reverse,Monday to Friday,Standard
+519,17:20,Central Park,Phelindaba,Reverse,Monday to Friday,Standard
+545,17:50,Central Park,Phelindaba,Reverse,Monday to Friday,Standard
+542,18:30,Central Park,Phelindaba,Reverse,Monday to Friday,Standard
+517,14:30,Central Park,Rocklands,Reverse,Monday to Friday,Standard
+505,15:10,Central Park,Rocklands,Reverse,Monday to Friday,Standard
+549,16:10,Central Park,Rocklands,Reverse,Monday to Friday,Standard
+559,17:00,Central Park,Rocklands,Reverse,Monday to Friday,Standard
+548,17:20,Central Park,Rocklands,Reverse,Monday to Friday,Standard
+536,15:10,Central Park,Phase 4,Reverse,Monday to Friday,Standard
+518,16:00,Central Park,Phase 4,Reverse,Monday to Friday,Standard
+536,16:30,Central Park,Phase 4,Reverse,Monday to Friday,Standard
+554,17:00,Central Park,Phase 4,Reverse,Monday to Friday,Standard
+538,17:30,Central Park,Phase 4,Reverse,Monday to Friday,Standard
+541,18:30,Central Park,Phase 4,Reverse,Monday to Friday,Standard
+516,15:10,Central Park,Turflaagte,Reverse,Monday to Friday,Standard
+535,16:20,Central Park,Turflaagte,Reverse,Monday to Friday,Standard
+511,17:00,Central Park,Turflaagte,Reverse,Monday to Friday,Standard
+521,17:30,Central Park,Turflaagte,Reverse,Monday to Friday,Standard
+512,17:50,Central Park,Turflaagte,Reverse,Monday to Friday,Standard
+556,18:30,Central Park,Turflaagte,Reverse,Monday to Friday,Standard
+537,15:10,Central Park,Peter Swart,Reverse,Monday to Friday,Standard
+534,16:20,Central Park,Peter Swart,Reverse,Monday to Friday,Standard
+546,17:20,Central Park,Peter Swart,Reverse,Monday to Friday,Standard
+532,18:00,Central Park,Peter Swart,Reverse,Monday to Friday,Standard
+554,18:30,Central Park,Peter Swart,Reverse,Monday to Friday,Standard
+560,17:00,Central Park,Phase 6,Reverse,Monday to Friday,Standard
+557,16:00,Central Park,Phase 6,Reverse,Monday to Friday,Standard
+22,15:00,Central Park,Mandela View,Reverse,Monday to Friday,Standard
+38,16:10,Central Park,Mandela View,Reverse,Monday to Friday,Standard
+203,06:00,Central Park,Zone 1,Reverse,Monday to Friday,Standard
+262,08:00,Central Park,Zone 1,Reverse,Monday to Friday,Standard
+267,09:10,Central Park,Zone 1,Reverse,Monday to Friday,Standard
+250,10:40,Central Park,Zone 1,Reverse,Monday to Friday,Standard
+251,12:00,Central Park,Zone 1,Reverse,Monday to Friday,Standard
+252,12:30,Central Park,Zone 1,Reverse,Monday to Friday,Standard
+208,15:30,Central Park,Zone 1,Reverse,Monday to Friday,Standard
+219,16:00,Central Park,Zone 1,Reverse,Monday to Friday,Standard
+233,17:10,Central Park,Zone 1,Reverse,Monday to Friday,Standard
+227,17:40,Central Park,Zone 1,Reverse,Monday to Friday,Standard
+291,19:30,Central Park,Zone 1,Reverse,Monday to Friday,Standard
+230,20:00,Central Park,Zone 1,Reverse,Monday to Friday,Standard
+293,21:00,Central Park,Zone 1,Reverse,Monday to Friday,Standard
+294,22:30,Central Park,Zone 1,Reverse,Monday to Friday,Standard
+7208,11:00,Central Park,Zone 1,Reverse,Sunday,Standard
+7208,17:00,Central Park,Zone 1,Reverse,Sunday,Standard
+7259,19:30,Central Park,Zone 1,Reverse,Sunday,Standard
+6202,06:00,Central Park,Zone 1,Reverse,Saturday,Standard
+6206,09:00,Central Park,Zone 1,Reverse,Saturday,Standard
+6205,11:00,Central Park,Zone 1,Reverse,Saturday,Standard
+6253,12:00,Central Park,Zone 1,Reverse,Saturday,Standard
+6203,12:30,Central Park,Zone 1,Reverse,Saturday,Standard
+6201,13:00,Central Park,Zone 1,Reverse,Saturday,Standard
+6219,13:40,Central Park,Zone 1,Reverse,Saturday,Standard
+6252,15:00,Central Park,Zone 1,Reverse,Saturday,Standard
+6206,16:30,Central Park,Zone 1,Reverse,Saturday,Standard
+6217,17:30,Central Park,Zone 1,Reverse,Saturday,Standard
+6257,18:00,Central Park,Zone 1,Reverse,Saturday,Standard
+6212,19:00,Central Park,Zone 1,Reverse,Saturday,Standard
+6215,19:30,Central Park,Zone 1,Reverse,Saturday,Standard
+6258,21:00,Central Park,Zone 1,Reverse,Saturday,Standard
+7251,06:00,Central Park,Zone 1,Reverse,Sunday,Standard
+7201,07:00,Central Park,Zone 1,Reverse,Sunday,Standard
+7252,08:00,Central Park,Zone 1,Reverse,Sunday,Standard
+7205,14:00,Central Park,Zone 1,Reverse,Sunday,Standard
+7212,20:00,Central Park,Zone 1,Reverse,Sunday,Standard
+7213,21:00,Central Park,Zone 1,Reverse,Sunday,Standard
+7209,22:30,Central Park,Zone 1,Reverse,Sunday,Standard
+253,13:00,Central Park,Zone 1,Reverse,Monday to Friday,Standard
+257,16:30,Central Park,Zone 1,Reverse,Monday to Friday,Standard
+294,19:00,Central Park,Zone 1,Reverse,Monday to Friday,Standard
+212,16:40,Central Park,Unit 1,Reverse,Monday to Friday,Standard
+202,17:30,Central Park,Zone 5,Reverse,Monday to Friday,Standard
+217,18:00,Central Park,Makurung,Reverse,Monday to Friday,Standard
+226,14:30,Central Park,Zone 3 + 4,Reverse,Monday to Friday,Standard
+232,15:30,Central Park,Zone 3 + 4,Reverse,Monday to Friday,Standard
+222,18:10,Central Park,Zone 3 + 4,Reverse,Monday to Friday,Standard
+221,18:30,Central Park,Zone 3 + 4,Reverse,Monday to Friday,Standard
+229,19:30,Central Park,Zone 3 + 4,Reverse,Monday to Friday,Standard
+7254,16:00,Central Park,Zone 3 + 4,Reverse,Sunday,Standard
+7213,17:00,Central Park,Zone 3 + 4,Reverse,Sunday,Standard
+7209,18:00,Central Park,Zone 3 + 4,Reverse,Sunday,Standard
+213,17:30,Central Park,Garapulana,Reverse,Monday to Friday,Standard
+205,06:30,Central Park,Mokwena,Reverse,Monday to Friday,Standard
+227,14:00,Central Park,Mokwena,Reverse,Monday to Friday,Standard
+207,15:00,Central Park,Mokwena,Reverse,Monday to Friday,Standard
+228,15:30,Central Park,Mokwena,Reverse,Monday to Friday,Standard
+209,16:00,Central Park,Mokwena,Reverse,Monday to Friday,Standard
+210,16:30,Central Park,Mokwena,Reverse,Monday to Friday,Standard
+211,16:40,Central Park,Mokwena,Reverse,Monday to Friday,Standard
+214,17:00,Central Park,Mokwena,Reverse,Monday to Friday,Standard
+215,17:20,Central Park,Mokwena,Reverse,Monday to Friday,Standard
+220,17:40,Central Park,Mokwena,Reverse,Monday to Friday,Standard
+224,18:00,Central Park,Mokwena,Reverse,Monday to Friday,Standard
+228,18:30,Central Park,Mokwena,Reverse,Monday to Friday,Standard
+231,19:00,Central Park,Mokwena,Reverse,Monday to Friday,Standard
+7202,07:00,Central Park,Mokwena,Reverse,Sunday,Standard
+6209,13:00,Central Park,Mokwena,Reverse,Saturday,Standard
+6204,14:00,Central Park,Mokwena,Reverse,Saturday,Standard
+6211,16:00,Central Park,Mokwena,Reverse,Saturday,Standard
+6210,17:00,Central Park,Mokwena,Reverse,Saturday,Standard
+6216,19:00,Central Park,Mokwena,Reverse,Saturday,Standard
+7203,13:00,Central Park,Mokwena,Reverse,Sunday,Standard
+7204,14:00,Central Park,Mokwena,Reverse,Sunday,Standard
+7206,15:00,Central Park,Mokwena,Reverse,Sunday,Standard
+206,13:00,Central Park,Mokwena,Reverse,Monday to Friday,Standard
+216,17:10,Central Park,Selosesha,Reverse,Monday to Friday,Standard
+218,17:40,Central Park,Rooifontein,Reverse,Monday to Friday,Standard
+550,15:00,Central Park,Phase 3,Reverse,Monday to Friday,Standard
+548,16:00,Central Park,Phase 3,Reverse,Monday to Friday,Standard
+542,17:00,Central Park,Phase 3,Reverse,Monday to Friday,Standard
+518,17:20,Central Park,Phase 3,Reverse,Monday to Friday,Standard
+525,17:30,Central Park,Ipopeng,Reverse,Monday to Friday,Standard
+521,15:00,Central Park,Mafora,Reverse,Monday to Friday,Standard
+545,16:20,Central Park,Mafora,Reverse,Monday to Friday,Standard
+556,17:00,Central Park,Mafora,Reverse,Monday to Friday,Standard
+544,17:30,Central Park,Mafora,Reverse,Monday to Friday,Standard
+559,18:30,Central Park,Mafora,Reverse,Monday to Friday,Standard
+519,16:00,Central Park,Phase 7,Reverse,Monday to Friday,Standard
+515,17:00,Central Park,Phase 7,Reverse,Monday to Friday,Standard
+547,18:30,Central Park,Phase 7,Reverse,Monday to Friday,Standard
+202,07:30,Central Park,Lakeview,Reverse,Monday to Friday,Standard
+209,06:30,Central Park,Bartemia,Reverse,Monday to Friday,Standard
+540,15:00,Central Park,Phase 6,Reverse,Monday to Friday,Train
+541,15:40,Central Park,Phase 6,Reverse,Monday to Friday,Train
+550,16:30,Central Park,Phase 6,Reverse,Monday to Friday,Train
+539,17:10,Central Park,Phase 6,Reverse,Monday to Friday,Train
+533,17:30,Central Park,Phase 6,Reverse,Monday to Friday,Train
+550,18:00,Central Park,Phase 6,Reverse,Monday to Friday,Train
+548,18:30,Central Park,Phase 6,Reverse,Monday to Friday,Train
+250,05:30,Central Park,Zone 1,Reverse,Monday to Friday,Train
+255,07:00,Central Park,Zone 1,Reverse,Monday to Friday,Train
+256,13:50,Central Park,Zone 1,Reverse,Monday to Friday,Train
+268,16:40,Central Park,Zone 1,Reverse,Monday to Friday,Train
+260,17:00,Central Park,Zone 1,Reverse,Monday to Friday,Train
+263,17:30,Central Park,Zone 1,Reverse,Monday to Friday,Train
+264,18:00,Central Park,Zone 1,Reverse,Monday to Friday,Train
+252,06:30,Central Park,Zone 1,Reverse,Monday to Friday,Train
+291,22:30,Central Park,Zone 1,Reverse,Monday to Friday,Train
+6256,08:30,Central Park,Zone 1,Reverse,Saturday,Train
+6251,14:30,Central Park,Zone 1,Reverse,Saturday,Train
+6255,17:00,Central Park,Zone 1,Reverse,Saturday,Train
+7255,09:00,Central Park,Zone 1,Reverse,Sunday,Train
+7256,12:00,Central Park,Zone 1,Reverse,Sunday,Train
+7253,13:00,Central Park,Zone 1,Reverse,Sunday,Train
+7258,15:00,Central Park,Zone 1,Reverse,Sunday,Train
+7255,16:00,Central Park,Zone 1,Reverse,Sunday,Train
+7256,18:00,Central Park,Zone 1,Reverse,Sunday,Train
+7258,19:00,Central Park,Zone 1,Reverse,Sunday,Train
+290,15:00,Central Park,Zone 1,Reverse,Monday to Friday,Train
+266,16:10,Central Park,Zone 1,Reverse,Monday to Friday,Train
+292,18:30,Central Park,Zone 1,Reverse,Monday to Friday,Train
+291,16:00,Central Park,Zone 3 + 4,Reverse,Monday to Friday,Train
+259,16:30,Central Park,Zone 3 + 4,Reverse,Monday to Friday,Train
+255,17:00,Central Park,Zone 3 + 4,Reverse,Monday to Friday,Train
+261,17:30,Central Park,Zone 3 + 4,Reverse,Monday to Friday,Train
+293,17:40,Central Park,Zone 3 + 4,Reverse,Monday to Friday,Train
+265,18:00,Central Park,Zone 3 + 4,Reverse,Monday to Friday,Train
+290,19:00,Central Park,Zone 3 + 4,Reverse,Monday to Friday,Train
+7257,19:00,Central Park,Zone 3+4,Reverse,Sunday,Train
+36,17:40,Central Park,A1,Reverse,Monday to Friday,Standard
+50,19:00,Central Park,A1,Reverse,Monday to Friday,Standard
+6001,13:00,Central Park,A1,Reverse,Saturday,Standard
+6010,15:00,Central Park,A1,Reverse,Saturday,Standard
+21,15:00,Central Park,A4,Reverse,Monday to Friday,Standard
+37,15:30,Central Park,C2,Reverse,Monday to Friday,Standard
+18,16:00,Central Park,C2,Reverse,Monday to Friday,Standard
+26,16:30,Central Park,C2,Reverse,Monday to Friday,Standard
+66,17:00,Central Park,C2,Reverse,Monday to Friday,Standard
+59,17:30,Central Park,C2,Reverse,Monday to Friday,Standard
+43,18:00,Central Park,C2,Reverse,Monday to Friday,Standard
+65,18:30,Central Park,C2,Reverse,Monday to Friday,Standard
+10,15:30,Central Park,D1,Reverse,Monday to Friday,Standard
+28,16:30,Central Park,D1,Reverse,Monday to Friday,Standard
+33,17:10,Central Park,D1,Reverse,Monday to Friday,Standard
+149,18:10,Central Park,D1,Reverse,Monday to Friday,Standard
+164,19:00,Central Park,D1,Reverse,Monday to Friday,Standard
+6022,17:30,Central Park,D1,Reverse,Saturday,Standard
+6009,13:00,Central Park,D1,Reverse,Saturday,Standard
+6008,15:00,Central Park,D1,Reverse,Saturday,Standard
+6028,18:00,Central Park,D1,Reverse,Saturday,Standard
+32,15:00,Central Park,J1,Reverse,Monday to Friday,Standard
+16,15:40,Central Park,J1,Reverse,Monday to Friday,Standard
+63,17:10,Central Park,J1,Reverse,Monday to Friday,Standard
+54,17:30,Central Park,J1,Reverse,Monday to Friday,Standard
+42,18:00,Central Park,J1,Reverse,Monday to Friday,Standard
+23,06:30,Central Park,G1,Reverse,Monday to Friday,Standard
+6048,13:00,Central Park,G1,Reverse,Saturday,Standard
+6113,15:00,Central Park,G1,Reverse,Saturday,Standard
+7019,20:00,Central Park,G2,Reverse,Sunday,Standard
+36,15:30,Central Park,J3,Reverse,Monday to Friday,Standard
+17,16:00,Central Park,J3,Reverse,Monday to Friday,Standard
+29,16:30,Central Park,J3,Reverse,Monday to Friday,Standard
+51,17:30,Central Park,J3,Reverse,Monday to Friday,Standard
+6030,15:00,Central Park,J3,Reverse,Saturday,Standard
+11,15:30,Central Park,K6,Reverse,Monday to Friday,Standard
+23,16:40,Central Park,K6,Reverse,Monday to Friday,Standard
+58,17:10,Central Park,K6,Reverse,Monday to Friday,Standard
+57,21:00,Central Park,K6,Reverse,Monday to Friday,Standard
+39,17:40,Central Park,M1,Reverse,Monday to Friday,Standard
+45,18:00,Central Park,M1,Reverse,Monday to Friday,Standard
+6014,14:00,Central Park,M1,Reverse,Saturday,Standard
+6019,15:00,Central Park,M1,Reverse,Saturday,Standard
+6017,16:00,Central Park,M1,Reverse,Saturday,Standard
+6024,17:00,Central Park,M1,Reverse,Saturday,Standard
+6029,18:00,Central Park,M1,Reverse,Saturday,Standard
+6039,19:00,Central Park,M1,Reverse,Saturday,Standard
+53,20:00,Central Park,M4,Reverse,Monday to Friday,Standard
+58,21:00,Central Park,M4,Reverse,Monday to Friday,Standard
+2,06:30,Central Park,N1,Reverse,Monday to Friday,Standard
+44,15:00,Central Park,N1,Reverse,Monday to Friday,Standard
+14,15:40,Central Park,N1,Reverse,Monday to Friday,Standard
+52,16:40,Central Park,N1,Reverse,Monday to Friday,Standard
+56,19:00,Central Park,N1,Reverse,Monday to Friday,Standard
+61,19:30,Central Park,N1,Reverse,Monday to Friday,Standard
+49,20:00,Central Park,N1,Reverse,Monday to Friday,Standard
+59,21:00,Central Park,N1,Reverse,Monday to Friday,Standard
+6026,13:00,Central Park,N1,Reverse,Saturday,Standard
+6015,14:00,Central Park,N1,Reverse,Saturday,Standard
+6020,15:00,Central Park,N1,Reverse,Saturday,Standard
+6102,16:00,Central Park,N1,Reverse,Saturday,Standard
+6106,17:00,Central Park,N1,Reverse,Saturday,Standard
+6041,18:00,Central Park,N1,Reverse,Saturday,Standard
+6034,19:00,Central Park,N1,Reverse,Saturday,Standard
+6117,20:00,Central Park,N1,Reverse,Saturday,Standard
+34,17:00,Central Park,S1,Reverse,Monday to Friday,Standard
+35,17:30,Central Park,S1,Reverse,Monday to Friday,Standard
+37,18:10,Central Park,S1,Reverse,Monday to Friday,Standard
+41,18:30,Central Park,S1,Reverse,Monday to Friday,Standard
+27,06:30,Central Park,T1,Reverse,Monday to Friday,Standard
+64,16:00,Central Park,T1,Reverse,Monday to Friday,Standard
+44,18:00,Central Park,T1,Reverse,Monday to Friday,Standard
+45,15:00,Central Park,U7,Reverse,Monday to Friday,Standard
+12,15:40,Central Park,U7,Reverse,Monday to Friday,Standard
+115,16:30,Central Park,U7,Reverse,Monday to Friday,Standard
+31,16:50,Central Park,U7,Reverse,Monday to Friday,Standard
+9,17:00,Central Park,U7,Reverse,Monday to Friday,Standard
+55,19:00,Central Park,U7,Reverse,Monday to Friday,Standard
+51,20:00,Central Park,U7,Reverse,Monday to Friday,Standard
+6027,18:00,Central Park,U7,Reverse,Saturday,Standard
+42,15:00,Central Park,W4,Reverse,Monday to Friday,Standard
+49,15:40,Central Park,W4,Reverse,Monday to Friday,Standard
+21,18:30,Central Park,W4,Reverse,Monday to Friday,Standard
+60,19:00,Central Park,W4,Reverse,Monday to Friday,Standard
+40,16:10,Langenhovenpark,M4,Reverse,Monday to Friday,Standard
+1,06:30,Central Park,N6,Reverse,Monday to Friday,Standard
+57,16:30,Central Park,N6,Reverse,Monday to Friday,Standard
+20,15:40,Central Park,H2,Reverse,Monday to Friday,Standard
+30,17:10,Central Park,H2,Reverse,Monday to Friday,Standard
+552,06:30,Central Park,Waterbron,Reverse,Monday to Friday,Standard
+14,06:30,Central Park,Waterbron,Reverse,Monday to Friday,Standard
+64,06:00,Central Park,Bayswater,Reverse,Monday to Friday,Standard
+37,07:20,Central Park,Bayswater,Reverse,Monday to Friday,Standard
+133,07:20,Central Park,Bayswater,Reverse,Monday to Friday,Standard
+253,07:40,Central Park,Bayswater,Reverse,Monday to Friday,Standard
+6123,06:30,Central Park,Bayswater,Reverse,Saturday,Standard
+6219,07:00,Central Park,Bayswater,Reverse,Saturday,Standard
+6022,08:00,Central Park,Bayswater,Reverse,Saturday,Standard
+267,06:30,Central Park,Pitstop,Reverse,Monday to Friday,Standard
+18,07:30,Central Park,Pitstop,Reverse,Monday to Friday,Standard
+8,06:00,Central Park,Brandwag,Reverse,Monday to Friday,Standard
+18,06:30,Central Park,Brandwag,Reverse,Monday to Friday,Standard
+506,07:00,Central Park,Brandwag,Reverse,Monday to Friday,Standard
+105,07:30,Central Park,Brandwag,Reverse,Monday to Friday,Standard
+10,06:00,Central Park,Dan Pienaar,Reverse,Monday to Friday,Standard
+39,08:00,Central Park,Dan Pienaar,Reverse,Monday to Friday,Standard
+214,06:10,Central Park,Fauna,Reverse,Monday to Friday,Standard
+201,07:00,Central Park,Fauna,Reverse,Monday to Friday,Standard
+523,07:30,Central Park,Fauna,Reverse,Monday to Friday,Standard
+210,08:00,Central Park,Fauna,Reverse,Monday to Friday,Standard
+6009,07:30,Central Park,Fauna,Reverse,Saturday,Standard
+16,06:30,Central Park,De Wet,Reverse,Monday to Friday,Standard
+508,06:30,Central Park,De Wet,Reverse,Monday to Friday,Standard
+132,07:00,Central Park,De Wet,Reverse,Monday to Friday,Standard
+15,05:30,Central Park,Fichardtpark,Reverse,Monday to Friday,Standard
+101,06:00,Central Park,Fichardtpark,Reverse,Monday to Friday,Standard
+117,06:30,Central Park,Fichardtpark,Reverse,Monday to Friday,Standard
+262,06:40,Central Park,Fichardtpark,Reverse,Monday to Friday,Standard
+104,07:10,Central Park,Fichardtpark,Reverse,Monday to Friday,Standard
+115,07:20,Central Park,Fichardtpark,Reverse,Monday to Friday,Standard
+141,07:30,Central Park,Fichardtpark,Reverse,Monday to Friday,Standard
+31,08:00,Central Park,Fichardtpark,Reverse,Monday to Friday,Standard
+3,05:40,Central Park,Hamilton,Reverse,Monday to Friday,Standard
+233,06:50,Central Park,Hamilton,Reverse,Monday to Friday,Standard
+525,06:10,Central Park,Heuwelsig,Reverse,Monday to Friday,Standard
+119,06:30,Central Park,Heuwelsig,Reverse,Monday to Friday,Standard
+259,07:10,Central Park,Heuwelsig,Reverse,Monday to Friday,Standard
+20,06:30,Central Park,Lillyvale,Reverse,Monday to Friday,Standard
+3,07:30,Central Park,Lillyvale,Reverse,Monday to Friday,Standard
+251,06:30,Central Park,Hospitaalpark,Reverse,Monday to Friday,Standard
+535,07:30,Central Park,Hospitaalpark,Reverse,Monday to Friday,Standard
+512,05:30,Central Park,Langenhovenpark,Reverse,Monday to Friday,Standard
+6,05:40,Central Park,Langenhovenpark,Reverse,Monday to Friday,Standard
+12,06:10,Central Park,Langenhovenpark,Reverse,Monday to Friday,Standard
+17,06:30,Central Park,Langenhovenpark,Reverse,Monday to Friday,Standard
+28,07:00,Central Park,Langenhovenpark,Reverse,Monday to Friday,Standard
+214,07:40,Central Park,Langenhovenpark,Reverse,Monday to Friday,Standard
+148,07:30,Central Park,Langenhovenpark,Reverse,Monday to Friday,Standard
+6023,07:30,Central Park,Langenhovenpark,Reverse,Saturday,Standard
+6507,08:00,Central Park,Langenhovenpark,Reverse,Saturday,Standard
+206,07:10,Central Park,Fruit & Veg,Reverse,Monday to Friday,Standard
+46,05:30,Central Park,Lourierpark,Reverse,Monday to Friday,Standard
+504,06:00,Central Park,Lourierpark,Reverse,Monday to Friday,Standard
+226,06:00,Central Park,Noordhoek,Reverse,Monday to Friday,Standard
+11,06:10,Central Park,Noordhoek,Reverse,Monday to Friday,Standard
+523,06:30,Central Park,Noordhoek,Reverse,Monday to Friday,Standard
+3,06:40,Central Park,Noordhoek,Reverse,Monday to Friday,Standard
+256,07:00,Central Park,Noordhoek,Reverse,Monday to Friday,Standard
+140,07:20,Central Park,Noordhoek,Reverse,Monday to Friday,Standard
+12,07:30,Central Park,Noordhoek,Reverse,Monday to Friday,Standard
+215,07:30,Central Park,Noordhoek,Reverse,Monday to Friday,Standard
+216,08:00,Central Park,Noordhoek,Reverse,Monday to Friday,Standard
+541,06:40,Central Park,Ooseinde,Reverse,Monday to Friday,Standard
+8,07:00,Central Park,Ooseinde,Reverse,Monday to Friday,Standard
+560,07:30,Central Park,Ooseinde,Reverse,Monday to Friday,Standard
+206,06:10,Central Park,Pellissier,Reverse,Monday to Friday,Standard
+550,06:10,Central Park,Universitas,Reverse,Monday to Friday,Standard
+121,06:30,Central Park,Universitas,Reverse,Monday to Friday,Standard
+212,06:50,Central Park,Universitas,Reverse,Monday to Friday,Standard
+103,07:00,Central Park,Universitas,Reverse,Monday to Friday,Standard
+136,07:20,Central Park,Universitas,Reverse,Monday to Friday,Standard
+117,07:30,Central Park,Universitas,Reverse,Monday to Friday,Standard
+16,08:00,Central Park,Universitas,Reverse,Monday to Friday,Standard
+210,06:40,Central Park,Universitas West,Reverse,Monday to Friday,Standard
+10,07:00,Central Park,Universitas West,Reverse,Monday to Friday,Standard
+505,07:30,Central Park,Universitas West,Reverse,Monday to Friday,Standard
+1,05:40,Central Park,Vogue,Reverse,Monday to Friday,Standard
+208,06:30,Central Park,Vogue,Reverse,Monday to Friday,Standard
+65,07:10,Central Park,Vogue,Reverse,Monday to Friday,Standard
+112,06:20,Central Park,Wilgehof,Reverse,Monday to Friday,Standard
+30,06:40,Central Park,Wilgehof,Reverse,Monday to Friday,Standard
+558,07:00,Central Park,Wilgehof,Reverse,Monday to Friday,Standard
+546,07:30,Central Park,Wilgehof,Reverse,Monday to Friday,Standard
+557,07:00,Central Park,Kwaggafontein,Reverse,Monday to Friday,Standard
+7,06:20,Central Park,Makro,Reverse,Monday to Friday,Standard
+536,07:30,Central Park,Makro,Reverse,Monday to Friday,Standard
+154,08:00,Central Park,Makro,Reverse,Monday to Friday,Standard
+5,05:20,Central Park,Vista,Reverse,Monday to Friday,Standard
+538,07:30,Central Park,Vista,Reverse,Monday to Friday,Standard
+523,16:30,Central Park ,Brandfort,Reverse,Monday to Friday,Standard
+557,17:30,Central Park ,Brandfort,Reverse,Monday to Friday,Standard
+19,06:10,Central Park,Woodland Hills,Reverse,Monday to Friday,Standard
+501,06:10,Central Park,Woodland Hills,Reverse,Monday to Friday,Standard
+513,06:30,Central Park,Woodland Hills,Reverse,Monday to Friday,Standard
+140,15:00,Central Park,A1,Reverse,Monday to Friday,Train
+108,15:30,Central Park,A1,Reverse,Monday to Friday,Train
+109,16:00,Central Park,A1,Reverse,Monday to Friday,Train
+165,16:30,Central Park,A1,Reverse,Monday to Friday,Train
+123,17:00,Central Park,A1,Reverse,Monday to Friday,Train
+159,17:10,Central Park,A1,Reverse,Monday to Friday,Train
+133,17:30,Central Park,A1,Reverse,Monday to Friday,Train
+158,18:00,Central Park,A1,Reverse,Monday to Friday,Train
+6103,16:00,Central Park,A1,Reverse,Saturday,Train
+6119,18:00,Central Park,A1,Reverse,Saturday,Train
+139,16:00,Central Park,A4,Reverse,Monday to Friday,Train
+113,16:30,Central Park,A4,Reverse,Monday to Friday,Train
+118,17:00,Central Park,A4,Reverse,Monday to Friday,Train
+174,17:30,Central Park,A4,Reverse,Monday to Friday,Train
+140,18:00,Central Park,A4,Reverse,Monday to Friday,Train
+156,18:30,Central Park,A4,Reverse,Monday to Friday,Train
+147,17:40,Central Park,D1,Reverse,Monday to Friday,Train
+6125,17:00,Central Park,D1,Reverse,Saturday,Train
+6124,14:00,Central Park,D1,Reverse,Saturday,Train
+6105,16:00,Central Park,D1,Reverse,Saturday,Train
+6113,19:00,Central Park,D1,Reverse,Saturday,Train
+114,16:30,Central Park,J1,Reverse,Monday to Friday,Train
+119,17:00,Central Park,J1,Reverse,Monday to Friday,Train
+157,18:30,Central Park,J1,Reverse,Monday to Friday,Train
+6114,16:00,Central Park,G2,Reverse,Saturday,Train
+6107,17:00,Central Park,G2,Reverse,Saturday,Train
+6109,17:30,Central Park,G2,Reverse,Saturday,Train
+6118,18:00,Central Park,G2,Reverse,Saturday,Train
+6114,19:00,Central Park,G2,Reverse,Saturday,Train
+6120,20:00,Central Park,G2,Reverse,Saturday,Train
+122,17:00,Central Park,J3,Reverse,Monday to Friday,Train
+160,17:40,Central Park,J3,Reverse,Monday to Friday,Train
+138,18:00,Central Park,J3,Reverse,Monday to Friday,Train
+155,18:30,Central Park,J3,Reverse,Monday to Friday,Train
+6116,18:00,Central Park,J3,Reverse,Saturday,Train
+153,15:00,Central Park,K6,Reverse,Monday to Friday,Train
+131,16:00,Central Park,K6,Reverse,Monday to Friday,Train
+112,16:30,Central Park,K6,Reverse,Monday to Friday,Train
+124,17:00,Central Park,K6,Reverse,Monday to Friday,Train
+132,17:30,Central Park,K6,Reverse,Monday to Friday,Train
+136,17:40,Central Park,K6,Reverse,Monday to Friday,Train
+142,18:00,Central Park,K6,Reverse,Monday to Friday,Train
+151,18:30,Central Park,K6,Reverse,Monday to Friday,Train
+166,19:00,Central Park,K6,Reverse,Monday to Friday,Train
+165,19:30,Central Park,K6,Reverse,Monday to Friday,Train
+105,15:00,Central Park,M1,Reverse,Monday to Friday,Train
+110,16:00,Central Park,M1,Reverse,Monday to Friday,Train
+116,16:30,Central Park,M1,Reverse,Monday to Friday,Train
+117,17:00,Central Park,M1,Reverse,Monday to Friday,Train
+128,17:30,Central Park,M1,Reverse,Monday to Friday,Train
+162,18:30,Central Park,M1,Reverse,Monday to Friday,Train
+123,06:30,Central Park,M4,Reverse,Monday to Friday,Train
+167,19:30,Central Park,M4,Reverse,Monday to Friday,Train
+6115,19:30,Central Park,M4,Reverse,Saturday,Train
+6116,21:00,Central Park,M4,Reverse,Saturday,Train
+6119,22:30,Central Park,M4,Reverse,Saturday,Train
+127,17:10,Central Park,N1,Reverse,Monday to Friday,Train
+171,17:30,Central Park,N1,Reverse,Monday to Friday,Train
+145,18:00,Central Park,N1,Reverse,Monday to Friday,Train
+153,18:30,Central Park,N1,Reverse,Monday to Friday,Train
+6118,21:00,Central Park,N1,Reverse,Saturday,Train
+125,17:00,Central Park,1,Reverse,Monday to Friday,Train
+130,17:30,Central Park,1,Reverse,Monday to Friday,Train
+148,18:10,Central Park,1,Reverse,Monday to Friday,Train
+121,17:00,Central Park,T1,Reverse,Monday to Friday,Train
+129,17:30,Central Park,T1,Reverse,Monday to Friday,Train
+134,17:30,Central Park,U7,Reverse,Monday to Friday,Train
+144,17:40,Central Park,U7,Reverse,Monday to Friday,Train
+146,18:00,Central Park,U7,Reverse,Monday to Friday,Train
+6110,14:00,Central Park,U7,Reverse,Saturday,Train
+6101,15:00,Central Park,U7,Reverse,Saturday,Train
+6104,16:00,Central Park,U7,Reverse,Saturday,Train
+6108,17:00,Central Park,U7,Reverse,Saturday,Train
+6110,18:00,Central Park,U7,Reverse,Saturday,Train
+6121,19:00,Central Park,U7,Reverse,Saturday,Train
+111,16:30,Central Park,W4,Reverse,Monday to Friday,Train
+126,17:00,Central Park,W4,Reverse,Monday to Friday,Train
+135,17:30,Central Park,W4,Reverse,Monday to Friday,Train
+137,17:40,Central Park,W4,Reverse,Monday to Friday,Train
+141,18:00,Central Park,W4,Reverse,Monday to Friday,Train
+163,17:10,Central Park,N6,Reverse,Monday to Friday,Train
+109,06:30,Central Park,Waterbron,Reverse,Monday to Friday,Train
+144,07:20,Central Park,Waterbron,Reverse,Monday to Friday,Train
+104,06:10,Central Park,Bayswater,Reverse,Monday to Friday,Train
+540,06:30,Central Park,Bayswater,Reverse,Monday to Friday,Train
+102,06:40,Central Park,Bayswater,Reverse,Monday to Friday,Train
+130,07:00,Central Park,Bayswater,Reverse,Monday to Friday,Train
+128,07:20,Central Park,Bayswater,Reverse,Monday to Friday,Train
+540,07:30,Central Park,Bayswater,Reverse,Monday to Friday,Train
+106,06:20,Central Park,Dan Pienaar,Reverse,Monday to Friday,Train
+115,06:20,Central Park,Dan Pienaar,Reverse,Monday to Friday,Train
+113,06:30,Central Park,Dan Pienaar,Reverse,Monday to Friday,Train
+257,07:00,Central Park,Dan Pienaar,Reverse,Monday to Friday,Train
+534,07:10,Central Park,Dan Pienaar,Reverse,Monday to Friday,Train
+260,07:20,Central Park,Dan Pienaar,Reverse,Monday to Friday,Train
+108,07:30,Central Park,Dan Pienaar,Reverse,Monday to Friday,Train
+267,07:40,Central Park,Dan Pienaar,Reverse,Monday to Friday,Train
+108,06:10,Central Park,Hamilton,Reverse,Monday to Friday,Train
+116,06:20,Central Park,Hamilton,Reverse,Monday to Friday,Train
+139,07:00,Central Park,Hamilton,Reverse,Monday to Friday,Train
+7533,05:40,Central Park,Hamilton,Reverse,Sunday,Train
+554,06:00,Central Park,Langenhovenpark,Reverse,Monday to Friday,Train
+105,06:10,Central Park,Langenhovenpark,Reverse,Monday to Friday,Train
+114,06:20,Central Park,Langenhovenpark,Reverse,Monday to Friday,Train
+253,06:30,Central Park,Langenhovenpark,Reverse,Monday to Friday,Train
+530,06:40,Central Park,Langenhovenpark,Reverse,Monday to Friday,Train
+125,07:00,Central Park,Langenhovenpark,Reverse,Monday to Friday,Train
+149,07:10,Central Park,Langenhovenpark,Reverse,Monday to Friday,Train
+550,07:20,Central Park,Langenhovenpark,Reverse,Monday to Friday,Train
+145,07:30,Central Park,Langenhovenpark,Reverse,Monday to Friday,Train
+544,06:30,Central Park,Pellissier,Reverse,Monday to Friday,Train
+126,07:00,Central Park,Pellissier,Reverse,Monday to Friday,Train
+6125,08:00,Central Park,Pellissier,Reverse,Saturday,Train
+110,06:30,Central Park,Woodland Hills,Reverse,Monday to Friday,Train
+118,06:40,Central Park,Woodland Hills,Reverse,Monday to Friday,Train
+147,07:30,Central Park,Woodland Hills,Reverse,Monday to Friday,Train
+280,17:30,Thaba Nchu,Springfontein,Reverse,Monday to Friday,Standard
+6281,07:30,Woodbridge,Thaba Nchu,Reverse,Saturday,Standard
+7281,08:00,Woodbridge,Thaba Nchu,Reverse,Sunday,Standard
+271,06:40,Thaba Nchu,Mariasdal,Reverse,Monday to Friday,Standard
+271,13:30,Thaba Nchu,Mariasdal,Reverse,Monday to Friday,Standard
+225,18:40,Thaba Nchu,Sediti,Reverse,Monday to Friday,Standard
+6270,13:30,Thaba Nchu,Sediti,Reverse,Saturday,Standard
+6270,17:30,Thaba Nchu,Sediti,Reverse,Saturday,Standard
+7270,13:30,Thaba Nchu,Sediti,Reverse,Sunday,Standard
+7270,17:00,Thaba Nchu,Sediti,Reverse,Sunday,Standard
+7273,13:30,Thaba Nchu,Spitskop,Reverse,Sunday,Standard
+7273,17:00,Thaba Nchu,Spitskop,Reverse,Sunday,Standard

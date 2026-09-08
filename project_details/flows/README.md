@@ -6,6 +6,7 @@ Use these files when changing KPI methodology, API aggregation logic, frontend c
 
 Current flow docs:
 
+- `route_departures_flow.md` - Versioned operator timetables, publication, and authenticated CSV downloads for offline mobile use.
 - `reporting_dashboard_flow.md` - Reporting dashboard methodology, data grain, API/frontend logic, and infrastructure notes.
 - `vehicle_and_monitor_drilldowns_flow.md` - Per-vehicle event/trip matching, high-risk trip logic, and monitor drilldown methodology.
 

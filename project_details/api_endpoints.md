@@ -4,6 +4,44 @@ Base URL: `https://bus-track-api-379989015900.africa-south1.run.app`
 
 ---
 
+## GET `/routes/departures.csv` — Download Current Timetables
+
+For first-time integration, read the [step-by-step mobile developer guide](mobile_departures_api_guide.md).
+It covers request/response models, every CSV column, first download, ETags,
+offline storage, error handling, pseudocode, and cURL examples. The endpoint's
+Swagger description also includes the mobile usage steps and response headers.
+
+Named models in `app/schemas/departure.py`:
+
+- `DepartureDownloadRequest`: query parameters; this GET has no JSON body.
+- `DepartureCsvRow`: a validated parsed CSV row; the HTTP 200 response remains a CSV file.
+- JSON 401/500 responses reuse `ErrorResponse`; 422 uses FastAPI's validation error contract.
+- HTTP 304 has no response body.
+
+Requires `Authorization: Bearer <firebase-id-token>`. Optional query parameter:
+`operator_id` (positive integer); omit it to download all operators' active schedules.
+
+Returns HTTP 200 with a UTF-8 CSV attachment:
+
+```csv
+uid,schedule_uid,operator_id,duty_no,departure,origin,destination,direction,valid_days,bus_type
+```
+
+Times are local `Africa/Johannesburg`, formatted as `HH:MM`. UUIDs identify
+departure records and their published schedule version. No published data
+returns a header-only CSV.
+
+Save the response `ETag`. Send it in `If-None-Match` on the next request to the
+same URL/filter; HTTP 304 means the locally cached CSV is still current. On
+HTTP 200, replace the complete local cache after validating the download. On
+network/auth failure, retain the cached schedule for offline use.
+
+See `project_details/flows/route_departures_flow.md` for the import workflow,
+versioning rules, and required database migration. The new endpoint becomes
+available on Cloud Run after the backend change is deployed.
+
+---
+
 ## POST `/auth/refresh` — Refresh Access Token
 
 Exchange a `refresh_token` for a new bearer token and the current app user context.

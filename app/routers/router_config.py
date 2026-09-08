@@ -5,6 +5,7 @@ from app.routers.image import image_router
 from app.routers.inspection import inspection_router
 from app.routers.monitors import monitor_router
 from app.routers.smartfleet import smartfleet_router
+from app.routers.routes import routes_router
 
 
 def register_routers(app):
@@ -22,3 +23,4 @@ def register_routers(app):
     app.include_router(image_router, prefix="/image", tags=["image"])
     app.include_router(inspection_router, prefix="/inspection", tags=["inspection"])
     app.include_router(smartfleet_router, prefix="/smartfleet", tags=["smartfleet"])
+    app.include_router(routes_router, prefix="/routes", tags=["routes"])

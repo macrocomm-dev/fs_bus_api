@@ -29,6 +29,7 @@
 
 ## CI/CD and reliability
 
+- Deploy the route-departure CSV endpoint through the backend `main` workflow and smoke-test it with a mobile user's Firebase token.
 - Expand automated tests beyond auth to health and core API routes.
 - Add integration testing path against a test database.
 - Run a post-deploy smoke test against a DB-backed route or migration path, not only health/auth placeholder routes.

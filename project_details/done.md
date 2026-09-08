@@ -64,6 +64,34 @@
 - Added a Firebase bootstrap script and created one test user per role: Monitor, Supervisor, and Admin.
 - Moved the custom docs shell into a dedicated template file and added a built-in test sign-in form that calls /auth/test/token when test auth helpers are enabled.
 
+## Route departure timetables (2026-09-08)
+
+- Created live `routes.departure` and `routes.schedule_version` tables with UUID keys and a single active version per operator; added a rerunnable SQL migration and ORM models.
+- Normalized 1,172 IBL departure times after the owner confirmed `04:4` means `04:40`; published the timetable for Interstate Bus Lines (`operator_id=1`).
+- Added authenticated `GET /routes/departures.csv` with optional operator filtering, UUID columns, UTF-8 CSV output, and ETag/304 support for offline mobile caches; backend deployment is pending.
+- Added a validating timetable import CLI that publishes complete versions atomically, retains history, and preserves UUIDs when current content is reimported unchanged.
+- Passed all 59 automated tests, including 14 schedule tests; rechecked all 14 schedule tests after batching imports.
+- Verified CSV HTTP 200 with all 1,172 rows and HTTP 304 against the live DB through the local API test client; verified PostgreSQL active-version uniqueness, identical reimport, and replacement rollback.
+
+## Departure API integration documentation (2026-09-08)
+
+- Added `DepartureDownloadRequest` for validated GET query parameters and `DepartureCsvRow` for validated CSV output columns; retained the CSV download response format.
+- Expanded Swagger/OpenAPI with mobile usage steps, CSV examples, ETag and download headers, JSON error models, and a supplementary parsed-row schema.
+- Added `project_details/mobile_departures_api_guide.md` with beginner-oriented authentication, first-download, update-check, offline storage, error handling, model definitions, pseudocode, and cURL instructions.
+- Passed all 15 schedule endpoint tests, including the OpenAPI query/header/CSV contract check; verified the new contract appears in the full app's generated schema. No DB changes or deployment were needed for these local code/documentation changes; backend deployment remains pending.
+
+## Local development recovery (2026-09-08)
+
+- Restored the incomplete Python virtual environment, installed backend and frontend dependencies, and downloaded the ignored local Cloud SQL Auth Proxy binary matching the repository's configured version.
+- Configured the ignored `.env` to load runtime secrets from Secret Manager, allow the local dashboard origins, use frontend port 4201 alongside the existing BLS app on 4200, and disable local operational email alerts.
+- Added missing Secret Manager, frontend-port, CORS, and local alert settings to `.env.example`; documented required/optional settings and recovery steps in `project_details/local_development.md` and linked it from README.
+- Started the proxy on 5432, API on 8000, and FS Bus Angular dashboard on 4201; verified HTTP 200 for health/docs/dashboard, CORS from the dashboard origin, secret availability, and a read-only query of all 1,172 active IBL departures through the local proxy.
+
+## Docs test account recovery (2026-09-08)
+
+- Reset only `admin.test@fsbus.example.com` in Firebase with explicit owner approval; saved the test credentials in the ignored `.env` and `frontend/app/.env.local` files with owner-only permissions.
+- Verified the real test-account login through the local API, authenticated access to protected OpenAPI, and a successful authenticated CSV download of all 1,172 IBL departures. Passwords and tokens were not recorded in tracked documentation.
+
 ## Notes
 
 - Items in this file represent work already present in the repository baseline.
