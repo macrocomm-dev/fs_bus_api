@@ -493,7 +493,7 @@ async def create_shift(
         )
 
         db.add(create_shif)
-        db.commit()
+        db.flush()
         db.refresh(create_shif)
 
         selfies = await add_shift_selfies(create_shif.id, shift_data.selfies, db)
@@ -507,6 +507,7 @@ async def create_shift(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="An error occurred while processing selfies or inspections",
             )
+        db.commit()
 
         interval_repairs = await _behind_schedule_interval_repairs(request)
         if interval_repairs:
@@ -570,7 +571,6 @@ async def add_shift_selfies(shift_id: int, selfies: List[SelfieIn], db: Session)
                 photo=selfie.photo,
             )
             db.add(new_selfie)
-        db.commit()
         return True
     except Exception:
         db.rollback()
@@ -635,7 +635,6 @@ async def add_inspections(shift_id: int, user_id: str, buses: List[BusIn], db: S
                 )
                 _persist_inspection(db, inspection_payload)
 
-        db.commit()
         return True
     except HTTPException:
         db.rollback()
