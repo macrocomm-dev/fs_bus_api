@@ -124,6 +124,10 @@ Exchange email and password for a Firebase ID token plus the app user context st
 
 Submit one completed monitor shift with all nested bus inspections. Requires a valid Bearer token.
 
+Schedule inspection choices: see the [mobile schedule inspection guide](mobile_schedule_inspections_guide.md)
+for the exact new `behind_schedule_interval` strings, an example, offline
+compatibility, and deployment order. The nested JSON structure is unchanged.
+
 **Headers:**
 
 | Header | Value |
@@ -245,7 +249,7 @@ curl -X 'POST' \
               "inspection_time": "2026-05-01T08:20:00",
               "inspection_lat": -26.2052,
               "inspection_lon": 28.0490,
-              "behind_schedule_interval": "5-10 mins"
+              "behind_schedule_interval": "6-15 mins late"
             }
           ]
         }

@@ -134,6 +134,7 @@ class AuthTests(unittest.TestCase):
         self.assertIn("Test Sign-In", response.text)
         self.assertIn("/auth/test/token", response.text)
         self.assertIn("Load Protected Docs", response.text)
+        self.assertIn("Ask an administrator to check your Firebase role", response.text)
 
     def test_openapi_respects_docs_role(self):
         payload = {
@@ -173,6 +174,20 @@ class AuthTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["info"]["title"], "FS Bus API")
         self.assertEqual(response.json()["openapi"], "3.0.3")
+
+    def test_operator_admin_docs_access_requires_firebase_role_claim(self):
+        payload = {
+            "uid": "mbs-admin-test", "email": "mbsadmin@fsbus.example.com",
+            "name": "MBS Admin",
+        }
+        with patch("app.auth.firebase_auth.verify_id_token", return_value=payload), patch(
+            "app.auth.get_firebase_app", return_value=object()
+        ):
+            missing_role = client.get("/openapi.json", headers={"Authorization": "Bearer test-token"})
+            self.assertEqual(missing_role.status_code, 403)
+            payload["role"] = "Admin"
+            restored = client.get("/openapi.json", headers={"Authorization": "Bearer test-token"})
+            self.assertEqual(restored.status_code, 200)
 
     def test_auth_test_token_returns_firebase_token_payload(self):
         result = FirebasePasswordSignInResult(

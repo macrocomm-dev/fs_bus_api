@@ -29,6 +29,7 @@
 
 ## CI/CD and reliability
 
+- Deploy the updated schedule-band backend and dashboard before the mobile app sends new values; verify the deployed OpenAPI enum and a fresh MBS Admin docs login.
 - Deploy the route-departure CSV endpoint through the backend `main` workflow and smoke-test it with a mobile user's Firebase token.
 - Expand automated tests beyond auth to health and core API routes.
 - Add integration testing path against a test database.

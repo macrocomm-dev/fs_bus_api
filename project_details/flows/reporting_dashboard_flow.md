@@ -42,16 +42,19 @@ Current source:
 
 Current interval treatment:
 
+- `Early departure`: early, not on time and not late.
 - `0-5 mins`: on-time / acceptable route-start check.
-- `5-10 mins`: late route-start check.
-- `10-15 mins`: late route-start check and major-delay candidate.
-- `15+ mins`: late route-start check and major-delay candidate.
+- `6-15 mins late`: late route-start check.
+- `15-30 mins late` and `30+ mins late`: late route-start checks and major-delay candidates.
+- Old `5-10 mins`, `10-15 mins`, and `15+ mins` records retain their meaning and
+  are displayed separately as legacy bands. The latter two retain their previous
+  major-delay classification for historical reports.
 
 Current top KPI formula:
 
 ```text
 on_time_count = count(behind_schedule rows where behind_schedule_interval = '0-5 mins')
-total_route_start_checks = count(behind_schedule rows where interval is one of the four known buckets)
+total_route_start_checks = count(behind_schedule rows in any current or legacy known band)
 on_time_percentage = on_time_count / total_route_start_checks
 secondary_text = on_time_count / total_route_start_checks
 ```
@@ -60,12 +63,19 @@ Current delayed-departures card formula:
 
 ```text
 late_route_start_count =
+  count('6-15 mins late') +
+  count('15-30 mins late') +
+  count('30+ mins late') +
   count('5-10 mins') +
   count('10-15 mins') +
   count('15+ mins')
 ```
 
-The breakdown still shows all four interval buckets so the product owner can see the full distribution.
+The breakdown shows all five current bands, plus any legacy bands with data in
+the selected period. Early departures contribute to the denominator but not to
+the late count. They have a separate trend series. See the
+[mobile interval guide](../mobile_schedule_inspections_guide.md) for exact values
+and the backend-first rollout requirement.
 
 ## Pass/Fail Logic
 
@@ -188,7 +198,13 @@ Shared route-start constants:
 
 - `ROUTE_START_INTERVALS`
 - `ON_TIME_ROUTE_START_INTERVALS`
+- `EARLY_ROUTE_START_INTERVALS`
+- `LATE_ROUTE_START_INTERVALS`
 - `MAJOR_DELAY_INTERVALS`
+
+Band definitions are shared in `app/services/schedule_intervals.py`; cards and
+top KPI summaries use the same summary helper, and SQL trend filters bind the
+same early/late/major band sets.
 
 Shared helper:
 
@@ -269,14 +285,18 @@ The mobile app has submitted invalid `behind_schedule_interval` values for late-
 }
 ```
 
-The canonical allowed values remain:
+Current capture values:
 
 ```text
+Early departure
 0-5 mins
-5-10 mins
-10-15 mins
-15+ mins
+6-15 mins late
+15-30 mins late
+30+ mins late
 ```
+
+The old `5-10 mins`, `10-15 mins`, and `15+ mins` values are also accepted and
+preserved for offline compatibility. They are not defaulted or converted.
 
 Temporary compatibility rule:
 
@@ -316,7 +336,9 @@ Known limitations:
 
 - The KPI only includes inspected route-start checks. It cannot yet include scheduled starts that were never inspected.
 - The `0-5 mins` threshold is a product/business rule and should be reconfirmed if the client changes the SLA.
-- Unknown or new `behind_schedule_interval` values are not shown in the four-bucket UI until explicitly mapped.
+- Unknown stored interval values are excluded from the band calculations until
+  explicitly mapped. Historical coarse bands cannot be split into the new
+  ranges without original timing data.
 
 ## Architecture And Infrastructure
 
@@ -340,4 +362,6 @@ Deployment:
 
 OpenAPI impact:
 
-- This change reuses existing response fields and does not require API interface regeneration.
+- The schedule-band update keeps existing request/response fields but expands the
+  `BehindScheduleInterval` enum. Its Angular model was regenerated from the updated
+  backend OpenAPI schema using the repository's pinned generator version.

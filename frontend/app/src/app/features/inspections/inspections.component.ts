@@ -1,3 +1,4 @@
+import { scheduleIntervalLabel } from '../../core/utils/schedule-interval';
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
@@ -68,7 +69,7 @@ const INSPECTION_METRIC_TYPES = [
   { type: 'Internal', label: 'Internal', icon: 'pi pi-wrench', color: '#16a34a' },
   { type: 'Driver', label: 'Driver', icon: 'pi pi-id-card', color: '#d97706' },
   { type: 'Passenger Count', label: 'Passenger', icon: 'pi pi-users', color: '#7c3aed' },
-  { type: 'Behind Schedule', label: 'Behind Schedule', icon: 'pi pi-clock', color: '#dc2626' },
+  { type: 'Schedule Check', label: 'Schedule Check', icon: 'pi pi-clock', color: '#dc2626' },
 ];
 
 @Component({
@@ -385,14 +386,14 @@ export class InspectionsComponent implements OnInit {
         rows.push({
           ...base,
           inspectionId: report.inspection_id,
-          type: 'Behind Schedule',
+          type: 'Schedule Check',
           inspectionTime: report.inspection_time,
           gps: this.gps(report.inspection_lat, report.inspection_lon),
           pass: report.pass_,
           notes: report.notes,
-          summary: `Interval: ${report.behind_schedule_interval ?? 'Not set'}`,
+          summary: `Interval: ${scheduleIntervalLabel(report.behind_schedule_interval)}`,
           details: [
-            { label: 'Delayed start interval', value: report.behind_schedule_interval ?? 'Not set' },
+            { label: 'Departure timing', value: scheduleIntervalLabel(report.behind_schedule_interval) },
           ],
         });
       }

@@ -6,7 +6,7 @@ from decimal import Decimal
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import text
+from sqlalchemy import bindparam, text
 from sqlalchemy.orm import Session
 
 from app.auth import TokenData, get_current_user
@@ -28,13 +28,19 @@ from app.schemas.analytics import (
     AnalyticsVehicleScoreResponse,
 )
 from app.schemas.shift import ErrorResponse
+from app.services.schedule_intervals import (
+    EARLY_ROUTE_START_INTERVALS,
+    LATE_ROUTE_START_INTERVALS,
+    MAJOR_DELAY_INTERVALS,
+    ON_TIME_ROUTE_START_INTERVALS,
+    ROUTE_START_BANDS,
+    ROUTE_START_INTERVALS,
+    visible_route_start_bands,
+)
 
 analytics_router = APIRouter()
 logger = logging.getLogger(__name__)
 
-ROUTE_START_INTERVALS = ("0-5 mins", "5-10 mins", "10-15 mins", "15+ mins")
-ON_TIME_ROUTE_START_INTERVALS = {"0-5 mins"}
-MAJOR_DELAY_INTERVALS = {"10-15 mins", "15+ mins"}
 COMPLETED_INSPECTION_TYPES = ("external", "internal", "driver", "count", "technical")
 FAILED_INSPECTION_LABELS = {
     "external": "External Inspections",
@@ -87,8 +93,16 @@ def _route_start_interval_counts(
     on_time = sum(
         counts_by_interval.get(interval, 0) for interval in ON_TIME_ROUTE_START_INTERVALS
     )
-    late = max(total - on_time, 0)
+    late = sum(counts_by_interval.get(interval, 0) for interval in LATE_ROUTE_START_INTERVALS)
     return on_time, late, total
+
+
+def _route_start_summary_items(counts_by_interval):
+    _, late, _ = _route_start_interval_counts(counts_by_interval)
+    return [
+        AnalyticsSummaryItemResponse(label=label, value=counts_by_interval.get(interval, 0), drill_key=key)
+        for interval, label, key in visible_route_start_bands(counts_by_interval)
+    ] + [AnalyticsSummaryItemResponse(label="Total Late Route Starts", value=late, drill_key=None)]
 
 
 def _status_for_percent(value: str, inverse: bool = False) -> str:
@@ -535,7 +549,7 @@ def get_reporting_summary(
         ("driver", "Driver"),
         ("date", "Date"),
         ("time", "Time"),
-        ("interval", "Delay Interval"),
+        ("interval", "Departure Timing"),
     )
     defect_columns = _report_columns(
         ("busReg", "Bus Reg"),
@@ -606,12 +620,7 @@ def get_reporting_summary(
             }
         )
 
-    delayed_rows_by_interval: dict[str, list[dict[str, Any]]] = {
-        "0-5 mins": [],
-        "5-10 mins": [],
-        "10-15 mins": [],
-        "15+ mins": [],
-    }
+    delayed_rows_by_interval: dict[str, list[dict[str, Any]]] = {interval: [] for interval in ROUTE_START_INTERVALS}
     for row in inspections_by_type["behind_schedule"]:
         base = _inspection_row(row)
         delay_row = {**base, "interval": row.behind_schedule_interval or "Unknown"}
@@ -796,10 +805,10 @@ def get_reporting_summary(
         "driver-inspections": _drilldown("Driver Inspections", driver_columns, driver_rows),
         "passenger-counts-drill": _drilldown("Passenger Counts", passenger_columns, passenger_rows),
         "technical-inspections": _drilldown("Technical Inspections", inspection_columns, technical_rows),
-        "behind-schedule-0-5": _drilldown("Route Starts (0-5 mins)", delay_columns, delayed_rows_by_interval["0-5 mins"]),
-        "behind-schedule-5-10": _drilldown("Behind Schedule (5-10 mins)", delay_columns, delayed_rows_by_interval["5-10 mins"]),
-        "behind-schedule-10-15": _drilldown("Behind Schedule (10-15 mins)", delay_columns, delayed_rows_by_interval["10-15 mins"]),
-        "behind-schedule-15-plus": _drilldown("Behind Schedule (15+ mins)", delay_columns, delayed_rows_by_interval["15+ mins"]),
+        **{
+            key: _drilldown(label, delay_columns, delayed_rows_by_interval[interval])
+            for interval, label, key in ROUTE_START_BANDS
+        },
         "route-deviation-events": _drilldown(
             "Route Deviations",
             _report_columns(
@@ -955,13 +964,7 @@ def get_reporting_summary(
             value=late_route_start_checks,
             status=_status_for_count(late_route_start_checks),
             icon="pi pi-clock",
-            summary_items=[
-                AnalyticsSummaryItemResponse(label="Route Starts (0-5 mins)", value=len(delayed_rows_by_interval["0-5 mins"]), drill_key="behind-schedule-0-5"),
-                AnalyticsSummaryItemResponse(label="Behind Schedule (5-10 mins)", value=len(delayed_rows_by_interval["5-10 mins"]), drill_key="behind-schedule-5-10"),
-                AnalyticsSummaryItemResponse(label="Behind Schedule (10-15 mins)", value=len(delayed_rows_by_interval["10-15 mins"]), drill_key="behind-schedule-10-15"),
-                AnalyticsSummaryItemResponse(label="Behind Schedule (15+ mins)", value=len(delayed_rows_by_interval["15+ mins"]), drill_key="behind-schedule-15-plus"),
-                AnalyticsSummaryItemResponse(label="Total Late Route Starts", value=late_route_start_checks, drill_key=None),
-            ],
+            summary_items=_route_start_summary_items(delayed_counts_by_interval),
         ),
         AnalyticsReportingTileResponse(
             id="service-reliability",
@@ -970,13 +973,7 @@ def get_reporting_summary(
             value=on_time_value,
             status=_status_for_percent(on_time_value),
             icon="pi pi-chart-line",
-            summary_items=[
-                AnalyticsSummaryItemResponse(label="Route Starts (0-5 mins)", value=len(delayed_rows_by_interval["0-5 mins"]), drill_key="behind-schedule-0-5"),
-                AnalyticsSummaryItemResponse(label="Delayed Starts (5-10 mins)", value=len(delayed_rows_by_interval["5-10 mins"]), drill_key="behind-schedule-5-10"),
-                AnalyticsSummaryItemResponse(label="Delayed Starts (10-15 mins)", value=len(delayed_rows_by_interval["10-15 mins"]), drill_key="behind-schedule-10-15"),
-                AnalyticsSummaryItemResponse(label="Delayed Starts (15+ mins)", value=len(delayed_rows_by_interval["15+ mins"]), drill_key="behind-schedule-15-plus"),
-                AnalyticsSummaryItemResponse(label="Total Late Route Starts", value=late_route_start_checks, drill_key=None),
-            ],
+            summary_items=_route_start_summary_items(delayed_counts_by_interval),
         ),
         AnalyticsReportingTileResponse(
             id="operator-compliance",
@@ -1225,11 +1222,14 @@ def get_analytics_summary(
                 select
                     inspection_time::date as delay_date,
                     count(*) filter (
-                        where behind_schedule_interval in ('5-10 mins', '10-15 mins', '15+ mins')
+                        where behind_schedule_interval in :late_intervals
                     ) as delayed_count,
                     count(*) filter (
-                        where behind_schedule_interval in ('10-15 mins', '15+ mins')
-                    ) as major_delay_count
+                        where behind_schedule_interval in :major_delay_intervals
+                    ) as major_delay_count,
+                    count(*) filter (
+                        where behind_schedule_interval in :early_intervals
+                    ) as early_count
                 from inspections.inspections
                 where inspection_type = 'behind_schedule'
                   and (cast(:start_date as date) is null or inspection_time::date >= cast(:start_date as date))
@@ -1237,8 +1237,17 @@ def get_analytics_summary(
                 group by inspection_time::date
                 order by inspection_time::date
                 """
+            ).bindparams(
+                bindparam("late_intervals", expanding=True),
+                bindparam("major_delay_intervals", expanding=True),
+                bindparam("early_intervals", expanding=True),
             ),
-            params,
+            {
+                **params,
+                "late_intervals": sorted(LATE_ROUTE_START_INTERVALS),
+                "major_delay_intervals": sorted(MAJOR_DELAY_INTERVALS),
+                "early_intervals": sorted(EARLY_ROUTE_START_INTERVALS),
+            },
         ).mappings().all()
 
         top_route_row = db.execute(
@@ -1463,44 +1472,18 @@ def get_analytics_summary(
         row.interval or "Unknown": _to_int(row.delayed_count)
         for row in delayed_interval_rows
     }
-    delayed_0_5 = delayed_counts.get("0-5 mins", 0)
-    delayed_5_10 = delayed_counts.get("5-10 mins", 0)
-    delayed_10_15 = delayed_counts.get("10-15 mins", 0)
-    delayed_15_plus = delayed_counts.get("15+ mins", 0)
     on_time_count, late_route_start_count, total_route_start_count = (
         _route_start_interval_counts(delayed_counts)
     )
     on_time_value = _format_percent(on_time_count, total_route_start_count)
-    service_reliability_items = [
-        AnalyticsSummaryItemResponse(
-            label="Route Starts (0-5 mins)",
-            value=delayed_0_5,
-            drill_key="behind-schedule-0-5",
-        ),
-        AnalyticsSummaryItemResponse(
-            label="Delayed Starts (5-10 mins)",
-            value=delayed_5_10,
-            drill_key="behind-schedule-5-10",
-        ),
-        AnalyticsSummaryItemResponse(
-            label="Delayed Starts (10-15 mins)",
-            value=delayed_10_15,
-            drill_key="behind-schedule-10-15",
-        ),
-        AnalyticsSummaryItemResponse(
-            label="Delayed Starts (15+ mins)",
-            value=delayed_15_plus,
-            drill_key="behind-schedule-15-plus",
-        ),
-        AnalyticsSummaryItemResponse(
-            label="Total Late Route Starts",
-            value=late_route_start_count,
-            drill_key=None,
-        ),
-    ]
+    service_reliability_items = _route_start_summary_items(delayed_counts)
     service_reliability_trend = AnalyticsTrendResponse(
         dates=[str(row.delay_date) for row in delayed_trend_rows],
         series=[
+            AnalyticsTrendSeriesResponse(
+                name="Early Departures",
+                data=[_to_int(row.early_count) for row in delayed_trend_rows],
+            ),
             AnalyticsTrendSeriesResponse(
                 name="Late Route Starts",
                 data=[_to_int(row.delayed_count) for row in delayed_trend_rows],

@@ -1,3 +1,4 @@
+import { scheduleIntervalLabel } from '../../core/utils/schedule-interval';
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
@@ -500,11 +501,11 @@ export class ShiftsComponent implements OnInit {
       rows.push({
         ...base,
         inspectionId: report.inspection_id,
-        type: 'Behind Schedule',
+        type: 'Schedule Check',
         inspectionTime: report.inspection_time,
         gps: this.gps(report.inspection_lat, report.inspection_lon),
         pass: report.pass_,
-        summary: `Interval: ${report.behind_schedule_interval ?? 'Not set'}`,
+        summary: `Interval: ${scheduleIntervalLabel(report.behind_schedule_interval)}`,
       });
     }
 

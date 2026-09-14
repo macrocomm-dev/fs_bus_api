@@ -167,6 +167,10 @@
             });
 
             if (!response.ok) {
+                if (response.status === 403) {
+                    statusNode.textContent = 'Sign-in succeeded, but this token does not have the required docs role shown above. Ask an administrator to check your Firebase role. After it is corrected, click Clear Token and sign in again.';
+                    return;
+                }
                 const body = await response.text();
                 statusNode.textContent = `Schema request failed: ${response.status} ${body}`;
                 return;

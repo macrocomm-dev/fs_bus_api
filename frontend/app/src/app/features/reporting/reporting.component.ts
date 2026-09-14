@@ -6,6 +6,7 @@ import type { EChartsOption, SeriesOption } from 'echarts';
 import { NgxEchartsDirective } from 'ngx-echarts';
 
 import { AuthService } from '../../core/services/auth.service';
+import { CURRENT_SCHEDULE_BANDS, scheduleIntervalLabel } from '../../core/utils/schedule-interval';
 import { AnalyticsService } from '../../core/api/api/analytics.service';
 import type { AnalyticsDrilldownResponse } from '../../core/api/model/analyticsDrilldownResponse';
 import type { AnalyticsReportingSummaryResponse } from '../../core/api/model/analyticsReportingSummaryResponse';
@@ -742,7 +743,7 @@ const DRILL_CONFIGS: Record<string, DrillConfig> = {
     ],
   },
   'behind-schedule-drill': {
-    title: 'Behind Schedule Reports',
+    title: 'Schedule Checks',
     columns: [
       { field: 'busReg', header: 'Bus Reg' },
       { field: 'fleetNo', header: 'Fleet No' },
@@ -750,7 +751,7 @@ const DRILL_CONFIGS: Record<string, DrillConfig> = {
       { field: 'driver', header: 'Driver' },
       { field: 'terminal', header: 'Terminal' },
       { field: 'date', header: 'Date' },
-      { field: 'interval', header: 'Delay Interval' },
+      { field: 'interval', header: 'Departure Timing' },
     ],
     data: [
       {
@@ -783,7 +784,7 @@ const DRILL_CONFIGS: Record<string, DrillConfig> = {
     ],
   },
   'behind-schedule-0-5': {
-    title: 'Behind Schedule (0–5 mins)',
+    title: 'On time (0–5 mins)',
     columns: [
       { field: 'busReg', header: 'Bus Reg' },
       { field: 'fleetNo', header: 'Fleet No' },
@@ -791,12 +792,12 @@ const DRILL_CONFIGS: Record<string, DrillConfig> = {
       { field: 'driver', header: 'Driver' },
       { field: 'terminal', header: 'Terminal' },
       { field: 'date', header: 'Date' },
-      { field: 'interval', header: 'Delay Interval' },
+      { field: 'interval', header: 'Departure Timing' },
     ],
     data: [],
   },
   'behind-schedule-5-10': {
-    title: 'Behind Schedule (5–10 mins)',
+    title: '5–10 mins late (legacy)',
     columns: [
       { field: 'busReg', header: 'Bus Reg' },
       { field: 'fleetNo', header: 'Fleet No' },
@@ -804,7 +805,7 @@ const DRILL_CONFIGS: Record<string, DrillConfig> = {
       { field: 'driver', header: 'Driver' },
       { field: 'terminal', header: 'Terminal' },
       { field: 'date', header: 'Date' },
-      { field: 'interval', header: 'Delay Interval' },
+      { field: 'interval', header: 'Departure Timing' },
     ],
     data: [
       {
@@ -819,7 +820,7 @@ const DRILL_CONFIGS: Record<string, DrillConfig> = {
     ],
   },
   'behind-schedule-10-15': {
-    title: 'Behind Schedule (10–15 mins)',
+    title: '10–15 mins late (legacy)',
     columns: [
       { field: 'busReg', header: 'Bus Reg' },
       { field: 'fleetNo', header: 'Fleet No' },
@@ -827,7 +828,7 @@ const DRILL_CONFIGS: Record<string, DrillConfig> = {
       { field: 'driver', header: 'Driver' },
       { field: 'terminal', header: 'Terminal' },
       { field: 'date', header: 'Date' },
-      { field: 'interval', header: 'Delay Interval' },
+      { field: 'interval', header: 'Departure Timing' },
     ],
     data: [
       {
@@ -842,7 +843,7 @@ const DRILL_CONFIGS: Record<string, DrillConfig> = {
     ],
   },
   'behind-schedule-15-plus': {
-    title: 'Behind Schedule (15+ mins)',
+    title: '15+ mins late (legacy)',
     columns: [
       { field: 'busReg', header: 'Bus Reg' },
       { field: 'fleetNo', header: 'Fleet No' },
@@ -850,7 +851,7 @@ const DRILL_CONFIGS: Record<string, DrillConfig> = {
       { field: 'driver', header: 'Driver' },
       { field: 'terminal', header: 'Terminal' },
       { field: 'date', header: 'Date' },
-      { field: 'interval', header: 'Delay Interval' },
+      { field: 'interval', header: 'Departure Timing' },
     ],
     data: [
       {
@@ -2261,6 +2262,19 @@ const FAILED_INSPECTION_SUMMARY_ITEMS: SummaryItem[] = [
 
 // ─── KPI Tiles (original document order) ─────────────────────────────────────
 
+for (const band of CURRENT_SCHEDULE_BANDS) {
+  DRILL_CONFIGS[band.drillKey] = {
+    title: band.label,
+    columns: DRILL_CONFIGS['behind-schedule-drill'].columns,
+    data: [],
+  };
+}
+
+const SCHEDULE_SUMMARY_ITEMS: SummaryItem[] = [
+  ...CURRENT_SCHEDULE_BANDS.map((band) => ({ label: band.label, value: 0, drillKey: band.drillKey })),
+  { label: 'Total Late Route Starts', value: 0, drillKey: null },
+];
+
 const TILES: KpiTile[] = [
   {
     id: 'daily-monitoring',
@@ -2343,13 +2357,7 @@ const TILES: KpiTile[] = [
     value: 12,
     status: 'warning',
     icon: 'pi pi-clock',
-    summaryItems: [
-      { label: 'Route Starts (0–5 mins)', value: 0, drillKey: 'behind-schedule-0-5' },
-      { label: 'Behind Schedule (5–10 mins)', value: 3, drillKey: 'behind-schedule-5-10' },
-      { label: 'Behind Schedule (10–15 mins)', value: 4, drillKey: 'behind-schedule-10-15' },
-      { label: 'Behind Schedule (15+ mins)', value: 5, drillKey: 'behind-schedule-15-plus' },
-      { label: 'Total Late Route Starts', value: 12, drillKey: null },
-    ],
+    summaryItems: SCHEDULE_SUMMARY_ITEMS,
   },
   {
     id: 'service-reliability',
@@ -2358,13 +2366,7 @@ const TILES: KpiTile[] = [
     value: '96.4%',
     status: 'good',
     icon: 'pi pi-chart-line',
-    summaryItems: [
-      { label: 'Route Starts (0-5 mins)', value: 0, drillKey: 'behind-schedule-0-5' },
-      { label: 'Delayed Starts (5-10 mins)', value: 1, drillKey: 'behind-schedule-5-10' },
-      { label: 'Delayed Starts (10-15 mins)', value: 1, drillKey: 'behind-schedule-10-15' },
-      { label: 'Delayed Starts (15+ mins)', value: 1, drillKey: 'behind-schedule-15-plus' },
-      { label: 'Total Late Route Starts', value: 3, drillKey: null },
-    ],
+    summaryItems: SCHEDULE_SUMMARY_ITEMS,
   },
   {
     id: 'operator-compliance',
@@ -3074,7 +3076,12 @@ export class ReportingComponent implements OnInit {
           field: column.field,
           header: column.header,
         })),
-        data: (value.data ?? []).map((row) => row as Record<string, string | number>),
+        data: (value.data ?? []).map((row) => {
+          const record = row as Record<string, string | number>;
+          return typeof record['interval'] === 'string'
+            ? { ...record, interval: scheduleIntervalLabel(record['interval']) }
+            : record;
+        }),
       };
       return mapped;
     }, {});

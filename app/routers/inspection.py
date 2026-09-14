@@ -177,7 +177,7 @@ _BUS_INSPECTIONS_200 = {
                                     "inspection_lon": 28.049,
                                     "pass_": False,
                                     "notes": None,
-                                    "behind_schedule_interval": "5-10 mins",
+                                    "behind_schedule_interval": "6-15 mins late",
                                 }
                             ],
                         },

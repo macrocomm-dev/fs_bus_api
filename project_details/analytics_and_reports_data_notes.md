@@ -93,7 +93,7 @@ Current backend sources:
     - Source: `inspections.inspections`
     - Grain: one `behind_schedule` inspection row represents one inspected bus route-start check.
     - Current calculation: route-start checks in the `0-5 mins` interval divided by all route-start checks in the selected date range.
-    - Late route starts are the `5-10 mins`, `10-15 mins`, and `15+ mins` intervals.
+    - Late route starts use `6-15 mins late`, `15-30 mins late`, and `30+ mins late`, plus the preserved legacy `5-10 mins`, `10-15 mins`, and `15+ mins` bands. `Early departure` contributes to total checks but is neither on time nor late.
     - Important: `shifts.shifts` is not used as the denominator because a shift is the monitor's inspection session and can contain inspection rows for many buses.
   - Route Compliance:
     - Source checked: `analytics.trip_data.routescore` and `analytics.trip_data.routevar`
@@ -143,12 +143,14 @@ Current backend sources:
   - Source: `inspections.inspections`
   - Use `inspection_type = 'behind_schedule'` and group by `behind_schedule_interval`.
   - The `0-5 mins` bucket is treated as the on-time/acceptable bucket for the top KPI.
-  - The delayed-departures card value uses the `5+ mins` buckets only.
+  - The delayed-departures card value uses explicit current and legacy late bands only; early departures are separate.
   - Drilldowns return the real rows per delay bucket:
+    - `Early departure`
     - `0-5 mins`
-    - `5-10 mins`
-    - `10-15 mins`
-    - `15+ mins`
+    - `6-15 mins late`
+    - `15-30 mins late`
+    - `30+ mins late`
+    - Historical `5-10 mins`, `10-15 mins`, and `15+ mins` are shown as legacy bands when present.
 - Shifts per operator
   - Source: `shifts.shifts` joined to `app_auth.app_user` and `master_data.operator`.
   - Used in the operator compliance drilldown.

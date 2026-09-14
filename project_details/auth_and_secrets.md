@@ -91,6 +91,14 @@ For this project's current email/password setup, the mobile app should talk dire
 
 ## Protected docs flow
 
+The docs gate reads the Firebase token's `role` custom claim; an Admin role in
+`app_auth.app_user` alone does not authorize `/openapi.json`. If sign-in succeeds
+but schema loading returns 403, verify the account's Firebase claim against its
+intended role. After correcting claims, obtain a fresh ID token by signing in
+again; an existing pasted token retains its old claims. On 2026-09-14 the missing
+Admin claim was restored for `mbsadmin@fsbus.example.com` after its active Admin
+database identity was verified. Its password was not reset.
+
 The `/docs` experience is hosted by the FastAPI application itself and served by the same Cloud Run service as the API.
 
 The page is a custom docs shell rather than FastAPI's built-in default docs page. Operationally it works as follows:

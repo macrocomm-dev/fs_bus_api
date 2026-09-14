@@ -10,11 +10,19 @@
 
 
 /**
- * Allowed labels for behind-schedule reports.
+ * Schedule check labels. New clients use Early departure, 0-5 mins, 6-15 mins late, 15-30 mins late, or 30+ mins late. The old 5-10 mins, 10-15 mins, and 15+ mins labels remain accepted for queued offline reports; they are preserved as legacy bands and must not be used for new captures.
  */
 export enum BehindScheduleInterval {
 
+    EarlyDeparture = 'Early departure',
+
     _05Mins = '0-5 mins',
+
+    _615MinsLate = '6-15 mins late',
+
+    _1530MinsLate = '15-30 mins late',
+
+    _30MinsLate = '30+ mins late',
 
     _510Mins = '5-10 mins',
 

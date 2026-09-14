@@ -1,3 +1,4 @@
+import { scheduleIntervalLabel } from '../../core/utils/schedule-interval';
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -93,7 +94,7 @@ const MONITOR_INSPECTION_TYPES = [
   'Internal',
   'Driver',
   'Passenger Count',
-  'Behind Schedule',
+  'Schedule Check',
 ] as const;
 const MONITOR_INSPECTION_TYPE_COLORS = ['#2563eb', '#16a34a', '#d97706', '#7c3aed', '#dc2626'];
 
@@ -617,11 +618,11 @@ export class MonitorsComponent implements OnInit {
       rows.push({
         ...base,
         inspectionId: report.inspection_id,
-        type: 'Behind Schedule',
+        type: 'Schedule Check',
         inspectionTime: report.inspection_time,
         gps: this.gps(report.inspection_lat, report.inspection_lon),
         pass: report.pass_,
-        summary: `Interval: ${report.behind_schedule_interval ?? 'Not set'}`,
+        summary: `Interval: ${scheduleIntervalLabel(report.behind_schedule_interval)}`,
       });
     }
 

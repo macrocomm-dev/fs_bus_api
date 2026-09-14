@@ -92,6 +92,15 @@
 - Reset only `admin.test@fsbus.example.com` in Firebase with explicit owner approval; saved the test credentials in the ignored `.env` and `frontend/app/.env.local` files with owner-only permissions.
 - Verified the real test-account login through the local API, authenticated access to protected OpenAPI, and a successful authenticated CSV download of all 1,172 IBL departures. Passwords and tokens were not recorded in tracked documentation.
 
+## Schedule inspection bands and MBS docs access (2026-09-14)
+
+- Expanded `behind_schedule_interval` without changing the JSON structure: added early departure and the three new late bands, retained `0-5 mins` for on-time checks, and kept legacy values valid for offline queues and historical reporting.
+- Updated both reporting endpoints, dashboard labels/drilldowns, and the generated Angular enum. Early departures have a separate count and trend and are excluded from late totals. Historical bands remain separately labelled and are not rebinned.
+- Documented exact mobile values, examples, offline compatibility, report calculations, and backend-first rollout in `project_details/mobile_schedule_inspections_guide.md`; updated API, reporting, and authentication references.
+- Restored the missing Firebase `Admin` role claim for `mbsadmin@fsbus.example.com` after confirming its matching database user was active and already Admin. Password and operator association were unchanged. The claim repair is live; David must clear his old token and sign in again. Added clearer docs-page guidance for insufficient-role errors.
+- Validation: all 84 backend tests passed; dashboard production build passed with existing size warnings. Read-only checks against live historical data confirmed both reporting endpoints agree on on-time percentage and legacy counts. No database migration or historical data changes were required.
+- Backend/frontend code deployment and the subsequent mobile rollout remain pending.
+
 ## Notes
 
 - Items in this file represent work already present in the repository baseline.

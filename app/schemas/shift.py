@@ -28,9 +28,18 @@ class InspectionType(str, Enum):
 
 
 class BehindScheduleInterval(str, Enum):
-    """Allowed labels for behind-schedule reports."""
+    """Schedule check labels. New clients use Early departure, 0-5 mins,
+    6-15 mins late, 15-30 mins late, or 30+ mins late. The old 5-10 mins,
+    10-15 mins, and 15+ mins labels remain accepted for queued offline reports;
+    they are preserved as legacy bands and must not be used for new captures.
+    """
 
+    early_departure = "Early departure"
     zero_to_five = "0-5 mins"
+    six_to_fifteen_late = "6-15 mins late"
+    fifteen_to_thirty_late = "15-30 mins late"
+    thirty_plus_late = "30+ mins late"
+    # Retain the original values so offline uploads keep their actual meaning.
     five_to_ten = "5-10 mins"
     ten_to_fifteen = "10-15 mins"
     fifteen_plus = "15+ mins"
@@ -46,7 +55,7 @@ def normalize_behind_schedule_interval(value):
     """Default invalid mobile-app behind-schedule interval values to 0-5 mins."""
     if isinstance(value, BehindScheduleInterval):
         return value
-    if value in _VALID_BEHIND_SCHEDULE_INTERVALS:
+    if isinstance(value, str) and value in _VALID_BEHIND_SCHEDULE_INTERVALS:
         return value
     return _DEFAULT_BEHIND_SCHEDULE_INTERVAL
 

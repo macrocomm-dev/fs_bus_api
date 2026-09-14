@@ -99,7 +99,7 @@ def _behind_schedule_interval_repairs_from_payload(payload) -> list[dict]:
             if not isinstance(report, dict):
                 continue
             original_value = report.get("behind_schedule_interval")
-            if original_value in _VALID_BEHIND_SCHEDULE_INTERVALS:
+            if isinstance(original_value, str) and original_value in _VALID_BEHIND_SCHEDULE_INTERVALS:
                 continue
             repairs.append(
                 {
