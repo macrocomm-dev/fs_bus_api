@@ -16,6 +16,7 @@ from fastapi import (
     status,
 )
 from fastapi.responses import JSONResponse
+from sqlalchemy import tuple_
 from sqlalchemy.orm import Session, selectinload
 
 from app.auth import TokenData, get_current_user, split_user_name
@@ -23,6 +24,7 @@ from app.database import get_db
 from app.models.app_auth import AppUser
 from app.models.master_data import Operator, Route, Vehicle
 from app.models.bus_inspection import BusInspection
+from app.models.photo import DestinationDisplayPhoto
 from app.models.operations import (
     Inspection,
     InspectionCheck,
@@ -82,6 +84,7 @@ _BUS_INSPECTIONS_200 = {
                         "replacement_bus": False,
                         "license_disk_scan_succeeded": True,
                         "destination_displayed": True,
+                        "photos": [],
                         "inspections": {
                             "external_inspected": True,
                             "internal_inspected": True,
@@ -472,6 +475,7 @@ def _group_bus_inspection_rows(rows: list[BusInspection]) -> list[dict]:
                 "replacement_bus": row.replacement_bus,
                 "license_disk_scan_succeeded": row.license_disk_scan_succeeded,
                 "destination_displayed": row.destination_displayed,
+                "photos": [],
                 "inspections": {
                     "external_inspected": False,
                     "internal_inspected": False,
@@ -576,6 +580,58 @@ def _group_bus_inspection_rows(rows: list[BusInspection]) -> list[dict]:
     return list(grouped.values())
 
 
+def _with_destination_photos(db, groups, params, *, shift_ids=None, bus_ids=None, user_ids=None):
+    """Add bus question evidence, including buses without inspection sections.
+
+    Photo timestamps use the same date/time filters as inspection events. The
+    existing inspection-row limit is retained; cap the combined group list too,
+    while keeping every matching photo for each returned group.
+    """
+    query = db.query(DestinationDisplayPhoto)
+    for column, values in ((DestinationDisplayPhoto.shift_id, shift_ids),
+                           (DestinationDisplayPhoto.bus_id, bus_ids),
+                           (DestinationDisplayPhoto.user_id, user_ids)):
+        if values is not None:
+            query = query.filter(column.in_(values))
+    if params.start_date:
+        query = query.filter(DestinationDisplayPhoto.timestamp >= datetime.combine(params.start_date, params.start_time or time.min))
+    if params.end_date:
+        query = query.filter(DestinationDisplayPhoto.timestamp <= datetime.combine(params.end_date, params.end_time or time(23, 59, 59)))
+    grouped = {(g["shift_id"], g["bus_id"], g["duty_number"], g["replacement_bus"]): g for g in groups}
+    if params.limit is not None:
+        # Select group identities before loading image bytes. A limit must not
+        # truncate a group's photo array or load the entire photo archive.
+        if params.limit <= 0:
+            return []
+        columns = (DestinationDisplayPhoto.shift_id, DestinationDisplayPhoto.bus_id,
+                   DestinationDisplayPhoto.duty_number, DestinationDisplayPhoto.replacement_bus)
+        selected_keys = list(grouped)
+        candidates = query.with_entities(*columns).distinct().order_by(*columns).limit(params.limit).all()
+        for candidate in candidates:
+            key = tuple(candidate)
+            if len(selected_keys) >= params.limit:
+                break
+            if key not in grouped:
+                selected_keys.append(key)
+        if not selected_keys:
+            return []
+        query = query.filter(tuple_(*columns).in_(selected_keys))
+    for photo in query.order_by(DestinationDisplayPhoto.id).all():
+        key = (photo.shift_id, photo.bus_id, photo.duty_number, photo.replacement_bus)
+        if key not in grouped:
+            if params.limit is not None and len(grouped) >= params.limit:
+                continue
+            grouped[key] = GroupedBusInspectionResponse(
+                shift_id=photo.shift_id, user_id=photo.user_id, bus_id=photo.bus_id,
+                fleet_number=photo.fleet_number, duty_number=photo.duty_number,
+                replacement_bus=photo.replacement_bus,
+                license_disk_scan_succeeded=photo.license_disk_scan_succeeded,
+                destination_displayed=photo.destination_displayed, inspections={},
+            ).model_dump()
+        grouped[key]["photos"].append(_serialize_group_photo(photo))
+    return list(grouped.values())
+
+
 @inspection_router.get(
     "/bus_inspections",
     response_model=List[GroupedBusInspectionResponse],
@@ -591,7 +647,7 @@ async def get_all_bus_inspections(
     try:
         query = db.query(BusInspection).options(selectinload(BusInspection.photos))
         query = _apply_date_range_limit(query, params)
-        return _group_bus_inspection_rows(query.all())
+        return _with_destination_photos(db, _group_bus_inspection_rows(query.all()), params)
     except HTTPException:
         raise
     except Exception as exc:
@@ -625,7 +681,7 @@ async def get_bus_inspections_by_shift(
         query = db.query(BusInspection).options(selectinload(BusInspection.photos))
         query = query.filter(BusInspection.shift_id.in_(shift_ids))
         query = _apply_date_range_limit(query, params)
-        results = _group_bus_inspection_rows(query.all())
+        results = _with_destination_photos(db, _group_bus_inspection_rows(query.all()), params, shift_ids=shift_ids)
         if not results:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -666,7 +722,7 @@ async def get_bus_inspections_by_bus(
         query = db.query(BusInspection).options(selectinload(BusInspection.photos))
         query = query.filter(BusInspection.bus_id.in_(bus_ids))
         query = _apply_date_range_limit(query, params)
-        results = _group_bus_inspection_rows(query.all())
+        results = _with_destination_photos(db, _group_bus_inspection_rows(query.all()), params, bus_ids=bus_ids)
         if not results:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -707,7 +763,7 @@ async def get_bus_inspections_by_user(
         query = db.query(BusInspection).options(selectinload(BusInspection.photos))
         query = query.filter(BusInspection.user_id.in_(user_ids))
         query = _apply_date_range_limit(query, params)
-        results = _group_bus_inspection_rows(query.all())
+        results = _with_destination_photos(db, _group_bus_inspection_rows(query.all()), params, user_ids=user_ids)
         if not results:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

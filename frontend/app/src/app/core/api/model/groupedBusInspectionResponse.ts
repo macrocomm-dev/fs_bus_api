@@ -7,6 +7,7 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { InspectionItemPhotoResponse } from './inspectionItemPhotoResponse';
 import { BusInspectionGroupItemsResponse } from './busInspectionGroupItemsResponse';
 
 
@@ -22,6 +23,10 @@ export interface GroupedBusInspectionResponse {
     replacement_bus?: boolean;
     license_disk_scan_succeeded?: boolean | null;
     destination_displayed?: boolean | null;
+    /**
+     * Photos linked to this bus\'s Destination Displayed Correctly question.
+     */
+    photos?: Array<InspectionItemPhotoResponse>;
     inspections: BusInspectionGroupItemsResponse;
 }
 

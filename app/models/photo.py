@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import BigInteger, Float, ForeignKey, String, Text, func
+from sqlalchemy import BigInteger, Boolean, Float, ForeignKey, Index, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -38,6 +38,28 @@ class Photo(Base):
     inspection: Mapped[BusInspection] = relationship(
         "BusInspection", back_populates="photos"
     )
+
+
+class DestinationDisplayPhoto(Base):
+    """Bus-level evidence, independent of optional inspection events and counts."""
+
+    __tablename__ = "destination_display"
+    __table_args__ = (Index("ix_destination_display_bus_group", "shift_id", "bus_id", "duty_number", "replacement_bus"), {"schema": "photos"})
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    shift_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("shifts.shifts.id"), nullable=False)
+    user_id: Mapped[str] = mapped_column(String, nullable=False)
+    bus_id: Mapped[str] = mapped_column(String, nullable=False)
+    fleet_number: Mapped[str] = mapped_column(String, nullable=False)
+    duty_number: Mapped[str] = mapped_column(String, nullable=False)
+    replacement_bus: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    license_disk_scan_succeeded: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    destination_displayed: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    timestamp: Mapped[datetime] = mapped_column(nullable=False)
+    lat: Mapped[float] = mapped_column(Float, nullable=False)
+    lon: Mapped[float] = mapped_column(Float, nullable=False)
+    photo: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(nullable=False, server_default=func.now())
 
 
 class Selfie(Base):

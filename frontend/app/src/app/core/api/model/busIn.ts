@@ -8,6 +8,7 @@
  * Do not edit the class manually.
  */
 import { BusInspectionsIn } from './busInspectionsIn';
+import { PhotoIn } from './photoIn';
 
 
 /**
@@ -20,6 +21,10 @@ export interface BusIn {
     replacement_bus?: boolean;
     license_disk_scan_succeeded?: boolean | null;
     destination_displayed?: boolean | null;
+    /**
+     * Photos for the Destination Displayed Correctly question only. Omit or send [] when none were captured.
+     */
+    photos?: Array<PhotoIn>;
     inspections: BusInspectionsIn;
 }
 

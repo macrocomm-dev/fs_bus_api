@@ -263,6 +263,7 @@ class BusIn(BaseModel):
     replacement_bus: bool = False
     license_disk_scan_succeeded: Optional[bool] = True
     destination_displayed: Optional[bool] = True
+    photos: list[PhotoIn] = Field(default_factory=list, description="Photos for the Destination Displayed Correctly question only. Omit or send [] when none were captured.")
     inspections: BusInspectionsIn
 
     @model_validator(mode="after")
@@ -536,6 +537,7 @@ class BusMetaIn(BaseModel):
     replacement_bus: bool = False
     license_disk_scan_succeeded: Optional[bool] = True
     destination_displayed: Optional[bool] = True
+    photos: list[PhotoMetaIn] = Field(default_factory=list, description="Destination-display photo metadata. Upload matching files as bus_{i}_destination_displayed_photo_{k} (zero-based indexes).")
     inspections: BusInspectionsMetaIn
 
     @model_validator(mode="after")
@@ -749,6 +751,7 @@ class GroupedBusInspectionResponse(BaseModel):
     replacement_bus: bool = False
     license_disk_scan_succeeded: Optional[bool] = None
     destination_displayed: Optional[bool] = None
+    photos: list[InspectionItemPhotoResponse] = Field(default_factory=list, description="Photos linked to this bus's Destination Displayed Correctly question.")
     inspections: BusInspectionGroupItemsResponse
 
 

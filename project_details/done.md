@@ -101,6 +101,14 @@
 - Validation: all 84 backend tests passed; dashboard production build passed with existing size warnings. Read-only checks against live historical data confirmed both reporting endpoints agree on on-time percentage and legacy counts. No database migration or historical data changes were required.
 - Backend/frontend code deployment and the subsequent mobile rollout remain pending.
 
+## Destination-display photo evidence (2026-09-14)
+
+- Added optional bus-level `photos` beside `destination_displayed` for JSON and multipart shift uploads, using the existing photo timestamp/GPS/base64 format. Old payloads remain valid; missing multipart files return 422 and roll back pending photo writes.
+- Added and applied `scripts/20260914_destination_display_photos.sql` to create `photos.destination_display` in Cloud SQL. Evidence is stored once per photo, separately from inspection events, including when no other inspection section was captured. Existing data and event counts were unchanged.
+- Added grouped readback with shift/bus/user/date filters and complete photo arrays under limited reads. The dashboard shift details now show destination answers and image previews without adding inspection counts or timeline events. Regenerated the affected Angular JSON models.
+- Added `project_details/mobile_destination_photos_guide.md` and linked it from API/departures docs. The general FS app should omit the operator filter to support IBL and Maluti; verified that only IBL currently has a published timetable (1,172 departures).
+- Validation: all 95 backend tests passed, including 11 destination-photo contract/persistence cases; the production dashboard build passed with existing size warnings. Backend/frontend deployment remains pending before mobile uploads can begin.
+
 ## Notes
 
 - Items in this file represent work already present in the repository baseline.

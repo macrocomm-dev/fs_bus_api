@@ -122,6 +122,10 @@ Exchange email and password for a Firebase ID token plus the app user context st
 
 ## POST `/shift/create_shift/` — Create Shift
 
+Destination-display evidence: the optional bus-level `photos` array sits beside
+`destination_displayed`; see the [mobile photo guide](mobile_destination_photos_guide.md)
+for exact JSON, multipart file names, readback, and deployment order.
+
 Submit one completed monitor shift with all nested bus inspections. Requires a valid Bearer token.
 
 Schedule inspection choices: see the [mobile schedule inspection guide](mobile_schedule_inspections_guide.md)
@@ -166,6 +170,7 @@ curl -X 'POST' \
         "bus_number": "GA 01 001 GP",
         "license_disk_scan_succeeded": true,
         "destination_displayed": true,
+        "photos": [],
         "inspections": {
           "external_inspected": true,
           "internal_inspected": true,

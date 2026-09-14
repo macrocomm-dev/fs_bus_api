@@ -49,6 +49,7 @@ type ShiftRow = ShiftResponse & {
   endGps: string;
   inspections: ShiftInspectionItem[];
   selfies: SelfieResponse[];
+  destinationPhotoGroups: GroupedBusInspectionResponse[];
   inspectionCount: number;
   failedInspectionCount: number;
 };
@@ -390,6 +391,7 @@ export class ShiftsComponent implements OnInit {
         endGps: this.gps(shift.end_lat, shift.end_lon),
         inspections,
         selfies: selfiesByShift.get(shift.id) ?? [],
+        destinationPhotoGroups: inspectionGroups.filter((group) => group.shift_id === shift.id && (group.photos?.length ?? 0) > 0),
         inspectionCount: inspections.length || shift.inspection_count || 0,
         failedInspectionCount:
           inspections.length > 0

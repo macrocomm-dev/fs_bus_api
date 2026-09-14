@@ -33,7 +33,7 @@ from app.models.app_auth import AppUser
 from app.services.audit_service import build_request_audit_context, log_api_success
 
 # from app.models.master_data import Vehicle  # re-enable if _resolve_bus_reference is un-commented
-from app.models.photo import Selfie, Photo
+from app.models.photo import DestinationDisplayPhoto, Selfie, Photo
 from app.models.shift import Shift
 from app.models import BusInspection
 from app.schemas.shift import (
@@ -228,6 +228,20 @@ async def _photo_payloads_from_multipart(
                 }
             )
     return payloads
+
+
+def _persist_destination_photos(db: Session, shift_id: int, user_id: str, bus, photo_payloads: list[dict]):
+    """Store each bus question photo once without inventing an inspection event."""
+    for payload in photo_payloads:
+        db.add(DestinationDisplayPhoto(
+            shift_id=shift_id, user_id=user_id,
+            bus_id=bus.bus_id or bus.bus_number,
+            fleet_number=bus.bus_number or bus.bus_id,
+            duty_number=bus.duty_number, replacement_bus=bus.replacement_bus,
+            license_disk_scan_succeeded=bus.license_disk_scan_succeeded,
+            destination_displayed=bus.destination_displayed,
+            **{key: value for key, value in payload.items() if key != "inspection_item"},
+        ))
 
 
 def _persist_inspection(
@@ -476,6 +490,10 @@ async def create_shift(
     The shift row is written first because child rows need the database-assigned
     ``shift_id``. After that, selfies and inspections are persisted using the
     nested request payload supplied by the client.
+
+    Each bus may include a ``photos`` array beside ``destination_displayed``.
+    These photos belong to the destination-display question and use timestamp,
+    lat, lon, and base64 photo fields. Omit the array or send [] when empty.
     """
 
     try:
@@ -593,6 +611,8 @@ async def add_inspections(shift_id: int, user_id: str, buses: List[BusIn], db: S
     current_bus_id = None
     try:
         for bus in buses:
+            _persist_destination_photos(db, shift_id, user_id, bus,
+                _photo_payloads_from_inline({"destination_displayed": bus.photos}))
             if bus.inspections.external is not None:
                 inspection_payload, photo_groups = _external_inspection_record(
                     db, shift_id, user_id, bus, bus.inspections.external
@@ -712,6 +732,7 @@ async def add_inspections(shift_id: int, user_id: str, buses: List[BusIn], db: S
 #   bus_{i}_external_{item}_photo_{k} — image file for an exterior item photo
 #   bus_{i}_internal_{item}_photo_{k} — image file for an interior item photo
 #   bus_{i}_driver_photo_{k} — image file for a driver inspection photo
+#   bus_{i}_destination_displayed_photo_{k} — image file for the bus question
 # ---------------------------------------------------------------------------
 
 
@@ -778,6 +799,10 @@ async def create_shift_multipart(
 
         # Inspections + item photos — file keys are scoped by bus, section and item.
         for i, bus in enumerate(shift_data.busses):
+            destination_photos = await _photo_payloads_from_multipart(
+                form, f"bus_{i}", {"destination_displayed": bus.photos}
+            )
+            _persist_destination_photos(db, new_shift.id, shift_data.user_id, bus, destination_photos)
             if bus.inspections.external is not None:
                 inspection_payload, photo_groups = _external_inspection_record(
                     db, new_shift.id, shift_data.user_id, bus, bus.inspections.external
@@ -842,6 +867,7 @@ async def create_shift_multipart(
         )
 
     except HTTPException:
+        db.rollback()
         raise
     except Exception as e:
         db.rollback()

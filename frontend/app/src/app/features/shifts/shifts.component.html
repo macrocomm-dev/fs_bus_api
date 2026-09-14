@@ -189,6 +189,25 @@
                   </section>
                 }
 
+                @if (row.destinationPhotoGroups.length > 0) {
+                  <div class="shift-detail-section-header shift-detail-section-header--spaced">
+                    <span>Destination Displayed Correctly — Photos</span>
+                  </div>
+                  <div class="shift-bus-fieldsets">
+                    @for (group of row.destinationPhotoGroups; track $index) {
+                      <p-fieldset [legend]="'Bus ' + group.bus_id + ' · Duty ' + group.duty_number + (group.replacement_bus ? ' · Replacement' : '')" [toggleable]="true">
+                        <p-tag [value]="statusLabel(group.destination_displayed)" [severity]="statusSeverity(group.destination_displayed)" />
+                        @for (photo of group.photos; track photo.id) {
+                          <figure>
+                            <p-image [src]="selfieImageSrc(photo.photo)" alt="Destination display evidence" width="160" [preview]="true" />
+                            <figcaption>{{ photo.timestamp | date: 'yyyy-MM-dd HH:mm' }} · {{ photo.lat }}, {{ photo.lon }}</figcaption>
+                          </figure>
+                        }
+                      </p-fieldset>
+                    }
+                  </div>
+                }
+
                 @if (row.inspections.length > 0) {
                   <div class="shift-detail-section-header shift-detail-section-header--spaced">
                     <span>Inspection Details</span>

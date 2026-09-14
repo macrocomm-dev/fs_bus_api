@@ -32,6 +32,12 @@ Accept: text/csv
 
 There is **no JSON request body** for this endpoint.
 
+For the general FS app, omit `operator_id` to download all published operators;
+the project covers IBL and Maluti. Use `operator_id=1` only for an intentionally
+IBL-only cache. Omit the parameter entirely rather than sending `operator_id=`.
+Keep the CSV and ETag scoped to the same selection. See the
+[operator-selection explanation](mobile_destination_photos_guide.md#which-operator-should-the-fs-mobile-app-download).
+
 | Input | Where it goes | Required? | Meaning |
 |---|---|---|---|
 | `operator_id` | URL query parameter | No | Positive integer. `1` is Interstate Bus Lines. Omit to download all operators' active timetables. |

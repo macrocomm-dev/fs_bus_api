@@ -9,7 +9,7 @@ from app.models.operations import (
     InspectionPhoto,
     PassengerCount,
 )
-from app.models.photo import Photo, Selfie
+from app.models.photo import DestinationDisplayPhoto, Photo, Selfie
 from app.models.shift import Shift
 
 __all__ = [
@@ -27,6 +27,7 @@ __all__ = [
     "InspectionPhoto",
     "PassengerCount",
     "Photo",
+    "DestinationDisplayPhoto",
     "Selfie",
     "Shift",
 ]
