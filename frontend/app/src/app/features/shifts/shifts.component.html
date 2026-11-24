@@ -134,7 +134,7 @@
               <span class="inspection-count">
                 {{ row.inspectionCount }}
                 @if (row.failedInspectionCount > 0) {
-                  <p-tag [value]="row.failedInspectionCount + ' failed'" severity="danger" />
+                  <p-tag [value]="row.failedInspectionCount + ' violations'" severity="danger" />
                 }
               </span>
             </td>

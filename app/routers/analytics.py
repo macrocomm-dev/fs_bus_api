@@ -28,6 +28,7 @@ from app.schemas.analytics import (
     AnalyticsVehicleScoreResponse,
 )
 from app.schemas.shift import ErrorResponse
+from app.services.passenger_capacity import passenger_assessment, passenger_violation_sql, inspection_pass
 from app.services.schedule_intervals import (
     EARLY_ROUTE_START_INTERVALS,
     LATE_ROUTE_START_INTERVALS,
@@ -181,7 +182,7 @@ def _status_for_count(count: int) -> str:
     return "good" if count == 0 else "warning" if count < 10 else "critical"
 
 
-def _bool_label(value: bool | None, pass_label: str = "Pass", fail_label: str = "Fail") -> str:
+def _bool_label(value: bool | None, pass_label: str = "Pass", fail_label: str = "Violation") -> str:
     if value is None:
         return "-"
     return pass_label if value else fail_label
@@ -197,7 +198,7 @@ def _bus_label_from_parts(
 
 def _inspection_has_failed_checks(row) -> bool:
     if row.inspection_type == "count":
-        return _to_int(row.number_standing) > 0
+        return passenger_assessment(row.fleet_number, row.number_seated, row.number_standing)["pass_"] is False
     check_values = [
         row.pass_,
         row.tyres_pass,
@@ -233,7 +234,7 @@ def _inspection_row(row) -> dict[str, Any]:
             if row.inspection_lat is not None and row.inspection_lon is not None
             else ""
         ),
-        "status": "Fail" if _inspection_has_failed_checks(row) else "Pass",
+        "status": "Violation" if _inspection_has_failed_checks(row) else "Pass",
         "inspectionType": row.inspection_type,
     }
 
@@ -272,7 +273,7 @@ def _defect_rows(rows: list[Any], category: str | None = None) -> list[dict[str,
                         **base,
                         "defectType": defect_type,
                         "defectDescription": notes or defect_type,
-                        "severity": "Failed",
+                        "severity": "Violation",
                     }
                 )
         if row.inspection_type == "technical" and row.pass_ is False and category in {None, "Technical"}:
@@ -281,7 +282,7 @@ def _defect_rows(rows: list[Any], category: str | None = None) -> list[dict[str,
                     **base,
                     "defectType": "Technical",
                     "defectDescription": row.notes or "Technical inspection failed",
-                    "severity": "Failed",
+                    "severity": "Violation",
                 }
             )
     return defects
@@ -353,6 +354,8 @@ def get_reporting_summary(
                     i.number_seated,
                     i.number_standing,
                     i.behind_schedule_interval,
+                    i.scheduled_departure_time,
+                    i.actual_departure_time,
                     i.license_disk_scan_succeeded,
                     i.destination_displayed,
                     i.prdp_scan_succeeded,
@@ -539,6 +542,9 @@ def get_reporting_summary(
         ("time", "Time"),
         ("seated", "Seated"),
         ("standing", "Standing"),
+        ("seating_capacity", "Seating capacity"),
+        ("standing_capacity", "Standing capacity"),
+        ("overloadedCount", "Passengers over capacity"),
         ("total", "Total Pax"),
     )
     delay_columns = _report_columns(
@@ -550,6 +556,8 @@ def get_reporting_summary(
         ("date", "Date"),
         ("time", "Time"),
         ("interval", "Departure Timing"),
+        ("scheduledDeparture", "Scheduled departure"),
+        ("actualDeparture", "Actual departure"),
     )
     defect_columns = _report_columns(
         ("busReg", "Bus Reg"),
@@ -609,21 +617,26 @@ def get_reporting_summary(
         base = _inspection_row(row)
         seated = _to_int(row.number_seated)
         standing = _to_int(row.number_standing)
-        total = _to_int(row.count, seated + standing)
+        total = seated + standing
+        assessment = passenger_assessment(row.fleet_number, row.number_seated, row.number_standing)
         passenger_rows.append(
             {
                 **base,
                 "seated": seated,
                 "standing": standing,
                 "total": total,
-                "overloadedCount": standing,
+                "status": "Not assessed" if assessment["pass_"] is None else base["status"],
+                "overloadedCount": assessment["overloaded_passengers"],
+                **assessment,
             }
         )
 
     delayed_rows_by_interval: dict[str, list[dict[str, Any]]] = {interval: [] for interval in ROUTE_START_INTERVALS}
     for row in inspections_by_type["behind_schedule"]:
         base = _inspection_row(row)
-        delay_row = {**base, "interval": row.behind_schedule_interval or "Unknown"}
+        delay_row = {**base, "interval": row.behind_schedule_interval or "Unknown",
+                     "scheduledDeparture": row.scheduled_departure_time.isoformat() if row.scheduled_departure_time else "Not captured",
+                     "actualDeparture": row.actual_departure_time.isoformat() if row.actual_departure_time else "Not captured"}
         if row.behind_schedule_interval in delayed_rows_by_interval:
             delayed_rows_by_interval[row.behind_schedule_interval].append(delay_row)
 
@@ -640,11 +653,11 @@ def get_reporting_summary(
     }
 
     failed_inspection_groups = {
-        "External Inspections": [row for row in external_rows if row["status"] == "Fail"],
-        "Internal Inspections": [row for row in internal_rows if row["status"] == "Fail"],
-        "Driver Inspections": [row for row in driver_rows if row["status"] == "Fail"],
+        "External Inspections": [row for row in external_rows if row["status"] == "Violation"],
+        "Internal Inspections": [row for row in internal_rows if row["status"] == "Violation"],
+        "Driver Inspections": [row for row in driver_rows if row["status"] == "Violation"],
         "Passenger Counts": [row for row in passenger_rows if _to_int(row["overloadedCount"]) > 0],
-        "Technical Inspections": [row for row in technical_rows if row["status"] == "Fail"],
+        "Technical Inspections": [row for row in technical_rows if row["status"] == "Violation"],
     }
 
     route_deviation_data: list[dict[str, Any]] = []
@@ -709,9 +722,10 @@ def get_reporting_summary(
         operator = row.operator_name or "Unassigned"
         shift_operator_counts.setdefault(operator, {"shifts": 0, "inspections": 0, "passed": 0, "failed": 0})
         shift_operator_counts[operator]["inspections"] += 1
-        if row.pass_ is False:
+        result = inspection_pass(row)
+        if result is False:
             shift_operator_counts[operator]["failed"] += 1
-        else:
+        elif result is True:
             shift_operator_counts[operator]["passed"] += 1
 
     operator_drill_rows = [
@@ -826,7 +840,7 @@ def get_reporting_summary(
         ),
         "missed-stops": _drilldown("Missed Stops", _report_columns(("message", "Status")), []),
         "expired-pdp": _drilldown(
-            "Expired / Failed PRDP Checks",
+            "PRDP Violations",
             _report_columns(
                 ("busReg", "Bus Reg"),
                 ("fleetNo", "Fleet No"),
@@ -841,7 +855,7 @@ def get_reporting_summary(
         "expired-driver-licence": _drilldown("Expired Driver Licences", _report_columns(("message", "Status")), []),
         "expired-route-licence": _drilldown("Expired Route Licences", _report_columns(("message", "Status")), []),
         "expired-bus-license-disk": _drilldown(
-            "Failed Bus Licence Disk Scans",
+            "Bus Licence Disk Violations",
             _report_columns(
                 ("busReg", "Bus Reg"),
                 ("fleetNo", "Fleet No"),
@@ -857,11 +871,11 @@ def get_reporting_summary(
         "tyre-defects": _drilldown("Tyre Defects", defect_columns, defect_groups["Tyres"]),
         "window-defects": _drilldown("Window Defects", defect_columns, defect_groups["Windows"]),
         "other-defects": _drilldown("Other Defects", defect_columns, defect_groups["Other"]),
-        "failed-external-inspections": _drilldown("Failed External Inspections", external_columns, failed_inspection_groups["External Inspections"]),
-        "failed-internal-inspections": _drilldown("Failed Internal Inspections", internal_columns, failed_inspection_groups["Internal Inspections"]),
-        "failed-driver-inspections": _drilldown("Failed Driver Inspections", driver_columns, failed_inspection_groups["Driver Inspections"]),
-        "failed-passenger-counts": _drilldown("Failed Passenger Counts", passenger_columns, failed_inspection_groups["Passenger Counts"]),
-        "failed-technical-inspections": _drilldown("Failed Technical Inspections", inspection_columns, failed_inspection_groups["Technical Inspections"]),
+        "failed-external-inspections": _drilldown("External Inspection Violations", external_columns, failed_inspection_groups["External Inspections"]),
+        "failed-internal-inspections": _drilldown("Internal Inspection Violations", internal_columns, failed_inspection_groups["Internal Inspections"]),
+        "failed-driver-inspections": _drilldown("Driver Inspection Violations", driver_columns, failed_inspection_groups["Driver Inspections"]),
+        "failed-passenger-counts": _drilldown("Passenger Capacity Violations", passenger_columns, failed_inspection_groups["Passenger Counts"]),
+        "failed-technical-inspections": _drilldown("Technical Inspection Violations", inspection_columns, failed_inspection_groups["Technical Inspections"]),
         "operator-compliance-summary": _drilldown(
             "Operator Compliance",
             _report_columns(
@@ -869,7 +883,7 @@ def get_reporting_summary(
                 ("shifts", "Shifts"),
                 ("inspections", "Inspections"),
                 ("passed", "Passed Inspections"),
-                ("failed", "Failed Inspections"),
+                ("failed", "Inspection Violations"),
             ),
             operator_drill_rows,
         ),
@@ -915,10 +929,10 @@ def get_reporting_summary(
             status=_status_for_count(total_violations),
             icon="pi pi-exclamation-triangle",
             summary_items=[
-                AnalyticsSummaryItemResponse(label="Expired / Failed PRDP", value=len(pdp_fail_rows), drill_key="expired-pdp"),
+                AnalyticsSummaryItemResponse(label="PRDP Violations", value=len(pdp_fail_rows), drill_key="expired-pdp"),
                 AnalyticsSummaryItemResponse(label="Expired Driver Licence", value=0, drill_key="expired-driver-licence"),
                 AnalyticsSummaryItemResponse(label="Expired Route Licence", value=0, drill_key="expired-route-licence"),
-                AnalyticsSummaryItemResponse(label="Failed Bus Licence Disk Scan", value=len(license_disk_fail_rows), drill_key="expired-bus-license-disk"),
+                AnalyticsSummaryItemResponse(label="Bus Licence Disk Violation", value=len(license_disk_fail_rows), drill_key="expired-bus-license-disk"),
                 AnalyticsSummaryItemResponse(label="Total Violations", value=total_violations, drill_key=None),
             ],
         ),
@@ -985,7 +999,7 @@ def get_reporting_summary(
             summary_items=[
                 AnalyticsSummaryItemResponse(
                     label=row["operator"],
-                    value=f"{row['shifts']} shifts, {row['inspections']} inspections, {row['passed']} passed, {row['failed']} failed",
+                    value=f"{row['shifts']} shifts, {row['inspections']} inspections, {row['passed']} passed, {row['failed']} violations",
                     drill_key="operator-compliance-summary",
                 )
                 for row in operator_drill_rows
@@ -994,8 +1008,8 @@ def get_reporting_summary(
         ),
         AnalyticsReportingTileResponse(
             id="photo-evidence",
-            title="Failed Inspections",
-            metric="Failed Inspections by Type",
+            title="Inspection Violations",
+            metric="Inspection Violations by Type",
             value=total_failed,
             status=_status_for_count(total_failed),
             icon="pi pi-clipboard",
@@ -1009,7 +1023,7 @@ def get_reporting_summary(
                     ("Technical Inspections", failed_inspection_groups["Technical Inspections"], "failed-technical-inspections"),
                 ]
             ]
-            + [AnalyticsSummaryItemResponse(label="Total Failed Inspections", value=total_failed, drill_key=None)],
+            + [AnalyticsSummaryItemResponse(label="Total Inspection Violations", value=total_failed, drill_key=None)],
         ),
         AnalyticsReportingTileResponse(
             id="fleet-health",
@@ -1143,7 +1157,7 @@ def get_analytics_summary(
 
         top_inspection_row = db.execute(
             text(
-                """
+                f"""
                 select
                     count(*) filter (
                         where inspection_type in ('external', 'internal', 'driver', 'count', 'technical')
@@ -1151,7 +1165,7 @@ def get_analytics_summary(
                     count(*) filter (
                         where inspection_type in ('external', 'internal', 'driver', 'count', 'technical')
                           and (
-                            pass is false
+                            CASE WHEN inspection_type = 'count' THEN {passenger_violation_sql()} ELSE (pass is false
                             or tyres_pass is false
                             or windows_pass is false
                             or ext_other_pass is false
@@ -1161,7 +1175,7 @@ def get_analytics_summary(
                             or int_other_pass is false
                             or prdp_scan_succeeded is false
                             or driver_identified is false
-                            or (inspection_type = 'count' and coalesce(number_standing, 0) > 0)
+                            ) END
                           )
                     ) as failed_inspections
                 from inspections.inspections
@@ -1174,11 +1188,11 @@ def get_analytics_summary(
 
         failed_inspection_type_rows = db.execute(
             text(
-                """
+                f"""
                 select
                     inspection_type,
                     count(*) filter (
-                        where pass is false
+                        where CASE WHEN inspection_type = 'count' THEN {passenger_violation_sql()} ELSE (pass is false
                            or tyres_pass is false
                            or windows_pass is false
                            or ext_other_pass is false
@@ -1188,7 +1202,7 @@ def get_analytics_summary(
                            or int_other_pass is false
                            or prdp_scan_succeeded is false
                            or driver_identified is false
-                           or (inspection_type = 'count' and coalesce(number_standing, 0) > 0)
+                           ) END
                     ) as failed_count
                 from inspections.inspections
                 where inspection_type in ('external', 'internal', 'driver', 'count', 'technical')
@@ -1439,7 +1453,7 @@ def get_analytics_summary(
     ]
     failed_summary_items.append(
         AnalyticsSummaryItemResponse(
-            label="Total Failed Inspections",
+            label="Total Inspection Violations",
             value=failed_inspections,
             drill_key=None,
         )

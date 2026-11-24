@@ -1,4 +1,6 @@
 import { scheduleIntervalLabel } from '../../core/utils/schedule-interval';
+import { FormsModule } from '@angular/forms';
+import { SelectModule } from 'primeng/select';
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
@@ -77,6 +79,8 @@ const INSPECTION_METRIC_TYPES = [
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
+    SelectModule,
     AvatarModule,
     ButtonModule,
     DashboardFiltersComponent,
@@ -109,6 +113,8 @@ export class InspectionsComponent implements OnInit {
   readonly inspections = signal<InspectionRow[]>([]);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
+  readonly selectedInspectionType = signal<string | null>(null);
+  readonly inspectionTypeOptions = [{ label: 'All inspection types', value: null }, ...INSPECTION_METRIC_TYPES.map(item => ({ label: item.type, value: item.type }))];
   readonly selectedFailedType = signal<string | null>(null);
 
   readonly dashboardFilteredInspections = computed(() => {
@@ -132,7 +138,7 @@ export class InspectionsComponent implements OnInit {
 
   readonly visibleInspections = computed(() => {
     const selectedType = this.selectedFailedType();
-    const rows = this.dashboardFilteredInspections();
+    const rows = this.dashboardFilteredInspections().filter(row => !this.selectedInspectionType() || row.type === this.selectedInspectionType());
     if (!selectedType) return rows;
     return rows.filter((row) => row.type === selectedType && row.pass === false);
   });
@@ -207,7 +213,7 @@ export class InspectionsComponent implements OnInit {
 
   statusLabel(pass: boolean | null | undefined): string {
     if (pass === true) return 'Pass';
-    if (pass === false) return 'Fail';
+    if (pass === false) return 'Violation';
     return 'Not set';
   }
 
@@ -218,8 +224,11 @@ export class InspectionsComponent implements OnInit {
     return item.value;
   }
 
+  clearInspectionTypeViolationFilter(): void { this.selectedFailedType.set(null); }
+
   filterFailedType(type: string): void {
     this.selectedFailedType.set(this.selectedFailedType() === type ? null : type);
+    this.selectedInspectionType.set(this.selectedFailedType());
   }
 
   onFiltersApplied(filters: DashboardFilters): void {
@@ -373,11 +382,14 @@ export class InspectionsComponent implements OnInit {
           gps: this.gps(passenger.inspection_lat, passenger.inspection_lon),
           pass: passenger.pass_,
           notes: passenger.notes,
-          summary: `Seated: ${passenger.number_seated ?? 0} | Standing: ${passenger.number_standing ?? 0} | Total: ${passenger.count ?? 0}`,
+          summary: `Seated: ${passenger.number_seated ?? 0} | Standing: ${passenger.number_standing ?? 0} | Total: ${passenger.count ?? 0} | Capacity: ${passenger.seating_capacity ?? "Unknown"} seated / ${passenger.standing_capacity ?? "Unknown"} standing`,
           details: [
             { label: 'Seated passengers', value: String(passenger.number_seated ?? 0) },
             { label: 'Standing passengers', value: String(passenger.number_standing ?? 0) },
             { label: 'Total passengers', value: String(passenger.count ?? 0) },
+            { label: 'Seating capacity', value: String(passenger.seating_capacity ?? 'Unknown') },
+            { label: 'Standing capacity', value: String(passenger.standing_capacity ?? 'Unknown') },
+            { label: 'Passengers over capacity', value: String(passenger.overloaded_passengers ?? 'Not assessed') },
           ],
         });
       }
@@ -391,9 +403,11 @@ export class InspectionsComponent implements OnInit {
           gps: this.gps(report.inspection_lat, report.inspection_lon),
           pass: report.pass_,
           notes: report.notes,
-          summary: `Interval: ${scheduleIntervalLabel(report.behind_schedule_interval)}`,
+          summary: `Interval: ${scheduleIntervalLabel(report.behind_schedule_interval)} | Scheduled: ${report.scheduled_departure_time ?? "Not captured"} | Actual: ${report.actual_departure_time ?? "Not captured"}`,
           details: [
             { label: 'Departure timing', value: scheduleIntervalLabel(report.behind_schedule_interval) },
+            { label: 'Scheduled departure', value: report.scheduled_departure_time ?? 'Not captured' },
+            { label: 'Actual departure', value: report.actual_departure_time ?? 'Not captured' },
           ],
         });
       }
@@ -491,7 +505,7 @@ export class InspectionsComponent implements OnInit {
 
   private itemLabel(value: boolean | null | undefined): string {
     if (value === true) return 'Pass';
-    if (value === false) return 'Fail';
+    if (value === false) return 'Violation';
     return 'Not set';
   }
 

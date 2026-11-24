@@ -366,3 +366,11 @@
     grid-template-columns: 1fr;
   }
 }
+
+.inspection-type-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}

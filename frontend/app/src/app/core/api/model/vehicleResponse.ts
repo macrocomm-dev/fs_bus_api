@@ -33,5 +33,7 @@ export interface VehicleResponse {
     smart_fleet_last_response_time?: string | null;
     last_inspection_at?: string | null;
     last_inspection_passed?: boolean | null;
+    seating_capacity?: number | null;
+    standing_capacity?: number | null;
 }
 

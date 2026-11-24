@@ -1,10 +1,13 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, time
+from uuid import UUID
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     BigInteger,
+    Uuid,
+    Time,
     Boolean,
     Float,
     ForeignKey,
@@ -81,6 +84,10 @@ class BusInspection(Base):
     number_seated: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     number_standing: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     behind_schedule_interval: Mapped[str | None] = mapped_column(String, nullable=True)
+    departure_uid: Mapped[UUID | None] = mapped_column(Uuid, ForeignKey("routes.departure.uid"), nullable=True)
+    scheduled_departure_time: Mapped[time | None] = mapped_column(Time, nullable=True)
+    actual_departure_time: Mapped[datetime | None] = mapped_column(nullable=True)
+
     # Bus / driver identification (moved from shifts table)
     license_disk_scan_succeeded: Mapped[bool | None] = mapped_column(
         Boolean, nullable=True

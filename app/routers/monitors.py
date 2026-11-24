@@ -35,7 +35,9 @@ from app.services.audit_service import build_request_audit_context, log_api_succ
 # from app.models.master_data import Vehicle  # re-enable if _resolve_bus_reference is un-commented
 from app.models.photo import DestinationDisplayPhoto, Selfie, Photo
 from app.models.shift import Shift
+from app.models.departure import Departure
 from app.models import BusInspection
+from app.services.passenger_capacity import passenger_assessment, inspection_violation_expression
 from app.schemas.shift import (
     ShiftCreate,
     ShiftCreateMeta,
@@ -450,6 +452,7 @@ def _passenger_count_record(db: Session, shift_id: int, user_id: str, bus, inspe
     payload = _base_inspection_payload(db, shift_id, user_id, bus, inspection, "count")
     payload.update(
         {
+            "pass_": passenger_assessment(bus.bus_number or bus.bus_id, inspection.number_seated, inspection.number_standing)["pass_"],
             "count": inspection.number_seated + inspection.number_standing,
             "number_seated": inspection.number_seated,
             "number_standing": inspection.number_standing,
@@ -463,9 +466,21 @@ def _behind_schedule_record(db: Session, shift_id: int, user_id: str, bus, inspe
     payload = _base_inspection_payload(
         db, shift_id, user_id, bus, inspection, "behind_schedule"
     )
+    scheduled_time = None
+    departure_uid = inspection.departure_uid
+    if departure_uid is not None:
+        departure = db.get(Departure, departure_uid)
+        if departure is None:
+            raise HTTPException(status_code=422, detail="departure_uid was not found in the published timetable history.")
+        if departure.duty_no.strip() != bus.duty_number.strip():
+            raise HTTPException(status_code=422, detail="departure_uid does not match the bus duty_number.")
+        scheduled_time = departure.departure
     payload.update(
         {
             "behind_schedule_interval": inspection.behind_schedule_interval,
+            "departure_uid": departure_uid,
+            "scheduled_departure_time": scheduled_time,
+            "actual_departure_time": inspection.actual_departure_time,
         }
     )
     return payload, {}
@@ -899,7 +914,7 @@ async def get_monitor_summaries(
                 BusInspection.shift_id.label("shift_id"),
                 func.count(BusInspection.id).label("inspection_count"),
                 func.count(BusInspection.id)
-                .filter(BusInspection.pass_.is_(False))
+                .filter(inspection_violation_expression(BusInspection))
                 .label("failed_inspection_count"),
             )
             .group_by(BusInspection.shift_id)
@@ -1094,7 +1109,7 @@ async def get_shifts_paged(
                 BusInspection.shift_id.label("shift_id"),
                 func.count(BusInspection.id).label("inspection_count"),
                 func.count(BusInspection.id)
-                .filter(BusInspection.pass_.is_(False))
+                .filter(inspection_violation_expression(BusInspection))
                 .label("failed_inspection_count"),
             )
             .group_by(BusInspection.shift_id)

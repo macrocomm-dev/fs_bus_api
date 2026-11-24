@@ -81,7 +81,20 @@
 
       <app-dashboard-filters idPrefix="inspections" (filtersApplied)="onFiltersApplied($event)" />
 
-      <section class="inspection-metric-strip" aria-label="Inspection failure summary">
+      <div class="inspection-type-filter">
+        <label for="inspection-type">Inspection type</label>
+        <p-select
+          inputId="inspection-type"
+          [options]="inspectionTypeOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="All inspection types"
+          [ngModel]="selectedInspectionType()"
+          (ngModelChange)="selectedInspectionType.set($event); clearInspectionTypeViolationFilter()"
+        />
+      </div>
+
+      <section class="inspection-metric-strip" aria-label="Inspection violation summary">
         @for (tile of inspectionMetricTiles(); track tile.type) {
           <button
             type="button"

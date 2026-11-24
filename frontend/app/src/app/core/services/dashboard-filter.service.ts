@@ -156,7 +156,7 @@ export class DashboardFilterService {
 
   defaultDateFrom(): Date {
     const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth(), 1);
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
   }
 
   private defaultFilters(): DashboardFilters {

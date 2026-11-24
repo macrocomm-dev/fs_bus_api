@@ -21,5 +21,8 @@ export interface BehindScheduleInspectionResponse {
     pass_?: boolean | null;
     notes?: string | null;
     behind_schedule_interval?: string | null;
+    departure_uid?: string | null;
+    scheduled_departure_time?: string | null;
+    actual_departure_time?: string | null;
 }
 

@@ -5,7 +5,7 @@ from decimal import Decimal
 from typing import List, Literal, Optional
 
 from enum import Enum
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 INSPECTION_TYPES = ("Inside", "Outside", "Full", "Technical")
 INSPECTION_STATUSES = ("draft", "submitted", "reviewed", "approved", "queried")
@@ -354,6 +354,14 @@ class VehicleResponse(BaseModel):
     smart_fleet_last_response_time: datetime | None = None
     last_inspection_at: datetime | None = None
     last_inspection_passed: bool | None = None
+    seating_capacity: int | None = None
+    standing_capacity: int | None = None
+
+    @model_validator(mode="after")
+    def apply_fleet_capacity(self):
+        from app.services.passenger_capacity import vehicle_capacity
+        self.seating_capacity, self.standing_capacity = vehicle_capacity(self.fleet_number)
+        return self
 
 
 class VehicleEnvelope(BaseModel):

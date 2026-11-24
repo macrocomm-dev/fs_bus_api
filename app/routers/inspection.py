@@ -25,6 +25,7 @@ from app.models.app_auth import AppUser
 from app.models.master_data import Operator, Route, Vehicle
 from app.models.bus_inspection import BusInspection
 from app.models.photo import DestinationDisplayPhoto
+from app.services.passenger_capacity import passenger_assessment
 from app.models.operations import (
     Inspection,
     InspectionCheck,
@@ -566,6 +567,7 @@ def _group_bus_inspection_rows(rows: list[BusInspection]) -> list[dict]:
                     "count": row.count,
                     "number_seated": row.number_seated,
                     "number_standing": row.number_standing,
+                    **passenger_assessment(row.fleet_number, row.number_seated, row.number_standing),
                 }
             )
         elif row.inspection_type in {"behind_schedule", "technical"}:
@@ -574,6 +576,9 @@ def _group_bus_inspection_rows(rows: list[BusInspection]) -> list[dict]:
                 {
                     **base,
                     "behind_schedule_interval": row.behind_schedule_interval,
+                    "departure_uid": getattr(row, "departure_uid", None),
+                    "scheduled_departure_time": getattr(row, "scheduled_departure_time", None),
+                    "actual_departure_time": getattr(row, "actual_departure_time", None),
                 }
             )
 

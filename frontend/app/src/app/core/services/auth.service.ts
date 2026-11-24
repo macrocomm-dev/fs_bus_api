@@ -2,6 +2,7 @@ import { inject, Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { tap } from 'rxjs/operators';
 import { Observable } from 'rxjs';
+import { DashboardFilterService } from './dashboard-filter.service';
 import { AuthSession } from '../models/auth.models';
 import { AuthService as ApiAuthService } from '../api/api/auth.service';
 import { UserLoginResponse, UserRefreshResponse } from '../api/model/models';
@@ -11,6 +12,7 @@ const SESSION_KEY = 'fs_bus_session';
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly router = inject(Router);
+  private readonly filters = inject(DashboardFilterService);
   private readonly apiAuth = inject(ApiAuthService);
 
   readonly session = signal<AuthSession | null>(this.loadSession());
@@ -18,7 +20,7 @@ export class AuthService {
   login(email: string, password: string): Observable<UserLoginResponse> {
     return this.apiAuth
       .getTokenAuthGetTokenPost({ userLoginRequest: { email, password } })
-      .pipe(tap((res) => this.persistSession(res)));
+      .pipe(tap((res) => { this.filters.reset(); this.persistSession(res); }));
   }
 
   refresh(refreshToken: string): Observable<UserRefreshResponse> {

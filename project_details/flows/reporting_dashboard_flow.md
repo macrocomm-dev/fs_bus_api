@@ -114,7 +114,7 @@ Derived failed-inspection rules:
   - interior other
   - PRDP scan
   - driver identified
-- Passenger count rows with `number_standing > 0` are treated as overloaded passenger-count failures until capacity data is available.
+- Passenger-count violations exceed either the seated or standing fleet-series limit. Unknown capacities are not assessed. See [capacity and departure rules](../dashboard_inspection_updates.md).
 
 Do not rely only on `pass = false` for reporting failed inspections. Some source rows can carry the failure on the subclass field while the parent field is missing or not meaningful for that inspection type.
 

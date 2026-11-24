@@ -200,7 +200,7 @@ export class ShiftsComponent implements OnInit {
 
   statusLabel(pass: boolean | null | undefined): string {
     if (pass === true) return 'Pass';
-    if (pass === false) return 'Fail';
+    if (pass === false) return 'Violation';
     return 'Not set';
   }
 
@@ -495,7 +495,7 @@ export class ShiftsComponent implements OnInit {
         inspectionTime: passenger.inspection_time,
         gps: this.gps(passenger.inspection_lat, passenger.inspection_lon),
         pass: passenger.pass_,
-        summary: `Seated: ${passenger.number_seated ?? 0} | Standing: ${passenger.number_standing ?? 0} | Total: ${passenger.count ?? 0}`,
+        summary: `Seated: ${passenger.number_seated ?? 0} | Standing: ${passenger.number_standing ?? 0} | Total: ${passenger.count ?? 0} | Capacity: ${passenger.seating_capacity ?? "Unknown"} seated / ${passenger.standing_capacity ?? "Unknown"} standing`,
       });
     }
 
@@ -507,7 +507,7 @@ export class ShiftsComponent implements OnInit {
         inspectionTime: report.inspection_time,
         gps: this.gps(report.inspection_lat, report.inspection_lon),
         pass: report.pass_,
-        summary: `Interval: ${scheduleIntervalLabel(report.behind_schedule_interval)}`,
+        summary: `Interval: ${scheduleIntervalLabel(report.behind_schedule_interval)} | Scheduled: ${report.scheduled_departure_time ?? "Not captured"} | Actual: ${report.actual_departure_time ?? "Not captured"}`,
       });
     }
 
@@ -533,7 +533,7 @@ export class ShiftsComponent implements OnInit {
 
   private itemLabel(value: boolean | null | undefined): string {
     if (value === true) return 'Pass';
-    if (value === false) return 'Fail';
+    if (value === false) return 'Violation';
     return 'Not set';
   }
 }

@@ -239,12 +239,12 @@ const OPERATOR_COMPLIANCE_TOTALS = OPERATOR_COMPLIANCE_ROWS.reduce(
 const OPERATOR_COMPLIANCE_SUMMARY_ITEMS: SummaryItem[] = [
   ...OPERATOR_COMPLIANCE_ROWS.map((row) => ({
     label: row.operator,
-    value: `${row.shifts} shifts, ${row.inspections} inspections, ${row.passed} passed, ${row.failed} failed`,
+    value: `${row.shifts} shifts, ${row.inspections} inspections, ${row.passed} passed, ${row.failed} violations`,
     drillKey: row.drillKey,
   })),
   {
     label: 'Total',
-    value: `${OPERATOR_COMPLIANCE_TOTALS.shifts} shifts, ${OPERATOR_COMPLIANCE_TOTALS.inspections} inspections, ${OPERATOR_COMPLIANCE_TOTALS.passed} passed, ${OPERATOR_COMPLIANCE_TOTALS.failed} failed`,
+    value: `${OPERATOR_COMPLIANCE_TOTALS.shifts} shifts, ${OPERATOR_COMPLIANCE_TOTALS.inspections} inspections, ${OPERATOR_COMPLIANCE_TOTALS.passed} passed, ${OPERATOR_COMPLIANCE_TOTALS.failed} violations`,
     drillKey: null,
   },
 ];
@@ -281,7 +281,7 @@ function buildOperatorComplianceDrillData(row: (typeof OPERATOR_COMPLIANCE_ROWS)
     { metric: 'Shifts', count: row.shifts },
     { metric: 'Inspections', count: row.inspections },
     { metric: 'Passed Inspections', count: row.passed },
-    { metric: 'Failed Inspections', count: row.failed },
+    { metric: 'Inspection Violations', count: row.failed },
   ];
 }
 
@@ -298,7 +298,7 @@ function isFailedInspectionTypeRow(
 function hasFailedInspectionValue(row: Record<string, string | number>): boolean {
   if (row['defectType']) return true;
 
-  const failureValues = new Set(['fail', 'missing', 'no', 'high', 'critical']);
+  const failureValues = new Set(['fail', 'violation', 'missing', 'no', 'high', 'critical']);
   return Object.entries(row).some(([field, value]) => {
     if (field.startsWith('_')) return false;
     if (
@@ -432,7 +432,7 @@ const DRILL_CONFIGS: Record<string, DrillConfig> = {
         terminal: 'Welkom',
         date: '2026-06-11',
         tyres: 'Pass',
-        windows: 'Fail',
+        windows: 'Violation',
         other: 'Pass',
         gps: '-27.9874, 26.7343',
       },
@@ -453,7 +453,7 @@ const DRILL_CONFIGS: Record<string, DrillConfig> = {
         inspector: 'Sarah Mokoena',
         terminal: 'Botshabelo',
         date: '2026-06-10',
-        tyres: 'Fail',
+        tyres: 'Violation',
         windows: 'Pass',
         other: 'Pass',
         gps: '-29.2645, 26.7150',
@@ -466,7 +466,7 @@ const DRILL_CONFIGS: Record<string, DrillConfig> = {
         date: '2026-06-10',
         tyres: 'Pass',
         windows: 'Pass',
-        other: 'Fail',
+        other: 'Violation',
         gps: '-29.3200, 26.8420',
       },
       {
@@ -514,7 +514,7 @@ const DRILL_CONFIGS: Record<string, DrillConfig> = {
         terminal: 'Welkom',
         date: '2026-06-11',
         fireExtinguisher: 'Present',
-        seats: 'Fail',
+        seats: 'Violation',
         aisle: 'Pass',
         gps: '-27.9874, 26.7343',
       },
@@ -537,7 +537,7 @@ const DRILL_CONFIGS: Record<string, DrillConfig> = {
         date: '2026-06-10',
         fireExtinguisher: 'Present',
         seats: 'Pass',
-        aisle: 'Fail',
+        aisle: 'Violation',
         gps: '-29.2645, 26.7150',
       },
       {
@@ -558,7 +558,7 @@ const DRILL_CONFIGS: Record<string, DrillConfig> = {
         terminal: 'Bloemfontein',
         date: '2026-06-10',
         fireExtinguisher: 'Present',
-        seats: 'Fail',
+        seats: 'Violation',
         aisle: 'Pass',
         gps: '-29.1191, 26.2150',
       },
@@ -1374,7 +1374,7 @@ const DRILL_CONFIGS: Record<string, DrillConfig> = {
     ],
   },
   roadworthiness: {
-    title: 'Roadworthiness Failures',
+    title: 'Roadworthiness Violations',
     columns: [
       { field: 'busReg', header: 'Bus Reg' },
       { field: 'fleetNo', header: 'Fleet No' },
@@ -2238,7 +2238,7 @@ const FAILED_INSPECTION_TYPES = [
 for (const type of FAILED_INSPECTION_TYPES) {
   const source = DRILL_CONFIGS[type.sourceKey];
   DRILL_CONFIGS[type.drillKey] = {
-    title: `Failed ${type.label}`,
+    title: `${type.label} — Violations`,
     columns: source.columns,
     data: source.data.filter((row) => isFailedInspectionTypeRow(type.sourceKey, row)),
   };
@@ -2251,7 +2251,7 @@ const FAILED_INSPECTION_SUMMARY_ITEMS: SummaryItem[] = [
     drillKey: type.drillKey,
   })),
   {
-    label: 'Total Failed Inspections',
+    label: 'Total Inspection Violations',
     value: FAILED_INSPECTION_TYPES.reduce(
       (total, type) => total + DRILL_CONFIGS[type.drillKey].data.length,
       0,
@@ -2379,8 +2379,8 @@ const TILES: KpiTile[] = [
   },
   {
     id: 'photo-evidence',
-    title: 'Failed Inspections',
-    metric: 'Failed Inspections by Type',
+    title: 'Inspection Violations',
+    metric: 'Inspection Violations by Type',
     value: 15,
     status: 'critical',
     icon: 'pi pi-clipboard',
@@ -2536,8 +2536,8 @@ export class ReportingComponent implements OnInit {
       },
       {
         ...failedTile,
-        title: 'Failed Inspections',
-        metric: 'Failed Inspections',
+        title: 'Inspection Violations',
+        metric: 'Inspection Violations',
         value: failedApi?.value ?? 'Loading',
         secondaryText: failedApi?.secondaryText,
         status: failedApi?.status ?? failedTile.status,

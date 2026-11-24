@@ -1,5 +1,6 @@
 from datetime import date, datetime, time
 from enum import Enum
+from uuid import UUID
 from typing import List, Optional
 from fastapi import Query
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -152,6 +153,8 @@ class BehindScheduleReportIn(InspectionBaseIn):
     """Nested request model for one behind-schedule report."""
 
     behind_schedule_interval: BehindScheduleInterval
+    departure_uid: Optional[UUID] = Field(None, description="UID from the cached departures CSV for the actual trip being checked. Historical schedule UIDs remain valid.")
+    actual_departure_time: Optional[datetime] = Field(None, description="Observed departure datetime; omit if not observed. This is not inspection_time.")
 
     @field_validator("behind_schedule_interval", mode="before")
     @classmethod
@@ -437,6 +440,8 @@ class BehindScheduleReportMetaIn(InspectionBaseMetaIn):
     """Multipart metadata for one behind-schedule report."""
 
     behind_schedule_interval: BehindScheduleInterval
+    departure_uid: Optional[UUID] = Field(None, description="UID from the cached departures CSV for the actual trip being checked. Historical schedule UIDs remain valid.")
+    actual_departure_time: Optional[datetime] = Field(None, description="Observed departure datetime; omit if not observed. This is not inspection_time.")
 
     @field_validator("behind_schedule_interval", mode="before")
     @classmethod
@@ -718,11 +723,18 @@ class PassengerCountInspectionResponse(InspectionEventResponse):
     number_seated: Optional[int] = None
     number_standing: Optional[int] = None
 
+    seating_capacity: Optional[int] = None
+    standing_capacity: Optional[int] = None
+    overloaded_passengers: Optional[int] = None
+
 
 class BehindScheduleInspectionResponse(InspectionEventResponse):
     """Grouped response model for one behind-schedule event."""
 
     behind_schedule_interval: Optional[str] = None
+    departure_uid: Optional[UUID] = None
+    scheduled_departure_time: Optional[time] = None
+    actual_departure_time: Optional[datetime] = None
 
 
 class BusInspectionGroupItemsResponse(BaseModel):

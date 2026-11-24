@@ -109,6 +109,27 @@
 - Added `project_details/mobile_destination_photos_guide.md` and linked it from API/departures docs. The general FS app should omit the operator filter to support IBL and Maluti; verified that only IBL currently has a published timetable (1,172 departures).
 - Validation: all 95 backend tests passed, including 11 destination-photo contract/persistence cases; the production dashboard build passed with existing size warnings. Backend/frontend deployment remains pending before mobile uploads can begin.
 
+## Stephanie dashboard account (2026-10-02)
+
+- Found an existing Firebase identity and matching database user for `stephanie@macrocomm.co.za`; confirmed the UID match and reconciled the account to active Admin/Internal access, preserving other Firebase claims and the existing password.
+- Verified the enabled Firebase account's Admin claim and the matching active database Admin/Internal record. Password login was not tested because the existing password was preserved and not available.
+- Generated a fresh password setup link for Erlo to share privately with Stephanie. Saved it in the ignored `.local/stephanie-account-setup.txt` file with owner-only permissions; no email was sent and no credentials or action links were added to tracked documentation. No deployment required.
+
+## NOC laptop dashboard accounts (2026-10-26)
+
+- Created `noc.laptop1@fsbus.example.com` and `noc.laptop2@fsbus.example.com` as separate, enabled Firebase accounts with Monitor claims and matching active Internal database users. These are login identifiers without mailboxes; password recovery is administrator-managed.
+- Generated separate random passwords and saved them only in the git-ignored, owner-readable `.local/noc-laptop-accounts.json` file. No emails were sent and no passwords were added to tracked documentation.
+- Verified both production dashboard logins, authenticated CSV reads, and dashboard reporting-summary requests (HTTP 200). No deployment was needed. Monitor is the existing application role, not a new read-only permission policy.
+
+## Dashboard inspection and capacity updates (2026-11-24)
+
+- Changed the shared default date range to seven calendar days including today and reset it on successful login. Added an inspection-type dropdown including compliant and violation records; existing metric tiles still select violations only.
+- Replaced user-facing failed-inspection wording with inspection violations, retaining API field names and drill keys for compatibility.
+- Centralized capacities by four-digit fleet series: 3000 = 65 seated/12 standing, 4000 = 114/32, 5000 = 79/24, 7000 = 49/12. Owner confirmed separate seated/standing checks. Corrected the previous any-standing-passenger overload proxy across reporting, analytics, inspection reads/writes, monitor/shift totals, and vehicle status. Unknown capacities/counts remain unassessed; historical observed counts are unchanged.
+- Added optional departure UID and observed actual-departure datetime capture, with a scheduled-time snapshot from the exact historical CSV row. Validate the UID and duty match; show Not captured for old observations rather than treating inspection time as departure time. Applied the additive nullable-column migration to Cloud SQL. External mobile changes are still needed to supply these observations.
+- Updated dashboard capacity/departure displays, generated Angular models, and the mobile/reporting documentation in `project_details/dashboard_inspection_updates.md`.
+- Validation: 118 backend tests and five focused frontend tests passed; production frontend build passed with existing size warnings. Read-only PostgreSQL checks confirmed Python/SQL agreement on 11 capacity boundary/unknown cases and matching reporting/analytics totals for 18–24 November (33 passenger-capacity violations). No deployment was performed.
+
 ## Notes
 
 - Items in this file represent work already present in the repository baseline.

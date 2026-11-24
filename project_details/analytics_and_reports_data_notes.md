@@ -98,14 +98,14 @@ Current backend sources:
   - Route Compliance:
     - Source checked: `analytics.trip_data.routescore` and `analytics.trip_data.routevar`
     - Current display: `N/A` because both fields are currently `0.00` for all inspected rows, so a percentage would be misleading.
-- Failed Inspections:
+- Inspection Violations:
   - Source: `inspections.inspections`
   - Denominator: completed inspection rows only: external, internal, driver, passenger count, and technical.
   - Current calculation: derived failed inspections divided by completed inspection rows in the selected date range.
   - Derived failed inspections include:
     - `pass = false`
     - any failed subclass check such as tyres, windows, seats, aisle, fire extinguisher, other, PRDP scan, or driver identified
-    - passenger count rows where `number_standing > 0`, which are treated as overloaded passenger-count failures
+    - passenger count rows exceeding either the seated or standing fleet-series capacity
   - Route-start rows are excluded from this denominator because they feed the on-time performance KPI.
   - Fleet Health:
     - Source: latest `analytics.bi_data.bi_total` per vehicle in the selected date range.
@@ -119,11 +119,11 @@ Current backend sources:
     - `Unassigned`: 16 completed inspections that did not resolve to an operator
   - Drilldowns return real inspection rows for external, internal, driver, passenger count, and technical inspections.
   - Inspection type over time uses real daily inspection counts.
-- Failed Inspections
+- Inspection Violations
   - Source: `inspections.inspections`
   - Group derived failed rows by `inspection_type`.
   - The raw parent `pass` column is not the only failure source because some failures live in type-specific subclass fields.
-  - Passenger count failures currently use `number_standing > 0` as a provisional overloaded-trip proxy.
+  - Passenger count violations use the separate seated/standing fleet-series limits; unknown capacities are not assessed.
 - Defects / Bus Defects
   - Source: `inspections.inspections`
   - Fields available include:
@@ -182,8 +182,8 @@ Current backend sources:
   - Need confirmation: whether route compliance should be trip-weighted, route-weighted, or operator-weighted.
 - Passenger overloaded trips
   - Partially hooked from passenger count rows.
-  - Current provisional rule: rows with standing passengers are treated as overloaded.
-  - Need bus seating/standing capacity per vehicle or route to calculate true overload percentage.
+  - Current rule: either seated or standing passengers exceed the respective fleet-series limit.
+  - Capacities and excess counts are defined in [the dashboard inspection guide](dashboard_inspection_updates.md); the overload tile counts violating inspection events.
 - Bus license disk count
   - Hooked from `license_disk_scan_succeeded` at bus-within-shift grain.
   - Need definition: should the card show successful scans, failed scans, missing disks, or total licence disk checks?

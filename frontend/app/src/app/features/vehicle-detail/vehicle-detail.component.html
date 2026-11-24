@@ -96,6 +96,10 @@
               <strong>{{ vehicleDetail.vehicle.fleet_number || '-' }}</strong>
             </div>
             <div>
+              <span>Passenger capacity (seated / standing)</span>
+              <strong>{{ vehicleDetail.vehicle.seating_capacity ?? 'Unknown' }} / {{ vehicleDetail.vehicle.standing_capacity ?? 'Unknown' }}</strong>
+            </div>
+            <div>
               <span>Registration</span>
               <strong>{{ vehicleDetail.vehicle.registration_number || '-' }}</strong>
             </div>
@@ -299,7 +303,7 @@
                 <th pSortableColumn="inspection_type">Type <p-sortIcon field="inspection_type" /></th>
                 <th pSortableColumn="passed">Result <p-sortIcon field="passed" /></th>
                 <th pSortableColumn="inspector">Inspector <p-sortIcon field="inspector" /></th>
-                <th>Failed Checks</th>
+                <th>Inspection Violations</th>
                 <th>GPS</th>
                 <th>Notes</th>
               </tr>

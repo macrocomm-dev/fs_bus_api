@@ -165,7 +165,7 @@ export class VehiclesComponent implements OnInit {
       return 'Passed';
     }
     if (passed === false) {
-      return 'Failed';
+      return 'Violation';
     }
     return 'No inspection';
   }

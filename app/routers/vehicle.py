@@ -19,6 +19,7 @@ from firebase_admin import db
 from sqlalchemy import func, or_, text
 from sqlalchemy.orm import Session
 
+from app.services.passenger_capacity import inspection_pass
 from app.auth import TokenData, get_current_user, split_user_name
 from app.config import Settings, get_settings
 from app.database import get_db
@@ -264,7 +265,7 @@ def _build_vehicle_response(
         last_inspection_at=(
             latest_inspection.inspection_time if latest_inspection else None
         ),
-        last_inspection_passed=latest_inspection.pass_ if latest_inspection else None,
+        last_inspection_passed=inspection_pass(latest_inspection) if latest_inspection else None,
     )
 
 
@@ -324,8 +325,8 @@ def _failed_checks(inspection: BusInspection) -> list[str]:
         checks.append("PRDP Scan")
     if inspection.driver_identified is False:
         checks.append("Driver Identified")
-    if inspection.pass_ is False and not checks:
-        checks.append("Inspection Failed")
+    if inspection_pass(inspection) is False and not checks:
+        checks.append("Inspection Violation")
     return checks
 
 
@@ -631,7 +632,7 @@ async def get_vehicle_detail(
             VehicleInspectionHistoryResponse(
                 inspection_time=inspection.inspection_time,
                 inspection_type=inspection.inspection_type,
-                passed=inspection.pass_,
+                passed=inspection_pass(inspection),
                 inspector=user.full_name if user else inspection.user_id,
                 notes=inspection.notes,
                 failed_checks=_failed_checks(inspection),
@@ -661,7 +662,7 @@ async def get_vehicle_detail(
                 latest_inspection.inspection_type if latest_inspection else None
             ),
             latest_inspection_passed=(
-                latest_inspection.pass_ if latest_inspection else None
+                inspection_pass(latest_inspection) if latest_inspection else None
             ),
         )
 

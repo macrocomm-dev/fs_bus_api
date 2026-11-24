@@ -122,6 +122,8 @@ Exchange email and password for a Firebase ID token plus the app user context st
 
 ## POST `/shift/create_shift/` — Create Shift
 
+November update: [fleet capacity rules and optional departure capture](dashboard_inspection_updates.md).
+
 Destination-display evidence: the optional bus-level `photos` array sits beside
 `destination_displayed`; see the [mobile photo guide](mobile_destination_photos_guide.md)
 for exact JSON, multipart file names, readback, and deployment order.

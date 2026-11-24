@@ -19,6 +19,14 @@ export interface BehindScheduleReportIn {
     inspection_lat: number;
     inspection_lon: number;
     behind_schedule_interval: BehindScheduleInterval;
+    /**
+     * UID from the cached departures CSV for the actual trip being checked. Historical schedule UIDs remain valid.
+     */
+    departure_uid?: string | null;
+    /**
+     * Observed departure datetime; omit if not observed. This is not inspection_time.
+     */
+    actual_departure_time?: string | null;
 }
 
 

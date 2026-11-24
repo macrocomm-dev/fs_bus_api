@@ -190,7 +190,7 @@ export class VehicleDetailComponent implements OnInit {
 
   resultLabel(passed: boolean | null | undefined): string {
     if (passed === true) return 'Passed';
-    if (passed === false) return 'Failed';
+    if (passed === false) return 'Violation';
     return 'No result';
   }
 

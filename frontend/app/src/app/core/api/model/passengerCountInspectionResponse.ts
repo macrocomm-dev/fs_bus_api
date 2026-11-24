@@ -23,5 +23,8 @@ export interface PassengerCountInspectionResponse {
     count?: number | null;
     number_seated?: number | null;
     number_standing?: number | null;
+    seating_capacity?: number | null;
+    standing_capacity?: number | null;
+    overloaded_passengers?: number | null;
 }
 

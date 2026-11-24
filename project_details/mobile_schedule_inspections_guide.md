@@ -5,6 +5,9 @@ inside `busses[].inspections.behind_schedule_reports[]`. The inspection type is
 still `behind_schedule`, including for early departures. Only the possible
 string values and dashboard presentation have expanded.
 
+For optional scheduled/actual departure capture added in November, see the
+[departure capture contract](dashboard_inspection_updates.md#mobile-change-required-to-capture-departures).
+
 ## Exact values for new captures
 
 | Mobile label | JSON `behind_schedule_interval` value |
